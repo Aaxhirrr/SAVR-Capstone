@@ -6,6 +6,8 @@ This repository is the official GitHub repo for our ASU CSE Capstone project:
 
 ## Team
 - **Aashir Javed**
+CS senior at ASU with a systems and backend tilt. I’m strongest in building production-style features: REST APIs, authentication and session handling, database schemas and queries, and service integrations. I also do frontend work in React/TypeScript and care about UX polish. On SAVR, I’m aiming to keep the mobile build structured and scalable, keep API payloads mobile-friendly, and ship a working core experience early so we can iterate fast.
+
 - **Peter Forbes** (collaborator)
 - **Alexander Wei** (collaborator)
 
