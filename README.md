@@ -11,7 +11,7 @@ This repository is the official GitHub repo for our ASU CSE Capstone project:
 - **Peter Forbes**
 : CS major with 5+ years of full-stack development experience, but focusing on systems development in university. I have real world experience with React, Vue, TypeScript, Node.js, PHP, MySQL, and PostgreSQL. I am very excited to work hands on with developing native mobile applications, and I'm specifically interested in learning a modern native multi-platform app framework like React Native or Flutter. I can handle anything that's thrown at me, from API integrations to mobile UI design.
 
-- **Alexander Wei:** Senior in Informatics. I work on the UX/UI on this app, so making sure it looks nice and feels good to use. I have years of design experience in various fields and programs. Not as much development experience, but I can pick things up pretty quickly and persist. Mostly excited to be able to get some real experience.
+- **Alexander Wei:** Senior in Informatics. I work on the UX/UI on this app, so making sure it looks nice and feels good to use. I have years of experience in graphic design and art. Not as much development experience, but I can pick things up pretty quickly and persist. Mostly excited to visibly contribute.
 
 ## Purpose
 We are working with our sponsor to help transform SAVR’s existing product experience into a mobile-first application, focusing on a functional implementation and a strong, modern frontend user experience.
