@@ -42,3 +42,10 @@ We are working with our sponsor to help transform SAVR’s existing product expe
 ## Notes
 
 More setup instructions, architecture notes, and contribution guidelines will be added as the project codebase and sprint work is finalized.
+
+## Run on macOS (Xcode)
+
+1. Clone the repo.
+2. Open `SavrMobile.xcodeproj` in Xcode.
+3. Select the `SavrMobile` scheme and an iOS Simulator (for example, iPhone 15).
+4. Press Run.
