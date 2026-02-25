@@ -1,6 +1,6 @@
 # SAVR Capstone (ASU)
 
-This repository is the official GitHub repo for our ASU CSE Capstone project:
+This repository is the official GitHub repo for SAVR:
 
 **SAVR — React to iOS & Android Mobile Application Transformation**
 
