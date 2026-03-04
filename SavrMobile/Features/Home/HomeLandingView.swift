@@ -66,6 +66,6 @@ struct HomeLandingView: View {
             }
         }
         .sheet(isPresented: $showSignIn) { SignInView() }
-        .sheet(isPresented: $showGetStarted) { GetStartedView() }
+        .sheet(isPresented: $showGetStarted) { SignUpView() }
     }
 }

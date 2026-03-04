@@ -32,6 +32,19 @@
 		000000000000000000000045 /* PriceOption.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000044 /* PriceOption.swift */; };
 		000000000000000000000048 /* PriceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000047 /* PriceService.swift */; };
 		00000000000000000000004A /* MockPriceService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 000000000000000000000049 /* MockPriceService.swift */; };
+		0ADD40B89690401B7D5764FC /* FlyersView.swift in Sources */ = {isa = PBXBuildFile; fileRef = AA954B1DA77BD340CC6957DB /* FlyersView.swift */; };
+		106A4612814D0C6A566849E3 /* AppShellView.swift in Sources */ = {isa = PBXBuildFile; fileRef = CC8A42B0BEF4CA80D9B9BB9F /* AppShellView.swift */; };
+		14E24E37AB24AA5A67F364C7 /* ChatView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EBD49D7903684D972A30EA5 /* ChatView.swift */; };
+		32B4495A83A65C7E615E7D57 /* PreferencesView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 366E4545B168129E534D8769 /* PreferencesView.swift */; };
+		40CA4537A3CFEF7E942D891A /* StoreSelectView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5A56428DA8F216C5DB1375CD /* StoreSelectView.swift */; };
+		4AEB4B8BA31A02394B8DFA15 /* SavrLogoView.swift in Sources */ = {isa = PBXBuildFile; fileRef = D85746A0B7F4364220F846CF /* SavrLogoView.swift */; };
+		50514B47A33C9D8EFC300549 /* ListsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = C3A842049582529F4DDCD8B9 /* ListsView.swift */; };
+		523D4400AB9DF149C5904A6E /* CheckboxToggleStyle.swift in Sources */ = {isa = PBXBuildFile; fileRef = 7FEA439882EC0A2EB4EE1F5D /* CheckboxToggleStyle.swift */; };
+		6E984A2D9EDA148AF0E73A35 /* ChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FFD43B68B62E3526640C46E /* ChatMessage.swift */; };
+		7A484206878ED2A643FBD072 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E70844D58C9FE17392411755 /* SidebarView.swift */; };
+		83F545B4A24016D59CF9C42A /* SignUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CE84867883AC8BAD9A6722C /* SignUpView.swift */; };
+		C1DE453FABE31FA4D2B97D0D /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 651041B39EA07DBD84AD0A4A /* ChatViewModel.swift */; };
+		EEEE4E60A5245A0F4DA51B46 /* AuthField.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF5D4885AC0F3204E6C6C6C9 /* AuthField.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -61,6 +74,19 @@
 		000000000000000000000044 /* PriceOption.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceOption.swift; sourceTree = "<group>"; };
 		000000000000000000000047 /* PriceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PriceService.swift; sourceTree = "<group>"; };
 		000000000000000000000049 /* MockPriceService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MockPriceService.swift; sourceTree = "<group>"; };
+		0EBD49D7903684D972A30EA5 /* ChatView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatView.swift; path = SavrMobile/Features/Chat/ChatView.swift; sourceTree = SOURCE_ROOT; };
+		1FFD43B68B62E3526640C46E /* ChatMessage.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatMessage.swift; path = SavrMobile/Features/Chat/ChatMessage.swift; sourceTree = SOURCE_ROOT; };
+		366E4545B168129E534D8769 /* PreferencesView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = PreferencesView.swift; path = SavrMobile/Features/Chat/PreferencesView.swift; sourceTree = SOURCE_ROOT; };
+		3CE84867883AC8BAD9A6722C /* SignUpView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SignUpView.swift; path = SavrMobile/Features/Auth/SignUpView.swift; sourceTree = SOURCE_ROOT; };
+		5A56428DA8F216C5DB1375CD /* StoreSelectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StoreSelectView.swift; path = SavrMobile/Features/Chat/StoreSelectView.swift; sourceTree = SOURCE_ROOT; };
+		651041B39EA07DBD84AD0A4A /* ChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatViewModel.swift; path = SavrMobile/Features/Chat/ChatViewModel.swift; sourceTree = SOURCE_ROOT; };
+		7FEA439882EC0A2EB4EE1F5D /* CheckboxToggleStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CheckboxToggleStyle.swift; path = SavrMobile/Components/CheckboxToggleStyle.swift; sourceTree = SOURCE_ROOT; };
+		AA954B1DA77BD340CC6957DB /* FlyersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FlyersView.swift; path = SavrMobile/Features/Flyers/FlyersView.swift; sourceTree = SOURCE_ROOT; };
+		C3A842049582529F4DDCD8B9 /* ListsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ListsView.swift; path = SavrMobile/Features/Lists/ListsView.swift; sourceTree = SOURCE_ROOT; };
+		CC8A42B0BEF4CA80D9B9BB9F /* AppShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppShellView.swift; path = SavrMobile/Features/AppShell/AppShellView.swift; sourceTree = SOURCE_ROOT; };
+		D85746A0B7F4364220F846CF /* SavrLogoView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SavrLogoView.swift; path = SavrMobile/Components/SavrLogoView.swift; sourceTree = SOURCE_ROOT; };
+		E70844D58C9FE17392411755 /* SidebarView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = SidebarView.swift; path = SavrMobile/Features/AppShell/SidebarView.swift; sourceTree = SOURCE_ROOT; };
+		FF5D4885AC0F3204E6C6C6C9 /* AuthField.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AuthField.swift; path = SavrMobile/Components/AuthField.swift; sourceTree = SOURCE_ROOT; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -79,6 +105,19 @@
 			children = (
 				000000000000000000000004 /* SavrMobile */,
 				000000000000000000000003 /* Products */,
+				D85746A0B7F4364220F846CF /* SavrLogoView.swift */,
+				7FEA439882EC0A2EB4EE1F5D /* CheckboxToggleStyle.swift */,
+				FF5D4885AC0F3204E6C6C6C9 /* AuthField.swift */,
+				3CE84867883AC8BAD9A6722C /* SignUpView.swift */,
+				CC8A42B0BEF4CA80D9B9BB9F /* AppShellView.swift */,
+				E70844D58C9FE17392411755 /* SidebarView.swift */,
+				1FFD43B68B62E3526640C46E /* ChatMessage.swift */,
+				651041B39EA07DBD84AD0A4A /* ChatViewModel.swift */,
+				0EBD49D7903684D972A30EA5 /* ChatView.swift */,
+				5A56428DA8F216C5DB1375CD /* StoreSelectView.swift */,
+				366E4545B168129E534D8769 /* PreferencesView.swift */,
+				AA954B1DA77BD340CC6957DB /* FlyersView.swift */,
+				C3A842049582529F4DDCD8B9 /* ListsView.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -289,6 +328,19 @@
 				000000000000000000000045 /* PriceOption.swift in Sources */,
 				000000000000000000000048 /* PriceService.swift in Sources */,
 				00000000000000000000004A /* MockPriceService.swift in Sources */,
+				4AEB4B8BA31A02394B8DFA15 /* SavrLogoView.swift in Sources */,
+				523D4400AB9DF149C5904A6E /* CheckboxToggleStyle.swift in Sources */,
+				EEEE4E60A5245A0F4DA51B46 /* AuthField.swift in Sources */,
+				83F545B4A24016D59CF9C42A /* SignUpView.swift in Sources */,
+				106A4612814D0C6A566849E3 /* AppShellView.swift in Sources */,
+				7A484206878ED2A643FBD072 /* SidebarView.swift in Sources */,
+				6E984A2D9EDA148AF0E73A35 /* ChatMessage.swift in Sources */,
+				C1DE453FABE31FA4D2B97D0D /* ChatViewModel.swift in Sources */,
+				14E24E37AB24AA5A67F364C7 /* ChatView.swift in Sources */,
+				40CA4537A3CFEF7E942D891A /* StoreSelectView.swift in Sources */,
+				32B4495A83A65C7E615E7D57 /* PreferencesView.swift in Sources */,
+				0ADD40B89690401B7D5764FC /* FlyersView.swift in Sources */,
+				50514B47A33C9D8EFC300549 /* ListsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
