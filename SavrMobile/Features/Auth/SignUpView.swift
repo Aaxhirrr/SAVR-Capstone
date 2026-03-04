@@ -131,9 +131,9 @@ struct SignUpView: View {
 
                         Toggle(isOn: $accepted) {
                             Text("I have read and agree to the ")
-                            + Text("Privacy Policy").foregroundStyle(SavrColors.brandGreen).fontWeight(.bold)
+                            + Text("Privacy Policy").foregroundColor(SavrColors.brandGreen).fontWeight(.bold)
                             + Text(" and ")
-                            + Text("Terms of Service").foregroundStyle(SavrColors.brandGreen).fontWeight(.bold)
+                            + Text("Terms of Service").foregroundColor(SavrColors.brandGreen).fontWeight(.bold)
                         }
                         .toggleStyle(CheckboxToggleStyle())
                         .padding(.top, 8)
