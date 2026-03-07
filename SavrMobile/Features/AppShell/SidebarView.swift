@@ -15,14 +15,14 @@ struct SidebarView: View {
             .padding(.bottom, 10)
 
             List(selection: $selection) {
-                NavigationLink(value: AppShellView.Route.flyers) {
-                    Label("Flyers", systemImage: "newspaper")
-                }
                 NavigationLink(value: AppShellView.Route.chat) {
                     Label("Chat", systemImage: "message.fill")
                 }
+                NavigationLink(value: AppShellView.Route.flyers) {
+                    Label("Flyers", systemImage: "newspaper")
+                }
                 NavigationLink(value: AppShellView.Route.lists) {
-                    Label("My Lists", systemImage: "cart")
+                    Label("My Lists", systemImage: "list.bullet.rectangle")
                 }
             }
             .listStyle(.sidebar)
