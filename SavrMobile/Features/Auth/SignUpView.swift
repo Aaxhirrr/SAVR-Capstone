@@ -22,6 +22,14 @@ struct SignUpView: View {
     @State private var phone = ""
 
     @State private var accepted = false
+    
+    private var passwordsMatch: Bool {
+        !password.isEmpty && password == confirmPassword
+    }
+    
+    private var canSubmit: Bool {
+        accepted && passwordsMatch
+    }
 
     var body: some View {
         ZStack {
@@ -88,6 +96,13 @@ struct SignUpView: View {
 
                             AuthField(title: "Password", placeholder: "Password", text: $password, isSecure: true)
                             AuthField(title: "Confirm Password", placeholder: "Confirm Password", text: $confirmPassword, isSecure: true)
+                            
+                            if !confirmPassword.isEmpty && !passwordsMatch {
+                                Text("Passwords do not match.")
+                                    .font(SavrTypography.caption)
+                                    .foregroundStyle(.red.opacity(0.85))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
                         }
 
                         Divider().opacity(0.35).padding(.top, 6)
@@ -140,7 +155,7 @@ struct SignUpView: View {
 
                         Button {
                             // stub signup
-                            guard accepted else { return }
+                            guard canSubmit else { return }
                             appState.isSignedIn = true
                             dismiss()
                         } label: {
@@ -148,7 +163,7 @@ struct SignUpView: View {
                                 .frame(maxWidth: .infinity)
                         }
                         .buttonStyle(SavrPrimaryButtonStyle())
-                        .opacity(accepted ? 1 : 0.55)
+                        .opacity(canSubmit ? 1 : 0.55)
                         .padding(.top, 6)
 
                         HStack(spacing: 6) {
