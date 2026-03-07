@@ -107,7 +107,7 @@ struct ChatView: View {
                 RoundedRectangle(cornerRadius: 16, style: .continuous)
                     .stroke(SavrColors.cardStroke, lineWidth: isUser ? 0 : 1)
             )
-            .frame(maxWidth: 520, alignment: isUser ? .trailing : .leading)
+            .frame(maxWidth: 450, alignment: isUser ? .trailing : .leading)
 
             if !isUser { Spacer(minLength: 0) }
         }
