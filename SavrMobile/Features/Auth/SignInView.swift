@@ -8,6 +8,14 @@ struct SignInView: View {
     @State private var password = ""
 
     @State private var showSignUp = false
+    
+    private var isValidEmail: Bool {
+        email.contains("@") && email.contains(".")
+    }
+    
+    private var canSubmit: Bool {
+        isValidEmail && password.count >= 6
+    }
 
     var body: some View {
         ZStack {
@@ -51,6 +59,13 @@ struct SignInView: View {
             VStack(spacing: 12) {
                 AuthField(title: "Email address", placeholder: "Email address", text: $email, keyboard: .emailAddress)
                 AuthField(title: "Password", placeholder: "Password", text: $password, isSecure: true)
+                
+                if !email.isEmpty && !isValidEmail {
+                    Text("Enter a valid email address.")
+                        .font(SavrTypography.caption)
+                        .foregroundStyle(.red.opacity(0.85))
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                }
 
                 HStack {
                     Spacer()
@@ -63,6 +78,7 @@ struct SignInView: View {
 
             Button {
                 // stub: accept any input for now
+                guard canSubmit else { return }
                 appState.isSignedIn = true
                 dismiss()
             } label: {
@@ -70,7 +86,8 @@ struct SignInView: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(SavrPrimaryButtonStyle())
-            .padding(.top, 2)
+            .opacity(canSubmit ? 1 : 0.55)
+            .padding(.top, 4)
 
             HStack(spacing: 10) {
                 Rectangle().fill(SavrColors.cardStroke).frame(height: 1)
