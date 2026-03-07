@@ -49,3 +49,17 @@ More setup instructions, architecture notes, and contribution guidelines will be
 2. Open `SavrMobile.xcodeproj` in Xcode.
 3. Select the `SavrMobile` scheme and an iOS Simulator (for example, iPhone 15).
 4. Press Run.
+
+## Mobile UI Progress (Current)
+
+Implemented SwiftUI screens:
+
+- Home landing page
+- Sign in page
+- Sign up page
+- App shell with sidebar navigation
+- Chat page
+- Store selection placeholder page
+- Preferences placeholder page
+- Flyers placeholder page
+- Lists placeholder page
