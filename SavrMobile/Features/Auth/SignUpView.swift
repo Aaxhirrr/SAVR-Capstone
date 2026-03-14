@@ -2,7 +2,6 @@ import SwiftUI
 
 struct SignUpView: View {
     @Environment(\.dismiss) private var dismiss
-    @EnvironmentObject private var appState: AppState
 
     enum Province: String, CaseIterable, Identifiable {
         case AB, BC, MB, NB, NL, NS, NT, NU, ON, PE, QC, SK, YT
@@ -22,6 +21,7 @@ struct SignUpView: View {
     @State private var phone = ""
 
     @State private var accepted = false
+    @State private var errorMessage: String?
     
     private var passwordsMatch: Bool {
         !password.isEmpty && password == confirmPassword
@@ -56,9 +56,7 @@ struct SignUpView: View {
                         }
 
                         Button {
-                            // stub google signup
-                            appState.isSignedIn = true
-                            dismiss()
+                            errorMessage = "Sign up is not connected to the backend yet."
                         } label: {
                             HStack(spacing: 10) {
                                 Image(systemName: "g.circle.fill")
@@ -99,6 +97,13 @@ struct SignUpView: View {
                             
                             if !confirmPassword.isEmpty && !passwordsMatch {
                                 Text("Passwords do not match.")
+                                    .font(SavrTypography.caption)
+                                    .foregroundStyle(.red.opacity(0.85))
+                                    .frame(maxWidth: .infinity, alignment: .leading)
+                            }
+
+                            if let errorMessage {
+                                Text(errorMessage)
                                     .font(SavrTypography.caption)
                                     .foregroundStyle(.red.opacity(0.85))
                                     .frame(maxWidth: .infinity, alignment: .leading)
@@ -154,10 +159,8 @@ struct SignUpView: View {
                         .padding(.top, 8)
 
                         Button {
-                            // stub signup
                             guard canSubmit else { return }
-                            appState.isSignedIn = true
-                            dismiss()
+                            errorMessage = "Sign up is not connected to the backend yet."
                         } label: {
                             Text("Sign up with Email")
                                 .frame(maxWidth: .infinity)

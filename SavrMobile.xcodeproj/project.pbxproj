@@ -43,6 +43,10 @@
 		6E984A2D9EDA148AF0E73A35 /* ChatMessage.swift in Sources */ = {isa = PBXBuildFile; fileRef = 1FFD43B68B62E3526640C46E /* ChatMessage.swift */; };
 		7A484206878ED2A643FBD072 /* SidebarView.swift in Sources */ = {isa = PBXBuildFile; fileRef = E70844D58C9FE17392411755 /* SidebarView.swift */; };
 		83F545B4A24016D59CF9C42A /* SignUpView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3CE84867883AC8BAD9A6722C /* SignUpView.swift */; };
+		85542D842F65343F00BB92B7 /* APIClient.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85542D832F65343F00BB92B7 /* APIClient.swift */; };
+		85542D862F65343F00BB92B7 /* AuthModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85542D852F65343F00BB92B7 /* AuthModels.swift */; };
+		85542D882F65343F00BB92B7 /* AuthTokenStore.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85542D872F65343F00BB92B7 /* AuthTokenStore.swift */; };
+		85542D8A2F65343F00BB92B7 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85542D892F65343F00BB92B7 /* AuthService.swift */; };
 		C1DE453FABE31FA4D2B97D0D /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 651041B39EA07DBD84AD0A4A /* ChatViewModel.swift */; };
 		EEEE4E60A5245A0F4DA51B46 /* AuthField.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF5D4885AC0F3204E6C6C6C9 /* AuthField.swift */; };
 /* End PBXBuildFile section */
@@ -81,6 +85,11 @@
 		5A56428DA8F216C5DB1375CD /* StoreSelectView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = StoreSelectView.swift; path = SavrMobile/Features/Chat/StoreSelectView.swift; sourceTree = SOURCE_ROOT; };
 		651041B39EA07DBD84AD0A4A /* ChatViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ChatViewModel.swift; path = SavrMobile/Features/Chat/ChatViewModel.swift; sourceTree = SOURCE_ROOT; };
 		7FEA439882EC0A2EB4EE1F5D /* CheckboxToggleStyle.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = CheckboxToggleStyle.swift; path = SavrMobile/Components/CheckboxToggleStyle.swift; sourceTree = SOURCE_ROOT; };
+		85542D832F65343F00BB92B7 /* APIClient.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = APIClient.swift; sourceTree = "<group>"; };
+		85542D852F65343F00BB92B7 /* AuthModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthModels.swift; sourceTree = "<group>"; };
+		85542D872F65343F00BB92B7 /* AuthTokenStore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthTokenStore.swift; sourceTree = "<group>"; };
+		85542D892F65343F00BB92B7 /* AuthService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AuthService.swift; sourceTree = "<group>"; };
+		85542D8B2F6538AD00BB92B7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		AA954B1DA77BD340CC6957DB /* FlyersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FlyersView.swift; path = SavrMobile/Features/Flyers/FlyersView.swift; sourceTree = SOURCE_ROOT; };
 		C3A842049582529F4DDCD8B9 /* ListsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ListsView.swift; path = SavrMobile/Features/Lists/ListsView.swift; sourceTree = SOURCE_ROOT; };
 		CC8A42B0BEF4CA80D9B9BB9F /* AppShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppShellView.swift; path = SavrMobile/Features/AppShell/AppShellView.swift; sourceTree = SOURCE_ROOT; };
@@ -118,6 +127,7 @@
 				366E4545B168129E534D8769 /* PreferencesView.swift */,
 				AA954B1DA77BD340CC6957DB /* FlyersView.swift */,
 				C3A842049582529F4DDCD8B9 /* ListsView.swift */,
+				85542D8B2F6538AD00BB92B7 /* Info.plist */,
 			);
 			sourceTree = "<group>";
 		};
@@ -229,6 +239,10 @@
 			children = (
 				000000000000000000000047 /* PriceService.swift */,
 				000000000000000000000049 /* MockPriceService.swift */,
+				85542D832F65343F00BB92B7 /* APIClient.swift */,
+				85542D852F65343F00BB92B7 /* AuthModels.swift */,
+				85542D872F65343F00BB92B7 /* AuthTokenStore.swift */,
+				85542D892F65343F00BB92B7 /* AuthService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -312,12 +326,14 @@
 				00000000000000000000001F /* SavrButtonStyles.swift in Sources */,
 				000000000000000000000022 /* SavrNavBar.swift in Sources */,
 				000000000000000000000024 /* PillTag.swift in Sources */,
+				85542D862F65343F00BB92B7 /* AuthModels.swift in Sources */,
 				000000000000000000000026 /* SavrSearchBar.swift in Sources */,
 				000000000000000000000028 /* InfoCard.swift in Sources */,
 				00000000000000000000002A /* MetricsBar.swift in Sources */,
 				00000000000000000000002E /* HomeLandingView.swift in Sources */,
 				000000000000000000000030 /* HomeViewModel.swift in Sources */,
 				000000000000000000000033 /* HeroSection.swift in Sources */,
+				85542D882F65343F00BB92B7 /* AuthTokenStore.swift in Sources */,
 				000000000000000000000035 /* HowItWorksSection.swift in Sources */,
 				000000000000000000000037 /* FeaturesSection.swift in Sources */,
 				000000000000000000000039 /* CTASection.swift in Sources */,
@@ -328,6 +344,7 @@
 				000000000000000000000045 /* PriceOption.swift in Sources */,
 				000000000000000000000048 /* PriceService.swift in Sources */,
 				00000000000000000000004A /* MockPriceService.swift in Sources */,
+				85542D8A2F65343F00BB92B7 /* AuthService.swift in Sources */,
 				4AEB4B8BA31A02394B8DFA15 /* SavrLogoView.swift in Sources */,
 				523D4400AB9DF149C5904A6E /* CheckboxToggleStyle.swift in Sources */,
 				EEEE4E60A5245A0F4DA51B46 /* AuthField.swift in Sources */,
@@ -338,6 +355,7 @@
 				C1DE453FABE31FA4D2B97D0D /* ChatViewModel.swift in Sources */,
 				14E24E37AB24AA5A67F364C7 /* ChatView.swift in Sources */,
 				40CA4537A3CFEF7E942D891A /* StoreSelectView.swift in Sources */,
+				85542D842F65343F00BB92B7 /* APIClient.swift in Sources */,
 				32B4495A83A65C7E615E7D57 /* PreferencesView.swift in Sources */,
 				0ADD40B89690401B7D5764FC /* FlyersView.swift in Sources */,
 				50514B47A33C9D8EFC300549 /* ListsView.swift in Sources */,
@@ -371,12 +389,8 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
@@ -400,12 +414,8 @@
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
-				GENERATE_INFOPLIST_FILE = YES;
-				INFOPLIST_KEY_UIApplicationSceneManifest_Generation = YES;
-				INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents = YES;
-				INFOPLIST_KEY_UILaunchScreen_Generation = YES;
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPad = "UIInterfaceOrientationPortrait UIInterfaceOrientationPortraitUpsideDown UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
-				INFOPLIST_KEY_UISupportedInterfaceOrientations_iPhone = "UIInterfaceOrientationPortrait UIInterfaceOrientationLandscapeLeft UIInterfaceOrientationLandscapeRight";
+				GENERATE_INFOPLIST_FILE = NO;
+				INFOPLIST_FILE = Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",

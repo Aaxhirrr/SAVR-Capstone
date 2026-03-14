@@ -16,11 +16,15 @@ struct AuthField: View {
             Group {
                 if isSecure {
                     SecureField(placeholder, text: $text)
+                        .textInputAutocapitalization(.never)
+                        .autocorrectionDisabled(true)
+                        .textContentType(.password)
                 } else {
                     TextField(placeholder, text: $text)
                         .keyboardType(keyboard)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled(true)
+                        .textContentType(keyboard == .emailAddress ? .emailAddress : .username)
                 }
             }
             .padding(.horizontal, 14)
