@@ -5,26 +5,23 @@ struct RootView: View {
 
     var body: some View {
         NavigationStack {
-            switch appState.sessionState {
-            case .loading:
-                ZStack {
-                    LinearGradient(
-                        colors: [SavrColors.bgTop, SavrColors.bgBottom],
-                        startPoint: .top,
-                        endPoint: .bottom
-                    )
-                    .ignoresSafeArea()
-
-                    ProgressView("Loading account...")
-                        .tint(SavrColors.brandGreen)
-                }
-                .navigationBarHidden(true)
-            case .signedIn:
-                AppShellView()
-                    .navigationBarHidden(true)
-            case .signedOut:
+            ZStack {
                 HomeLandingView()
                     .navigationBarHidden(true)
+
+                if appState.sessionState == .loading {
+                    ZStack {
+                        LinearGradient(
+                            colors: [SavrColors.bgTop, SavrColors.bgBottom],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .ignoresSafeArea()
+
+                        ProgressView("Loading account...")
+                            .tint(SavrColors.brandGreen)
+                    }
+                }
             }
         }
     }

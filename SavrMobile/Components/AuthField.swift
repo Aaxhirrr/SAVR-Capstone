@@ -10,8 +10,8 @@ struct AuthField: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
             Text(title)
-                .font(.system(size: 13, weight: .bold, design: .rounded))
-                .foregroundStyle(SavrColors.textPrimary)
+                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .foregroundStyle(Color(red: 0.18, green: 0.23, blue: 0.33))
 
             Group {
                 if isSecure {
@@ -19,21 +19,23 @@ struct AuthField: View {
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled(true)
                         .textContentType(.password)
+                        .font(.system(size: 16, weight: .medium, design: .rounded))
                 } else {
                     TextField(placeholder, text: $text)
                         .keyboardType(keyboard)
                         .textInputAutocapitalization(.never)
                         .autocorrectionDisabled(true)
                         .textContentType(keyboard == .emailAddress ? .emailAddress : .username)
+                        .font(.system(size: 16, weight: .medium, design: .rounded))
                 }
             }
             .padding(.horizontal, 14)
-            .padding(.vertical, 12)
-            .background(.white.opacity(0.95))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+            .padding(.vertical, 13)
+            .background(Color(red: 0.95, green: 0.96, blue: 0.97))
+            .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
             .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(SavrColors.cardStroke, lineWidth: 1)
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .stroke(Color(red: 0.78, green: 0.81, blue: 0.85), lineWidth: 1.5)
             )
         }
     }

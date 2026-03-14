@@ -2,222 +2,292 @@ import SwiftUI
 
 struct ChatView: View {
     @EnvironmentObject private var appState: AppState
-    @StateObject private var vm = ChatViewModel()
-    @State private var showStores = false
-    @State private var showPrefs = false
+    @StateObject private var viewModel = ChatViewModel()
+
+    private var greetingName: String {
+        let first = appState.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !first.isEmpty { return first }
+        let display = appState.displayName.trimmingCharacters(in: .whitespacesAndNewlines)
+        if !display.isEmpty { return display.components(separatedBy: " ").first ?? display }
+        return "there"
+    }
 
     var body: some View {
         ZStack {
-            shellBackground
-                .ignoresSafeArea()
+            chatBackground.ignoresSafeArea()
 
-            ScrollView(showsIndicators: false) {
-                VStack(alignment: .leading, spacing: 16) {
-                    Text("Hello \(appState.firstName) 👋")
-                        .font(.system(size: 20, weight: .bold, design: .rounded))
-                        .foregroundStyle(SavrColors.textSecondary)
+            VStack(spacing: 0) {
+                topBar
 
-                    VStack(alignment: .leading, spacing: -4) {
-                        Text("Your ai grocery")
-                            .foregroundStyle(SavrColors.textPrimary)
-                        Text("shopping")
-                            .foregroundStyle(SavrColors.brandGreen)
-                        Text("companion.")
-                            .foregroundStyle(SavrColors.textPrimary)
-                    }
-                    .font(.system(size: 34, weight: .black, design: .serif))
-                    .minimumScaleFactor(0.8)
+                ScrollViewReader { proxy in
+                    ScrollView(showsIndicators: false) {
+                        VStack(alignment: .leading, spacing: 16) {
+                            greetingSection
+                            aiPill
+                            assistantHeader
 
-                    Text("✨🛒 AI-Powered Canadian Grocery Shopping 🇨🇦")
-                        .font(.system(size: 12, weight: .bold, design: .rounded))
-                        .foregroundStyle(SavrColors.textPrimary)
-                        .padding(.horizontal, 14)
-                        .padding(.vertical, 10)
-                        .background(Color.white.opacity(0.72))
-                        .clipShape(Capsule())
-                        .overlay(
-                            Capsule()
-                                .stroke(SavrColors.peachGlow.opacity(0.9), lineWidth: 1)
-                        )
+                            // Welcome bubble (always shown)
+                            AssistantBubble(
+                                text: "Hi \(greetingName)! Welcome to Savr, your personal grocery shopping companion. Planning your meals for the week? Just let me know what you're craving, and I'll help you create the perfect shopping list."
+                            )
 
-                    HStack(spacing: 8) {
-                        ZStack {
-                            Circle()
-                                .fill(SavrColors.brandGreen)
-                                .frame(width: 22, height: 22)
-                            Image(systemName: "message")
-                                .font(.system(size: 10, weight: .bold))
-                                .foregroundStyle(.white)
-                        }
-                        Text("Savr Assistant")
-                            .font(.system(size: 16, weight: .bold, design: .rounded))
-                            .foregroundStyle(SavrColors.brandGreen)
-                    }
-
-                    introCard
-
-                    inputComposer
-
-                    if !vm.messages.isEmpty {
-                        VStack(alignment: .leading, spacing: 12) {
-                            ForEach(vm.messages) { msg in
-                                messageBubble(msg)
+                            // Conversation messages
+                            ForEach(viewModel.messages) { message in
+                                if message.role == .assistant {
+                                    AssistantBubble(text: message.text)
+                                } else {
+                                    UserBubble(text: message.text)
+                                }
                             }
+
+                            Color.clear.frame(height: 1).id("bottom")
+                        }
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 16)
+                        .padding(.top, 14)
+                        .padding(.bottom, 20)
+                    }
+                    .onChange(of: viewModel.messages.count) { _ in
+                        withAnimation {
+                            proxy.scrollTo("bottom", anchor: .bottom)
                         }
                     }
                 }
-                .padding(.horizontal, 24)
-                .padding(.vertical, 24)
+
+                composerView
+                    .padding(.horizontal, 12)
+                    .padding(.bottom, 14)
+                    .padding(.top, 8)
+                    .background(.clear)
             }
         }
-        .sheet(isPresented: $showStores) { StoreSelectView() }
-        .sheet(isPresented: $showPrefs) { PreferencesView() }
     }
 
-    private var introCard: some View {
-        Text("Hi \(appState.firstName)! Welcome to Savr, your personal grocery shopping companion. Planning your meals for the week? Just let me know what you're craving, and I'll help you create the perfect shopping list.")
-            .font(.system(size: 15, weight: .medium, design: .rounded))
-            .foregroundStyle(SavrColors.textPrimary)
-            .lineSpacing(4)
-            .padding(18)
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color.white.opacity(0.76))
-            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+    // MARK: - Top Bar
+
+    private var topBar: some View {
+        HStack {
+            SavrLogoView(fontSize: 34)
+
+            Spacer()
+
+            Menu {
+                Button("Flyers") { }
+                Button("My Lists") { }
+                Button("Preferences") { }
+                Button("Logout") { appState.signOut() }
+            } label: {
+                ZStack {
+                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        .fill(.white.opacity(0.88))
+                        .frame(width: 42, height: 42)
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .stroke(Color(red: 0.86, green: 0.87, blue: 0.89), lineWidth: 1)
+                        )
+                    Image(systemName: "line.3.horizontal")
+                        .font(.system(size: 18, weight: .bold))
+                        .foregroundStyle(Color(red: 0.20, green: 0.24, blue: 0.32))
+                }
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.top, 10)
+        .padding(.bottom, 8)
+    }
+
+    // MARK: - Greeting
+
+    private var greetingSection: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            Text("Hello \(greetingName) 👋")
+                .font(.system(size: 18, weight: .bold, design: .rounded))
+                .foregroundStyle(Color(red: 0.19, green: 0.24, blue: 0.35))
+
+            VStack(alignment: .leading, spacing: -2) {
+                Text("Your ai grocery")
+                    .font(.system(size: 30, weight: .black, design: .serif))
+                    .foregroundStyle(Color(red: 0.10, green: 0.30, blue: 0.16))
+                    .fixedSize(horizontal: false, vertical: true)
+
+                Text("shopping companion.")
+                    .font(.system(size: 30, weight: .black, design: .serif))
+                    .foregroundStyle(Color(red: 0.12, green: 0.67, blue: 0.28))
+                    .fixedSize(horizontal: false, vertical: true)
+            }
+        }
+    }
+
+    private var aiPill: some View {
+        Text("☀️ 🛒 AI-Powered Canadian Grocery Shopping 🇨🇦")
+            .font(.system(size: 13, weight: .bold, design: .rounded))
+            .foregroundStyle(Color(red: 0.38, green: 0.42, blue: 0.50))
+            .padding(.horizontal, 14)
+            .padding(.vertical, 10)
+            .background(.white.opacity(0.78))
+            .clipShape(Capsule())
             .overlay(
-                RoundedRectangle(cornerRadius: 18, style: .continuous)
-                    .stroke(SavrColors.cardStroke.opacity(0.9), lineWidth: 1)
+                Capsule()
+                    .stroke(Color(red: 0.98, green: 0.74, blue: 0.54), lineWidth: 2)
             )
-            .shadow(color: .white.opacity(0.3), radius: 16, x: 0, y: 0)
+            .lineLimit(1)
+            .minimumScaleFactor(0.75)
     }
 
-    private var inputComposer: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            TextField("Ask anything...", text: $vm.draft, axis: .vertical)
-                .lineLimit(2...4)
-                .textInputAutocapitalization(.sentences)
-                .autocorrectionDisabled(false)
+    private var assistantHeader: some View {
+        HStack(spacing: 10) {
+            ZStack {
+                Circle()
+                    .fill(Color(red: 0.12, green: 0.67, blue: 0.28))
+                    .frame(width: 34, height: 34)
+                Image(systemName: "bubble.left")
+                    .font(.system(size: 15, weight: .bold))
+                    .foregroundStyle(.white)
+            }
+            Text("Savr Assistant")
+                .font(.system(size: 20, weight: .bold, design: .rounded))
+                .foregroundStyle(Color(red: 0.10, green: 0.62, blue: 0.25))
+        }
+    }
 
-            HStack(spacing: 10) {
-                actionIcon("camera") { }
-                actionIcon("heart") {
-                    showPrefs = true
-                }
-                actionIcon("storefront") {
-                    showStores = true
-                }
+    // MARK: - Composer
 
+    private var composerView: some View {
+        VStack(alignment: .leading, spacing: 14) {
+            TextField("Ask anything...", text: $viewModel.draft)
+                .font(.system(size: 16, weight: .medium, design: .rounded))
+                .foregroundStyle(Color(red: 0.20, green: 0.24, blue: 0.32))
+                .submitLabel(.send)
+                .onSubmit { viewModel.send() }
+
+            HStack {
+                HStack(spacing: 10) {
+                    composerIcon("camera.fill")
+                    composerIcon("heart")
+                    composerIcon("storefront")
+                }
                 Spacer()
-
-                Button {
-                    vm.send()
-                } label: {
-                    Image(systemName: "arrow.right")
-                        .font(.system(size: 16, weight: .bold))
-                        .foregroundStyle(.white)
-                        .frame(width: 30, height: 30)
-                        .background(SavrColors.brandGreen)
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+                Button(action: { viewModel.send() }) {
+                    RoundedRectangle(cornerRadius: 14, style: .continuous)
+                        .fill(Color(red: 0.72, green: 0.89, blue: 0.72))
+                        .frame(width: 44, height: 44)
+                        .overlay(
+                            Image(systemName: "arrow.right")
+                                .font(.system(size: 16, weight: .bold))
+                                .foregroundStyle(.white)
+                        )
                 }
             }
         }
         .padding(14)
-        .background(Color.white.opacity(0.82))
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .background(.white)
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
-                .stroke(Color(red: 0.99, green: 0.66, blue: 0.61), lineWidth: 1.2)
+            RoundedRectangle(cornerRadius: 22, style: .continuous)
+                .stroke(Color(red: 0.98, green: 0.58, blue: 0.47), lineWidth: 2)
         )
+        .shadow(color: .black.opacity(0.04), radius: 10, x: 0, y: 3)
     }
 
-    private func messageBubble(_ msg: ChatMessage) -> some View {
-        let isUser = (msg.role == .user)
-
-        return HStack {
-            if isUser { Spacer(minLength: 0) }
-
-            VStack(alignment: .leading, spacing: 6) {
-                Text(msg.text)
-                    .font(SavrTypography.body)
-                    .foregroundStyle(isUser ? .white : SavrColors.textPrimary)
-
-                Text(msg.timestamp, style: .time)
-                    .font(SavrTypography.caption)
-                    .foregroundStyle((isUser ? .white.opacity(0.75) : SavrColors.textSecondary))
-            }
-            .padding(14)
-            .background(isUser ? SavrColors.brandGreen : SavrColors.card)
-            .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+    private func composerIcon(_ name: String) -> some View {
+        RoundedRectangle(cornerRadius: 12, style: .continuous)
+            .fill(Color(red: 0.95, green: 0.92, blue: 0.87))
+            .frame(width: 38, height: 38)
             .overlay(
-                RoundedRectangle(cornerRadius: 16, style: .continuous)
-                    .stroke(SavrColors.cardStroke, lineWidth: isUser ? 0 : 1)
+                Image(systemName: name)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Color(red: 0.27, green: 0.31, blue: 0.39))
             )
-            .frame(maxWidth: 450, alignment: isUser ? .trailing : .leading)
-
-            if !isUser { Spacer(minLength: 0) }
-        }
     }
 
-    private var shellBackground: some View {
+    // MARK: - Background
+
+    private var chatBackground: some View {
         ZStack {
             LinearGradient(
-                colors: [Color.white, SavrColors.bgBottom],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
+                colors: [
+                    Color(red: 0.985, green: 0.985, blue: 0.985),
+                    Color(red: 0.98, green: 0.99, blue: 0.99)
+                ],
+                startPoint: .leading,
+                endPoint: .trailing
             )
 
             HStack {
-                patternWall
-                    .frame(width: 96)
-                Spacer()
-                patternWall
-                    .frame(width: 96)
-                    .scaleEffect(x: -1, y: 1)
-            }
-            .opacity(0.17)
-
-            RadialGradient(
-                colors: [SavrColors.peachGlow.opacity(0.24), .clear],
-                center: .leading,
-                startRadius: 14,
-                endRadius: 260
-            )
-            .offset(x: -110, y: 0)
-
-            RadialGradient(
-                colors: [SavrColors.brandBlue.opacity(0.22), .clear],
-                center: .trailing,
-                startRadius: 14,
-                endRadius: 280
-            )
-            .offset(x: 140, y: 40)
-        }
-    }
-
-    private var patternWall: some View {
-        VStack(spacing: 12) {
-            ForEach(0..<16, id: \.self) { index in
-                HStack(spacing: 10) {
-                    Image(systemName: index.isMultiple(of: 3) ? "birthday.cake" : "fork.knife")
-                    Image(systemName: index.isMultiple(of: 2) ? "fish" : "cup.and.saucer")
-                }
-                .font(.system(size: 16, weight: .regular))
-                .foregroundStyle(.white)
-            }
-        }
-    }
-
-    private func actionIcon(_ systemName: String, action: @escaping () -> Void) -> some View {
-        Button(action: action) {
-            Image(systemName: systemName)
-                .font(.system(size: 15, weight: .semibold))
-                .foregroundStyle(SavrColors.textSecondary)
-                .frame(width: 30, height: 30)
-                .background(Color.white.opacity(0.9))
-                .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                .overlay(
-                    RoundedRectangle(cornerRadius: 10, style: .continuous)
-                        .stroke(SavrColors.cardStroke.opacity(0.9), lineWidth: 1)
+                LinearGradient(
+                    colors: [Color(red: 0.99, green: 0.96, blue: 0.84), .clear],
+                    startPoint: .leading,
+                    endPoint: .trailing
                 )
+                LinearGradient(
+                    colors: [.clear, Color(red: 0.92, green: 1.00, blue: 0.98)],
+                    startPoint: .leading,
+                    endPoint: .trailing
+                )
+            }
+
+            HStack {
+                foodPatternGrid.opacity(0.18)
+                Spacer()
+                foodPatternGrid.opacity(0.12)
+            }
+        }
+    }
+
+    private var foodPatternGrid: some View {
+        VStack(spacing: 14) {
+            ForEach(0..<7, id: \.self) { _ in
+                HStack(spacing: 14) {
+                    ForEach(0..<6, id: \.self) { _ in
+                        Image(systemName: ["fork.knife", "cup.and.saucer", "birthday.cake",
+                                          "takeoutbag.and.cup.and.straw", "carrot", "fish", "leaf"]
+                                          .randomElement()!)
+                            .font(.system(size: 22, weight: .regular))
+                            .foregroundStyle(.white.opacity(0.55))
+                            .frame(width: 30, height: 30)
+                    }
+                }
+            }
+        }
+        .padding(24)
+    }
+}
+
+// MARK: - Bubbles
+
+private struct AssistantBubble: View {
+    let text: String
+
+    var body: some View {
+        Text(text)
+            .font(.system(size: 15, weight: .medium, design: .rounded))
+            .foregroundStyle(Color(red: 0.18, green: 0.22, blue: 0.30))
+            .lineSpacing(5)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
+            .background(Color(red: 0.96, green: 0.97, blue: 0.98))
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .stroke(Color(red: 0.88, green: 0.89, blue: 0.92), lineWidth: 1)
+            )
+    }
+}
+
+private struct UserBubble: View {
+    let text: String
+
+    var body: some View {
+        HStack {
+            Spacer()
+            Text(text)
+                .font(.system(size: 15, weight: .medium, design: .rounded))
+                .foregroundStyle(.white)
+                .lineSpacing(5)
+                .padding(.horizontal, 16)
+                .padding(.vertical, 12)
+                .background(Color(red: 0.12, green: 0.67, blue: 0.28))
+                .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         }
     }
 }

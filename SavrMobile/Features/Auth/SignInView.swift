@@ -1,16 +1,19 @@
 import SwiftUI
 
 struct SignInView: View {
-    @Environment(\.dismiss) private var dismiss
     @EnvironmentObject private var appState: AppState
+    @Environment(\.dismiss) private var dismiss
+
+    let onSuccess: (() -> Void)?
 
     @State private var email = ""
     @State private var password = ""
-
-    @State private var showSignUp = false
     @State private var isSubmitting = false
     @State private var errorMessage: String?
-    @State private var debugMessage: String?
+
+    init(onSuccess: (() -> Void)? = nil) {
+        self.onSuccess = onSuccess
+    }
 
     private var canSubmit: Bool {
         !email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty && password.count >= 6
@@ -18,192 +21,154 @@ struct SignInView: View {
 
     var body: some View {
         ZStack {
-            signInBackground
-                .ignoresSafeArea()
-
-            ScrollView(showsIndicators: false) {
-                VStack(spacing: 18) {
-                    Spacer(minLength: 72)
-
-                    card
-
-                    Spacer(minLength: 72)
-                }
-                .frame(maxWidth: 520)
-                .padding(.horizontal, 18)
-                .padding(.vertical, 20)
-            }
-        }
-        .sheet(isPresented: $showSignUp) {
-            SignUpView()
-        }
-    }
-
-    private var card: some View {
-        VStack(spacing: 16) {
-            SavrLogoView(size: 72)
-
-            VStack(spacing: 6) {
-                Text("Welcome")
-                    .font(.system(size: 32, weight: .black, design: .rounded))
-                    .foregroundStyle(SavrColors.textPrimary)
-                Text("Sign in to your account to start saving on groceries")
-                    .font(SavrTypography.body)
-                    .foregroundStyle(SavrColors.textSecondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 10)
-            }
-
-            VStack(spacing: 12) {
-                AuthField(title: "Email address", placeholder: "Email address", text: $email, keyboard: .emailAddress)
-                AuthField(title: "Password", placeholder: "Password", text: $password, isSecure: true)
-
-                if let errorMessage {
-                    Text(errorMessage)
-                        .font(SavrTypography.caption)
-                        .foregroundStyle(.red.opacity(0.85))
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                }
-
-                if let debugMessage {
-                    Text(debugMessage)
-                        .font(.system(size: 11, weight: .medium, design: .monospaced))
-                        .foregroundStyle(SavrColors.textPrimary)
-                        .frame(maxWidth: .infinity, alignment: .leading)
-                        .padding(10)
-                        .background(.black.opacity(0.06))
-                        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
-                }
-
-                HStack {
-                    Spacer()
-                    Button("Forgot password?") { }
-                        .font(SavrTypography.caption)
-                        .foregroundStyle(SavrColors.brandGreen)
-                }
-            }
-            .padding(.top, 4)
-
-            Button {
-                guard canSubmit else { return }
-                Task {
-                    await handleSignIn()
-                }
-            } label: {
-                Group {
-                    if isSubmitting {
-                        ProgressView()
-                            .tint(.white)
-                            .frame(maxWidth: .infinity)
-                    } else {
-                        Text("Sign in")
-                            .frame(maxWidth: .infinity)
-                    }
-                }
-            }
-            .buttonStyle(SavrPrimaryButtonStyle())
-            .opacity(canSubmit && !isSubmitting ? 1 : 0.55)
-            .disabled(!canSubmit || isSubmitting)
-            .padding(.top, 4)
-
-            HStack(spacing: 10) {
-                Rectangle().fill(SavrColors.cardStroke).frame(height: 1)
-                Text("Or continue with")
-                    .font(SavrTypography.caption)
-                    .foregroundStyle(SavrColors.textSecondary)
-                Rectangle().fill(SavrColors.cardStroke).frame(height: 1)
-            }
-            .padding(.top, 6)
-
-            Button {
-                errorMessage = "Google sign-in is not connected yet."
-            } label: {
-                HStack(spacing: 10) {
-                    Image(systemName: "g.circle.fill")
-                        .font(.system(size: 18, weight: .bold))
-                    Text("Sign in with Google")
-                        .font(.system(size: 15, weight: .bold, design: .rounded))
-                }
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, 12)
-            }
-            .foregroundStyle(SavrColors.textPrimary)
-            .background(.white.opacity(0.95))
-            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
-            .overlay(
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
-                    .stroke(SavrColors.cardStroke, lineWidth: 1)
-            )
-
-            HStack(spacing: 6) {
-                Text("Don't have an account?")
-                    .foregroundStyle(SavrColors.textSecondary)
-                Button("Sign up here") { showSignUp = true }
-                    .foregroundStyle(SavrColors.brandGreen)
-                    .fontWeight(.bold)
-            }
-            .font(SavrTypography.caption)
-            .padding(.top, 4)
-        }
-        .padding(.horizontal, 22)
-        .padding(.vertical, 26)
-        .background(.white.opacity(0.94))
-        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
-        .shadow(color: .black.opacity(0.06), radius: 18, x: 0, y: 14)
-        .overlay(
-            RoundedRectangle(cornerRadius: 20, style: .continuous)
-                .stroke(.white.opacity(0.85), lineWidth: 1)
-        )
-    }
-
-    private var signInBackground: some View {
-        ZStack {
             LinearGradient(
-                colors: [Color.white, SavrColors.bgBottom],
+                colors: [
+                    Color(red: 0.93, green: 0.98, blue: 0.92),
+                    Color(red: 0.97, green: 0.94, blue: 0.82)
+                ],
                 startPoint: .topLeading,
                 endPoint: .bottomTrailing
             )
+            .ignoresSafeArea()
 
-            RadialGradient(
-                colors: [SavrColors.peachGlow.opacity(0.28), .clear],
-                center: .leading,
-                startRadius: 10,
-                endRadius: 280
-            )
-            .frame(width: 320, height: 420)
-            .offset(x: -130, y: -40)
+            ScrollView(showsIndicators: false) {
+                VStack(spacing: 28) {
+                    // Logo + headline
+                    VStack(spacing: 8) {
+                        SavrLogoView(fontSize: 52)
+                        Text("Welcome back")
+                            .font(.system(size: 26, weight: .black, design: .rounded))
+                            .foregroundStyle(Color(red: 0.08, green: 0.20, blue: 0.12))
+                        Text("Sign in to start saving on groceries")
+                            .font(.system(size: 15, weight: .medium, design: .rounded))
+                            .foregroundStyle(Color(red: 0.35, green: 0.42, blue: 0.38))
+                            .multilineTextAlignment(.center)
+                    }
+                    .padding(.top, 70)
 
-            RadialGradient(
-                colors: [SavrColors.brandBlue.opacity(0.24), .clear],
-                center: .trailing,
-                startRadius: 10,
-                endRadius: 320
-            )
-            .frame(width: 360, height: 460)
-            .offset(x: 140, y: 70)
+                    // Form card — fixed width with horizontal padding
+                    VStack(spacing: 16) {
+                        // Email field
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Email address")
+                                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                                .foregroundStyle(Color(red: 0.20, green: 0.28, blue: 0.22))
+                            TextField("you@example.com", text: $email)
+                                .keyboardType(.emailAddress)
+                                .textInputAutocapitalization(.never)
+                                .autocorrectionDisabled()
+                                .font(.system(size: 16, design: .rounded))
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 13)
+                                .background(Color.white)
+                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .stroke(Color(red: 0.80, green: 0.86, blue: 0.80), lineWidth: 1.5)
+                                )
+                        }
 
-            HStack {
-                patternColumn
-                    .offset(x: -16)
-                Spacer()
-                patternColumn
-                    .scaleEffect(x: -1, y: 1)
-                    .offset(x: 16)
-            }
-            .opacity(0.18)
-        }
-    }
+                        // Password field
+                        VStack(alignment: .leading, spacing: 6) {
+                            Text("Password")
+                                .font(.system(size: 13, weight: .semibold, design: .rounded))
+                                .foregroundStyle(Color(red: 0.20, green: 0.28, blue: 0.22))
+                            SecureField("Password", text: $password)
+                                .font(.system(size: 16, design: .rounded))
+                                .padding(.horizontal, 14)
+                                .padding(.vertical, 13)
+                                .background(Color.white)
+                                .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                                .overlay(
+                                    RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                        .stroke(Color(red: 0.80, green: 0.86, blue: 0.80), lineWidth: 1.5)
+                                )
+                            HStack {
+                                Spacer()
+                                Button("Forgot password?") { }
+                                    .font(.system(size: 13, weight: .medium, design: .rounded))
+                                    .foregroundStyle(Color(red: 0.12, green: 0.62, blue: 0.28))
+                            }
+                        }
 
-    private var patternColumn: some View {
-        VStack(spacing: 14) {
-            ForEach(0..<18, id: \.self) { index in
-                HStack(spacing: 14) {
-                    Image(systemName: index.isMultiple(of: 3) ? "cup.and.saucer" : (index.isMultiple(of: 2) ? "birthday.cake" : "fork.knife"))
-                    Image(systemName: index.isMultiple(of: 2) ? "carrot" : "fish")
-                    Image(systemName: index.isMultiple(of: 4) ? "takeoutbag.and.cup.and.straw" : "leaf")
+                        if let errorMessage {
+                            Text(errorMessage)
+                                .font(.system(size: 13, weight: .medium, design: .rounded))
+                                .foregroundStyle(.red.opacity(0.85))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                        }
+
+                        // Sign in button
+                        Button {
+                            guard canSubmit else { return }
+                            Task { await handleSignIn() }
+                        } label: {
+                            ZStack {
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .fill(Color(red: 0.12, green: 0.62, blue: 0.28))
+                                if isSubmitting {
+                                    ProgressView().tint(.white)
+                                } else {
+                                    Text("Sign in")
+                                        .font(.system(size: 17, weight: .bold, design: .rounded))
+                                        .foregroundStyle(.white)
+                                }
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 52)
+                        }
+                        .opacity(canSubmit && !isSubmitting ? 1 : 0.5)
+                        .disabled(!canSubmit || isSubmitting)
+                        .padding(.top, 4)
+
+                        HStack(spacing: 12) {
+                            Rectangle().fill(Color(red: 0.75, green: 0.82, blue: 0.76)).frame(height: 1)
+                            Text("or")
+                                .font(.system(size: 13, weight: .medium, design: .rounded))
+                                .foregroundStyle(Color(red: 0.50, green: 0.56, blue: 0.52))
+                            Rectangle().fill(Color(red: 0.75, green: 0.82, blue: 0.76)).frame(height: 1)
+                        }
+
+                        // Google button
+                        Button {
+                            errorMessage = "Google sign-in is not connected yet."
+                        } label: {
+                            HStack(spacing: 10) {
+                                Text("G")
+                                    .font(.system(size: 18, weight: .black, design: .rounded))
+                                    .foregroundStyle(.blue)
+                                Text("Continue with Google")
+                                    .font(.system(size: 15, weight: .semibold, design: .rounded))
+                                    .foregroundStyle(Color(red: 0.15, green: 0.20, blue: 0.18))
+                            }
+                            .frame(maxWidth: .infinity)
+                            .frame(height: 50)
+                            .background(Color.white)
+                            .clipShape(RoundedRectangle(cornerRadius: 14, style: .continuous))
+                            .overlay(
+                                RoundedRectangle(cornerRadius: 14, style: .continuous)
+                                    .stroke(Color(red: 0.80, green: 0.86, blue: 0.80), lineWidth: 1.5)
+                            )
+                        }
+
+                        HStack(spacing: 4) {
+                            Text("Don't have an account?")
+                                .foregroundStyle(Color(red: 0.40, green: 0.46, blue: 0.42))
+                            Button("Sign up") { }
+                                .foregroundStyle(Color(red: 0.12, green: 0.62, blue: 0.28))
+                        }
+                        .font(.system(size: 14, weight: .medium, design: .rounded))
+                        .padding(.top, 4)
+                    }
+                    .padding(24)
+                    .background(
+                        RoundedRectangle(cornerRadius: 24, style: .continuous)
+                            .fill(Color.white.opacity(0.88))
+                            .shadow(color: .black.opacity(0.10), radius: 20, x: 0, y: 8)
+                    )
+                    .padding(.horizontal, 24)
+                    .padding(.bottom, 60)
                 }
-                .font(.system(size: 20, weight: .regular))
-                .foregroundStyle(.white)
             }
         }
     }
@@ -211,23 +176,21 @@ struct SignInView: View {
     private func handleSignIn() async {
         isSubmitting = true
         errorMessage = nil
-        debugMessage = nil
-
         do {
             try await appState.signIn(
                 username: email.trimmingCharacters(in: .whitespacesAndNewlines),
                 password: password
             )
             dismiss()
+            onSuccess?()
         } catch {
             errorMessage = error.localizedDescription
-            if let apiError = error as? APIError {
-                debugMessage = apiError.debugSummary
-            } else {
-                debugMessage = String(describing: error)
-            }
         }
-
         isSubmitting = false
     }
+}
+
+#Preview {
+    SignInView()
+        .environmentObject(AppState())
 }

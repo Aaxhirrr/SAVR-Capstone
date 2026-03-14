@@ -2,69 +2,90 @@ import SwiftUI
 
 struct HowItWorksSection: View {
     var body: some View {
-        VStack(spacing: 22) {
-            VStack(spacing: 10) {
-                Text("SIMPLE PROCESS")
-                    .font(.system(size: 13, weight: .black, design: .rounded))
-                    .foregroundStyle(SavrColors.brandGreen)
+        VStack(spacing: 26) {
+            Text("SIMPLE PROCESS")
+                .font(.system(size: 14, weight: .bold, design: .rounded))
+                .foregroundStyle(SavrColors.brandGreen)
 
-                Text("How It Works")
-                    .font(.system(size: 34, weight: .black, design: .serif))
-                    .foregroundStyle(SavrColors.textPrimary)
-            }
+            Text("How It Works")
+                .font(SavrTypography.section)
+                .foregroundStyle(SavrColors.deepGreen)
 
-            VStack(spacing: 16) {
-                stepCard(number: "01", icon: "message", title: "Tell Savr What You Need", subtitle: "Chat naturally about recipes, meal plans, or just the basics. Savr understands you and builds your list as you talk.")
-                stepCard(number: "02", icon: "arrow.left.arrow.right", title: "Choose Your Stores", subtitle: "Pick up to 3 stores near you. Savr instantly checks real-time prices at each one so you stop guessing.")
-                stepCard(number: "03", icon: "cart", title: "Save Real Money", subtitle: "Compare every item side-by-side and pick the best deals or the cheapest store overall.")
-            }
-            .padding(.horizontal, 20)
-        }
-    }
-
-    private func stepCard(number: String, icon: String, title: String, subtitle: String) -> some View {
-        ZStack(alignment: .topTrailing) {
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .fill(
-                    LinearGradient(
-                        colors: [SavrColors.peach.opacity(0.92), SavrColors.peachGlow.opacity(0.72)],
-                        startPoint: .topLeading,
-                        endPoint: .bottomTrailing
-                    )
+            VStack(spacing: 22) {
+                ProcessCard(
+                    number: "01",
+                    step: "STEP 01",
+                    title: "Tell Savr What You Need",
+                    detail: "Chat naturally about recipes, meal plans, or just the basics. Savr understands you and builds your list as you talk.",
+                    icon: "bubble.left"
                 )
 
-            Text(number)
-                .font(.system(size: 32, weight: .black, design: .rounded))
-                .foregroundStyle(SavrColors.textPrimary.opacity(0.12))
-                .padding(18)
+                ProcessCard(
+                    number: "02",
+                    step: "STEP 02",
+                    title: "Choose Your Stores",
+                    detail: "Pick up to 3 stores near you. Savr instantly checks real-time prices at each one — no more guessing.",
+                    icon: "arrow.left.arrow.right"
+                )
 
-            VStack(alignment: .leading, spacing: 14) {
-                RoundedRectangle(cornerRadius: 14, style: .continuous)
-                    .fill(SavrColors.brandGreen)
-                    .frame(width: 54, height: 54)
-                    .overlay(
-                        Image(systemName: icon)
-                            .font(.system(size: 20, weight: .bold))
-                            .foregroundStyle(.white)
-                    )
-
-                Text(title)
-                    .font(.system(size: 22, weight: .black, design: .rounded))
-                    .foregroundStyle(SavrColors.textPrimary)
-
-                Text(subtitle)
-                    .font(.system(size: 15, weight: .medium, design: .rounded))
-                    .foregroundStyle(SavrColors.textSecondary)
-                    .lineSpacing(3)
+                ProcessCard(
+                    number: "03",
+                    step: "STEP 03",
+                    title: "Save Real Money",
+                    detail: "Compare every item side-by-side. Pick the best deals or go with the cheapest store overall. You decide.",
+                    icon: "cart"
+                )
             }
-            .padding(20)
-            .frame(maxWidth: .infinity, alignment: .leading)
         }
-        .frame(maxWidth: .infinity)
-        .frame(height: 210)
-        .overlay(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .stroke(SavrColors.cardStroke.opacity(0.8), lineWidth: 1)
-        )
+        .padding(.horizontal, 28)
+        .padding(.vertical, 90)
+    }
+}
+
+private struct ProcessCard: View {
+    let number: String
+    let step: String
+    let title: String
+    let detail: String
+    let icon: String
+
+    var body: some View {
+        VStack(alignment: .center, spacing: 14) {
+            HStack {
+                Spacer()
+                Text(number)
+                    .font(.system(size: 34, weight: .black, design: .rounded))
+                    .foregroundStyle(Color.black.opacity(0.08))
+            }
+
+            ZStack {
+                RoundedRectangle(cornerRadius: 16, style: .continuous)
+                    .fill(SavrColors.brandGreen)
+                    .frame(width: 52, height: 52)
+
+                Image(systemName: icon)
+                    .font(.system(size: 20, weight: .bold))
+                    .foregroundStyle(.white)
+            }
+
+            Text(step)
+                .font(.system(size: 12, weight: .bold, design: .rounded))
+                .foregroundStyle(SavrColors.brandGreen)
+
+            Text(title)
+                .font(.system(size: 18, weight: .black, design: .rounded))
+                .foregroundStyle(SavrColors.deepGreen)
+                .multilineTextAlignment(.center)
+
+            Text(detail)
+                .font(SavrTypography.body)
+                .foregroundStyle(SavrColors.textSecondary)
+                .multilineTextAlignment(.center)
+                .lineSpacing(4)
+        }
+        .padding(24)
+        .frame(maxWidth: .infinity, minHeight: 250, alignment: .top)
+        .background(SavrColors.processCard)
+        .clipShape(RoundedRectangle(cornerRadius: 22, style: .continuous))
     }
 }

@@ -2,60 +2,63 @@ import SwiftUI
 
 struct CTASection: View {
     let onGetStarted: () -> Void
-    let onSignIn: () -> Void
+    let onHowItWorks: () -> Void
 
     var body: some View {
-        VStack(spacing: 18) {
-            VStack(spacing: 10) {
+        VStack {
+            VStack(spacing: 24) {
                 Text("Ready to Start Saving?")
-                    .font(.system(size: 34, weight: .black, design: .serif))
-                    .foregroundStyle(SavrColors.textPrimary)
+                    .font(SavrTypography.cta)
+                    .foregroundStyle(SavrColors.deepGreen)
                     .multilineTextAlignment(.center)
 
-                Text("Join Canadians who are already spending less on groceries every week. Create your free account in seconds and start comparing prices today.")
-                    .font(.system(size: 17, weight: .medium, design: .rounded))
+                Text("Join Canadians who are already spending less on groceries every week. Create your free account in seconds — no credit card required. Start comparing prices across stores like No Frills, Loblaws, Metro, Walmart, and Sobeys today.")
+                    .font(.system(size: 20, weight: .medium, design: .rounded))
                     .foregroundStyle(SavrColors.textSecondary)
                     .multilineTextAlignment(.center)
-                    .lineSpacing(4)
-            }
+                    .lineSpacing(6)
 
-            VStack(spacing: 12) {
-                Button(action: onGetStarted) {
-                    Text("Get Started for Free")
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
-                }
-                .font(.system(size: 17, weight: .bold, design: .rounded))
-                .foregroundStyle(.white)
-                .background(SavrColors.brandGreen)
-                .clipShape(Capsule())
+                VStack(spacing: 16) {
+                    Button(action: onGetStarted) {
+                        Text("Get Started for Free")
+                            .font(.system(size: 18, weight: .bold, design: .rounded))
+                            .foregroundStyle(.white)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 18)
+                            .background(SavrColors.brandGreen)
+                            .clipShape(Capsule())
+                    }
 
-                Button(action: onSignIn) {
-                    Text("See How It Works")
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 14)
+                    Button(action: onHowItWorks) {
+                        Text("See How It Works")
+                            .font(.system(size: 18, weight: .bold, design: .rounded))
+                            .foregroundStyle(SavrColors.deepGreen)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 18)
+                            .background(.white)
+                            .clipShape(Capsule())
+                    }
                 }
-                .font(.system(size: 17, weight: .bold, design: .rounded))
-                .foregroundStyle(SavrColors.textPrimary)
-                .background(.white.opacity(0.9))
-                .clipShape(Capsule())
-                .overlay(Capsule().stroke(SavrColors.cardStroke, lineWidth: 1))
             }
-        }
-        .padding(.horizontal, 22)
-        .padding(.vertical, 30)
-        .background(
-            LinearGradient(
-                colors: [SavrColors.mintGlow.opacity(0.6), SavrColors.peach.opacity(0.8)],
-                startPoint: .topLeading,
-                endPoint: .bottomTrailing
+            .padding(.horizontal, 28)
+            .padding(.vertical, 56)
+            .frame(maxWidth: .infinity)
+            .background(
+                RoundedRectangle(cornerRadius: 30, style: .continuous)
+                    .fill(
+                        LinearGradient(
+                            colors: [
+                                Color(red: 0.82, green: 0.88, blue: 0.68),
+                                SavrColors.ctaCard,
+                                Color(red: 0.95, green: 0.81, blue: 0.61)
+                            ],
+                            startPoint: .topLeading,
+                            endPoint: .bottomTrailing
+                        )
+                    )
             )
-        )
-        .clipShape(RoundedRectangle(cornerRadius: 28, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 28, style: .continuous)
-                .stroke(SavrColors.cardStroke.opacity(0.9), lineWidth: 1)
-        )
-        .padding(.horizontal, 20)
+        }
+        .padding(.horizontal, 28)
+        .padding(.bottom, 24)
     }
 }

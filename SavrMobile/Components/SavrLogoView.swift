@@ -1,19 +1,26 @@
 import SwiftUI
 
 struct SavrLogoView: View {
-    var size: CGFloat = 54
+    var fontSize: CGFloat = 54
+
+    init(fontSize: CGFloat = 54) {
+        self.fontSize = fontSize
+    }
+
+    init(size: CGFloat = 54) {
+        self.fontSize = size
+    }
 
     var body: some View {
-        ZStack {
-            Text("savr")
-                .font(.system(size: size, weight: .black, design: .rounded))
-                .foregroundStyle(SavrColors.brandGreen)
-
-            Circle()
-                .fill(.red.opacity(0.9))
-                .frame(width: max(6, size * 0.12), height: max(6, size * 0.12))
-                .offset(x: size * 0.37, y: -size * 0.22)
-        }
+        Text("savr")
+            .font(.system(size: fontSize, weight: .black, design: .rounded))
+            .foregroundStyle(Color(red: 0.43, green: 0.78, blue: 0.45))
+            .overlay(
+                Circle()
+                    .fill(Color.red)
+                    .frame(width: max(8, fontSize * 0.10), height: max(8, fontSize * 0.10))
+                    .offset(x: fontSize * 0.28, y: -fontSize * 0.18)
+            )
         .accessibilityLabel("Savr")
     }
 }
