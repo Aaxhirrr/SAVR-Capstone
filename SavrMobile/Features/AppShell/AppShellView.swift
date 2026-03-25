@@ -2,10 +2,11 @@ import SwiftUI
 
 struct AppShellView: View {
     var body: some View {
-        ChatHomeView()
+        ChatView()
     }
 }
 
+// MARK: - Legacy stub (kept for reference, not used)
 private struct ChatHomeView: View {
     @EnvironmentObject private var appState: AppState
     @State private var draft = ""

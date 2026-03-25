@@ -13,14 +13,11 @@ struct ChatView: View {
     }
 
     var body: some View {
-        ZStack {
-            chatBackground.ignoresSafeArea()
+        VStack(spacing: 0) {
+            topBar
 
-            VStack(spacing: 0) {
-                topBar
-
-                ScrollViewReader { proxy in
-                    ScrollView(showsIndicators: false) {
+            ScrollViewReader { proxy in
+                ScrollView(showsIndicators: false) {
                         VStack(alignment: .leading, spacing: 16) {
                             greetingSection
                             aiPill
@@ -65,8 +62,9 @@ struct ChatView: View {
                     .padding(.bottom, 14)
                     .padding(.top, 8)
                     .background(.clear)
-            }
         }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .background(chatBackground.ignoresSafeArea())
     }
 
     // MARK: - Top Bar
@@ -303,6 +301,11 @@ private struct UserBubble: View {
                 .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         }
     }
+}
+
+#Preview {
+    ChatView()
+        .environmentObject(AppState())
 }
 
 private struct TypingIndicator: View {

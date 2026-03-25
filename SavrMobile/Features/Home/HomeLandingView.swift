@@ -6,6 +6,7 @@ struct HomeLandingView: View {
     @State private var showSignIn = false
     @State private var showGetStarted = false
     @State private var showAppShell = false
+    @State private var hasBootstrapped = false
 
     var body: some View {
         ScrollView(showsIndicators: false) {
@@ -54,18 +55,25 @@ struct HomeLandingView: View {
         }
         .fullScreenCover(isPresented: $showAppShell) {
             AppShellView()
+                .environmentObject(appState)
         }
         .onChange(of: appState.sessionState) { state in
             switch state {
             case .signedIn:
                 showSignIn = false
-                showAppShell = true
+                if hasBootstrapped {
+                    showAppShell = true
+                }
             case .signedOut:
                 showAppShell = false
                 showSignIn = false
+                hasBootstrapped = true
             case .loading:
                 break
             }
+        }
+        .onAppear {
+            hasBootstrapped = true
         }
     }
 }
