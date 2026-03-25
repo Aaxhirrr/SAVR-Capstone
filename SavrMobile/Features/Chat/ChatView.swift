@@ -40,6 +40,11 @@ struct ChatView: View {
                                 }
                             }
 
+                            // Typing indicator
+                            if viewModel.isWaiting {
+                                TypingIndicator()
+                            }
+
                             Color.clear.frame(height: 1).id("bottom")
                         }
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -48,9 +53,10 @@ struct ChatView: View {
                         .padding(.bottom, 20)
                     }
                     .onChange(of: viewModel.messages.count) { _ in
-                        withAnimation {
-                            proxy.scrollTo("bottom", anchor: .bottom)
-                        }
+                        withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
+                    }
+                    .onChange(of: viewModel.isWaiting) { _ in
+                        withAnimation { proxy.scrollTo("bottom", anchor: .bottom) }
                     }
                 }
 
@@ -169,14 +175,21 @@ struct ChatView: View {
                 Spacer()
                 Button(action: { viewModel.send() }) {
                     RoundedRectangle(cornerRadius: 14, style: .continuous)
-                        .fill(Color(red: 0.72, green: 0.89, blue: 0.72))
+                        .fill(viewModel.isWaiting ? Color(red: 0.80, green: 0.80, blue: 0.80) : Color(red: 0.72, green: 0.89, blue: 0.72))
                         .frame(width: 44, height: 44)
                         .overlay(
-                            Image(systemName: "arrow.right")
-                                .font(.system(size: 16, weight: .bold))
-                                .foregroundStyle(.white)
+                            Group {
+                                if viewModel.isWaiting {
+                                    ProgressView().tint(.white).scaleEffect(0.8)
+                                } else {
+                                    Image(systemName: "arrow.right")
+                                        .font(.system(size: 16, weight: .bold))
+                                        .foregroundStyle(.white)
+                                }
+                            }
                         )
                 }
+                .disabled(viewModel.isWaiting)
             }
         }
         .padding(14)
@@ -289,5 +302,31 @@ private struct UserBubble: View {
                 .background(Color(red: 0.12, green: 0.67, blue: 0.28))
                 .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
         }
+    }
+}
+
+private struct TypingIndicator: View {
+    @State private var phase = 0
+
+    var body: some View {
+        HStack(spacing: 5) {
+            ForEach(0..<3, id: \.self) { i in
+                Circle()
+                    .fill(Color(red: 0.55, green: 0.60, blue: 0.68))
+                    .frame(width: 8, height: 8)
+                    .scaleEffect(phase == i ? 1.3 : 0.8)
+                    .animation(.easeInOut(duration: 0.4).repeatForever().delay(Double(i) * 0.15), value: phase)
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 14)
+        .background(Color(red: 0.96, green: 0.97, blue: 0.98))
+        .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+        .overlay(
+            RoundedRectangle(cornerRadius: 20, style: .continuous)
+                .stroke(Color(red: 0.88, green: 0.89, blue: 0.92), lineWidth: 1)
+        )
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .onAppear { phase = 2 }
     }
 }

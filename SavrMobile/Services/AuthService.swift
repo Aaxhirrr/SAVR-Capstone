@@ -64,6 +64,51 @@ final class AuthService {
         return UserProfile(response: response)
     }
 
+    func signup(
+        email: String,
+        password: String,
+        firstName: String?,
+        lastName: String?,
+        phone: String?,
+        street: String?,
+        city: String?,
+        province: String?,
+        postal: String?
+    ) async throws -> AuthSession {
+        var body: [String: Any] = [
+            "email": email,
+            "password": password
+        ]
+        if let firstName, !firstName.isEmpty { body["first_name"] = firstName }
+        if let lastName, !lastName.isEmpty { body["last_name"] = lastName }
+        if let phone, !phone.isEmpty { body["phone"] = phone }
+
+        let hasAddress = [street, city, province, postal].contains(where: { !($0?.isEmpty ?? true) })
+        if hasAddress {
+            var addr: [String: String] = [:]
+            if let street, !street.isEmpty { addr["street"] = street }
+            if let city, !city.isEmpty { addr["city"] = city }
+            if let province, !province.isEmpty { addr["province"] = province }
+            if let postal, !postal.isEmpty { addr["postal_code"] = postal }
+            body["address"] = addr
+        }
+
+        let data = try JSONSerialization.data(withJSONObject: body)
+        let response: LoginResponse = try await apiClient.send(
+            path: "auth/signup",
+            method: "POST",
+            headers: [
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            ],
+            body: data
+        )
+
+        let session = AuthSession(accessToken: response.accessToken, userID: response.userID)
+        try tokenStore.save(accessToken: session.accessToken, userID: session.userID)
+        return session
+    }
+
     func logout() throws {
         try tokenStore.clear()
     }

@@ -49,6 +49,7 @@
 		85542D8A2F65343F00BB92B7 /* AuthService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85542D892F65343F00BB92B7 /* AuthService.swift */; };
 		85542D9E2F65707D00BB92B7 /* AppListPricingImage 2.jpeg in Resources */ = {isa = PBXBuildFile; fileRef = 85542D9D2F65707D00BB92B7 /* AppListPricingImage 2.jpeg */; };
 		85542DA02F65779500BB92B7 /* Assets 2.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 85542D9F2F65779500BB92B7 /* Assets 2.xcassets */; };
+		8572E2D52F73756900BEB980 /* ChatService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8572E2D42F73756900BEB980 /* ChatService.swift */; };
 		C1DE453FABE31FA4D2B97D0D /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 651041B39EA07DBD84AD0A4A /* ChatViewModel.swift */; };
 		EEEE4E60A5245A0F4DA51B46 /* AuthField.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF5D4885AC0F3204E6C6C6C9 /* AuthField.swift */; };
 /* End PBXBuildFile section */
@@ -94,6 +95,7 @@
 		85542D8B2F6538AD00BB92B7 /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
 		85542D9D2F65707D00BB92B7 /* AppListPricingImage 2.jpeg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "AppListPricingImage 2.jpeg"; sourceTree = "<group>"; };
 		85542D9F2F65779500BB92B7 /* Assets 2.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Assets 2.xcassets"; sourceTree = "<group>"; };
+		8572E2D42F73756900BEB980 /* ChatService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatService.swift; sourceTree = "<group>"; };
 		AA954B1DA77BD340CC6957DB /* FlyersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FlyersView.swift; path = SavrMobile/Features/Flyers/FlyersView.swift; sourceTree = SOURCE_ROOT; };
 		C3A842049582529F4DDCD8B9 /* ListsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ListsView.swift; path = SavrMobile/Features/Lists/ListsView.swift; sourceTree = SOURCE_ROOT; };
 		CC8A42B0BEF4CA80D9B9BB9F /* AppShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppShellView.swift; path = SavrMobile/Features/AppShell/AppShellView.swift; sourceTree = SOURCE_ROOT; };
@@ -249,6 +251,7 @@
 				85542D852F65343F00BB92B7 /* AuthModels.swift */,
 				85542D872F65343F00BB92B7 /* AuthTokenStore.swift */,
 				85542D892F65343F00BB92B7 /* AuthService.swift */,
+				8572E2D42F73756900BEB980 /* ChatService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -325,6 +328,7 @@
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
 			files = (
+				8572E2D52F73756900BEB980 /* ChatService.swift in Sources */,
 				000000000000000000000011 /* SavrMobileApp.swift in Sources */,
 				000000000000000000000013 /* RootView.swift in Sources */,
 				000000000000000000000016 /* AppState.swift in Sources */,
@@ -394,10 +398,10 @@
 		00000000000000000000000E /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;
@@ -420,10 +424,10 @@
 		00000000000000000000000F /* Release */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				CODE_SIGN_STYLE = Automatic;
 				CURRENT_PROJECT_VERSION = 1;
 				DEVELOPMENT_TEAM = "";
-				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
 				GENERATE_INFOPLIST_FILE = NO;
 				INFOPLIST_FILE = Info.plist;
 				IPHONEOS_DEPLOYMENT_TARGET = 16.0;

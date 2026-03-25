@@ -1,6 +1,7 @@
 import SwiftUI
 
 struct SignUpView: View {
+    @EnvironmentObject private var appState: AppState
     @Environment(\.dismiss) private var dismiss
 
     enum Province: String, CaseIterable, Identifiable {
@@ -21,6 +22,7 @@ struct SignUpView: View {
     @State private var phone = ""
 
     @State private var accepted = false
+    @State private var isSubmitting = false
     @State private var errorMessage: String?
     
     private var passwordsMatch: Bool {
@@ -159,14 +161,20 @@ struct SignUpView: View {
                         .padding(.top, 8)
 
                         Button {
-                            guard canSubmit else { return }
-                            errorMessage = "Sign up is not connected to the backend yet."
+                            guard canSubmit && !isSubmitting else { return }
+                            Task { await handleSignUp() }
                         } label: {
-                            Text("Sign up with Email")
-                                .frame(maxWidth: .infinity)
+                            ZStack {
+                                Text("Sign up with Email")
+                                    .frame(maxWidth: .infinity)
+                                    .opacity(isSubmitting ? 0 : 1)
+                                if isSubmitting {
+                                    ProgressView().tint(.white)
+                                }
+                            }
                         }
                         .buttonStyle(SavrPrimaryButtonStyle())
-                        .opacity(canSubmit ? 1 : 0.55)
+                        .opacity(canSubmit && !isSubmitting ? 1 : 0.55)
                         .padding(.top, 6)
 
                         HStack(spacing: 6) {
@@ -195,5 +203,27 @@ struct SignUpView: View {
                 .padding(.vertical, 20)
             }
         }
+    }
+
+    private func handleSignUp() async {
+        isSubmitting = true
+        errorMessage = nil
+        do {
+            try await appState.signUp(
+                email: email.trimmingCharacters(in: .whitespacesAndNewlines),
+                password: password,
+                firstName: firstName.isEmpty ? nil : firstName,
+                lastName: lastName.isEmpty ? nil : lastName,
+                phone: phone.isEmpty ? nil : phone,
+                street: street.isEmpty ? nil : street,
+                city: city.isEmpty ? nil : city,
+                province: province.rawValue,
+                postal: postal.isEmpty ? nil : postal
+            )
+            dismiss()
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        isSubmitting = false
     }
 }

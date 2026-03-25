@@ -49,6 +49,33 @@ final class AppState: ObservableObject {
         sessionState = .signedIn
     }
 
+    func signUp(
+        email: String,
+        password: String,
+        firstName: String?,
+        lastName: String?,
+        phone: String?,
+        street: String?,
+        city: String?,
+        province: String?,
+        postal: String?
+    ) async throws {
+        let session = try await authService.signup(
+            email: email,
+            password: password,
+            firstName: firstName,
+            lastName: lastName,
+            phone: phone,
+            street: street,
+            city: city,
+            province: province,
+            postal: postal
+        )
+        userID = session.userID
+        profile = try? await authService.fetchProfile()
+        sessionState = .signedIn
+    }
+
     func signOut() {
         do {
             try authService.logout()
