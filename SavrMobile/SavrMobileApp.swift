@@ -8,6 +8,9 @@ struct SavrMobileApp: App {
         WindowGroup {
             RootView()
                 .environmentObject(appState)
+                .task {
+                    await appState.bootstrap()
+                }
         }
     }
 }
