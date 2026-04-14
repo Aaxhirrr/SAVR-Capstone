@@ -50,6 +50,7 @@
 		85542D9E2F65707D00BB92B7 /* AppListPricingImage 2.jpeg in Resources */ = {isa = PBXBuildFile; fileRef = 85542D9D2F65707D00BB92B7 /* AppListPricingImage 2.jpeg */; };
 		85542DA02F65779500BB92B7 /* Assets 2.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 85542D9F2F65779500BB92B7 /* Assets 2.xcassets */; };
 		8572E2D52F73756900BEB980 /* ChatService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8572E2D42F73756900BEB980 /* ChatService.swift */; };
+		85758C4B2F84440C000D1F6B /* GroceryListService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85758C4A2F84440C000D1F6B /* GroceryListService.swift */; };
 		C1DE453FABE31FA4D2B97D0D /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 651041B39EA07DBD84AD0A4A /* ChatViewModel.swift */; };
 		EEEE4E60A5245A0F4DA51B46 /* AuthField.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF5D4885AC0F3204E6C6C6C9 /* AuthField.swift */; };
 /* End PBXBuildFile section */
@@ -96,6 +97,7 @@
 		85542D9D2F65707D00BB92B7 /* AppListPricingImage 2.jpeg */ = {isa = PBXFileReference; lastKnownFileType = image.jpeg; path = "AppListPricingImage 2.jpeg"; sourceTree = "<group>"; };
 		85542D9F2F65779500BB92B7 /* Assets 2.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Assets 2.xcassets"; sourceTree = "<group>"; };
 		8572E2D42F73756900BEB980 /* ChatService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatService.swift; sourceTree = "<group>"; };
+		85758C4A2F84440C000D1F6B /* GroceryListService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroceryListService.swift; sourceTree = "<group>"; };
 		AA954B1DA77BD340CC6957DB /* FlyersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FlyersView.swift; path = SavrMobile/Features/Flyers/FlyersView.swift; sourceTree = SOURCE_ROOT; };
 		C3A842049582529F4DDCD8B9 /* ListsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ListsView.swift; path = SavrMobile/Features/Lists/ListsView.swift; sourceTree = SOURCE_ROOT; };
 		CC8A42B0BEF4CA80D9B9BB9F /* AppShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppShellView.swift; path = SavrMobile/Features/AppShell/AppShellView.swift; sourceTree = SOURCE_ROOT; };
@@ -252,6 +254,7 @@
 				85542D872F65343F00BB92B7 /* AuthTokenStore.swift */,
 				85542D892F65343F00BB92B7 /* AuthService.swift */,
 				8572E2D42F73756900BEB980 /* ChatService.swift */,
+				85758C4A2F84440C000D1F6B /* GroceryListService.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -367,6 +370,7 @@
 				C1DE453FABE31FA4D2B97D0D /* ChatViewModel.swift in Sources */,
 				14E24E37AB24AA5A67F364C7 /* ChatView.swift in Sources */,
 				40CA4537A3CFEF7E942D891A /* StoreSelectView.swift in Sources */,
+				85758C4B2F84440C000D1F6B /* GroceryListService.swift in Sources */,
 				85542D842F65343F00BB92B7 /* APIClient.swift in Sources */,
 				32B4495A83A65C7E615E7D57 /* PreferencesView.swift in Sources */,
 				0ADD40B89690401B7D5764FC /* FlyersView.swift in Sources */,
