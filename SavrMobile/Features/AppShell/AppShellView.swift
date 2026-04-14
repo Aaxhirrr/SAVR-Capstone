@@ -1,8 +1,66 @@
 import SwiftUI
 
 struct AppShellView: View {
+    @State private var selectedTab: Tab = .chat
+
+    enum Tab { case chat, lists, flyers }
+
     var body: some View {
-        ChatView()
+        ZStack(alignment: .bottom) {
+            // Content — extra bottom padding so nothing hides behind the nav bar
+            Group {
+                switch selectedTab {
+                case .chat:
+                    ChatView()
+                case .lists:
+                    ListsView()
+                case .flyers:
+                    FlyersView()
+                }
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
+            .safeAreaInset(edge: .bottom) {
+                Color.clear.frame(height: 70)
+            }
+
+            // Bottom nav bar
+            bottomNav
+        }
+        .ignoresSafeArea(edges: .bottom)
+    }
+
+    private var bottomNav: some View {
+        HStack(spacing: 0) {
+            tabButton(.chat,   icon: "bubble.left.fill",  label: "Chat")
+            tabButton(.lists,  icon: "cart.fill",         label: "My Lists")
+            tabButton(.flyers, icon: "doc.text.fill",     label: "Flyers")
+        }
+        .padding(.horizontal, 24)
+        .padding(.top, 12)
+        .padding(.bottom, 28)
+        .background(.ultraThinMaterial)
+        .overlay(Rectangle().fill(Color(red: 0.90, green: 0.91, blue: 0.93).opacity(0.5)).frame(height: 0.5), alignment: .top)
+    }
+
+    private func tabButton(_ tab: Tab, icon: String, label: String) -> some View {
+        let active = selectedTab == tab
+        return Button {
+            selectedTab = tab
+        } label: {
+            HStack(spacing: 6) {
+                Image(systemName: icon)
+                    .font(.system(size: 15, weight: .semibold))
+                Text(label)
+                    .font(.system(size: 13, weight: .semibold, design: .rounded))
+            }
+            .foregroundStyle(active ? .white : Color(red: 0.30, green: 0.33, blue: 0.38))
+            .padding(.horizontal, 16)
+            .padding(.vertical, 9)
+            .background(active ? Color(red: 0.43, green: 0.78, blue: 0.45) : Color.clear)
+            .clipShape(Capsule())
+            .frame(maxWidth: .infinity)
+        }
+        .buttonStyle(.plain)
     }
 }
 
