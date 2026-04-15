@@ -1,10 +1,14 @@
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { SavrTheme } from "@/constants/theme";
+
 export type SavrTopBarProps = {
   onSignIn: () => void;
   onGetStarted: () => void;
 };
+
+const { colors, typography, spacing, radius, borderWidth, shadows } = SavrTheme;
 
 export default function SavrTopBar({
   onSignIn,
@@ -59,13 +63,13 @@ export default function SavrTopBar({
 
 const styles = StyleSheet.create({
   root: {
-    backgroundColor: "#F8F6F2",
+    backgroundColor: colors.bg,
   },
   content: {
-    paddingHorizontal: 20,
-    paddingTop: 16,
-    paddingBottom: 16,
-    gap: 14,
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.md,
+    gap: spacing.sm,
   },
   topRow: {
     flexDirection: "row",
@@ -76,18 +80,19 @@ const styles = StyleSheet.create({
     alignSelf: "flex-start",
   },
   logoText: {
-    fontSize: 34,
-    fontWeight: "900",
-    color: "#6DB473",
+    color: colors.brandGreen,
     lineHeight: 40,
+    letterSpacing: 0.2,
     includeFontPadding: false,
+    ...typography.cta,
+    fontSize: 34, // preserve previous compact top-bar logo sizing
   },
   logoDot: {
     position: "absolute",
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: "#FF3B30",
+    backgroundColor: colors.orangeBorder,
     right: -3,
     top: 2,
   },
@@ -95,56 +100,63 @@ const styles = StyleSheet.create({
     marginLeft: "auto",
     flexDirection: "row",
     alignItems: "center",
-    gap: 8,
+    gap: spacing.xs,
+    backgroundColor: colors.softCard,
+    borderWidth: borderWidth.hairline,
+    borderColor: colors.line,
+    borderRadius: radius.pill,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
   },
   liveDot: {
     width: 10,
     height: 10,
     borderRadius: 5,
-    backgroundColor: "#6DB473",
+    backgroundColor: colors.brandGreen,
   },
   liveText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#5D6674",
+    color: colors.textSecondary,
+    ...typography.caption,
   },
   actionsRow: {
     flexDirection: "row",
-    gap: 12,
+    gap: spacing.sm,
   },
   signInButton: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 999,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "rgba(255,255,255,0.75)",
-    borderWidth: 1,
-    borderColor: "#DDE2E8",
+    backgroundColor: colors.softCard,
+    borderWidth: borderWidth.thin,
+    borderColor: colors.line,
+    ...shadows.soft,
   },
   signInText: {
-    fontSize: 14,
-    fontWeight: "600",
-    color: "#234031",
+    color: colors.deepGreen,
+    ...typography.nav,
   },
   getStartedButton: {
     flex: 1,
-    paddingVertical: 14,
-    borderRadius: 999,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.pill,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#6DB473",
+    backgroundColor: colors.brandGreen,
+    borderWidth: borderWidth.thin,
+    borderColor: colors.deepGreen,
+    ...shadows.soft,
   },
   getStartedText: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "#FFFFFF",
+    color: colors.deepGreen,
+    ...typography.bodyBold,
   },
   pressed: {
     opacity: 0.82,
   },
   divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: "#DDE2E8",
+    height: borderWidth.hairline,
+    backgroundColor: colors.line,
   },
 });
