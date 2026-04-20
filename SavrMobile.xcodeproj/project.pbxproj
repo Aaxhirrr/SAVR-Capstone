@@ -51,6 +51,7 @@
 		85542DA02F65779500BB92B7 /* Assets 2.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 85542D9F2F65779500BB92B7 /* Assets 2.xcassets */; };
 		8572E2D52F73756900BEB980 /* ChatService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8572E2D42F73756900BEB980 /* ChatService.swift */; };
 		85758C4B2F84440C000D1F6B /* GroceryListService.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85758C4A2F84440C000D1F6B /* GroceryListService.swift */; };
+		85A08A132F96A55A00AC1E1D /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 85A08A122F96A55A00AC1E1D /* ProfileView.swift */; };
 		C1DE453FABE31FA4D2B97D0D /* ChatViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 651041B39EA07DBD84AD0A4A /* ChatViewModel.swift */; };
 		EEEE4E60A5245A0F4DA51B46 /* AuthField.swift in Sources */ = {isa = PBXBuildFile; fileRef = FF5D4885AC0F3204E6C6C6C9 /* AuthField.swift */; };
 /* End PBXBuildFile section */
@@ -98,6 +99,7 @@
 		85542D9F2F65779500BB92B7 /* Assets 2.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Assets 2.xcassets"; sourceTree = "<group>"; };
 		8572E2D42F73756900BEB980 /* ChatService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ChatService.swift; sourceTree = "<group>"; };
 		85758C4A2F84440C000D1F6B /* GroceryListService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GroceryListService.swift; sourceTree = "<group>"; };
+		85A08A122F96A55A00AC1E1D /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		AA954B1DA77BD340CC6957DB /* FlyersView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = FlyersView.swift; path = SavrMobile/Features/Flyers/FlyersView.swift; sourceTree = SOURCE_ROOT; };
 		C3A842049582529F4DDCD8B9 /* ListsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = ListsView.swift; path = SavrMobile/Features/Lists/ListsView.swift; sourceTree = SOURCE_ROOT; };
 		CC8A42B0BEF4CA80D9B9BB9F /* AppShellView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; name = AppShellView.swift; path = SavrMobile/Features/AppShell/AppShellView.swift; sourceTree = SOURCE_ROOT; };
@@ -138,6 +140,7 @@
 				AA954B1DA77BD340CC6957DB /* FlyersView.swift */,
 				C3A842049582529F4DDCD8B9 /* ListsView.swift */,
 				85542D8B2F6538AD00BB92B7 /* Info.plist */,
+				85A08A122F96A55A00AC1E1D /* ProfileView.swift */,
 			);
 			sourceTree = "<group>";
 		};
@@ -368,6 +371,7 @@
 				7A484206878ED2A643FBD072 /* SidebarView.swift in Sources */,
 				6E984A2D9EDA148AF0E73A35 /* ChatMessage.swift in Sources */,
 				C1DE453FABE31FA4D2B97D0D /* ChatViewModel.swift in Sources */,
+				85A08A132F96A55A00AC1E1D /* ProfileView.swift in Sources */,
 				14E24E37AB24AA5A67F364C7 /* ChatView.swift in Sources */,
 				40CA4537A3CFEF7E942D891A /* StoreSelectView.swift in Sources */,
 				85758C4B2F84440C000D1F6B /* GroceryListService.swift in Sources */,
