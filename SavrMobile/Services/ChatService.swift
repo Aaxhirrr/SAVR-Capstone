@@ -4,9 +4,26 @@ struct ChatAPIResponse: Decodable {
     let sessionId: String
     let botResponse: String
 
+    init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        // API may return snake_case or camelCase
+        if let sid = try? container.decode(String.self, forKey: .sessionId) {
+            sessionId = sid
+        } else {
+            sessionId = try container.decode(String.self, forKey: .sessionIdSnake)
+        }
+        if let bot = try? container.decode(String.self, forKey: .botResponse) {
+            botResponse = bot
+        } else {
+            botResponse = try container.decode(String.self, forKey: .botResponseSnake)
+        }
+    }
+
     private enum CodingKeys: String, CodingKey {
         case sessionId = "sessionId"
+        case sessionIdSnake = "session_id"
         case botResponse = "botResponse"
+        case botResponseSnake = "bot_response"
     }
 }
 

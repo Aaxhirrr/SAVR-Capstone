@@ -36,6 +36,10 @@ final class ChatViewModel: ObservableObject {
                 messages.append(.init(role: .assistant, text: response.botResponse, timestamp: Date()))
             } catch {
                 errorMessage = error.localizedDescription
+                #if DEBUG
+                print("Chat error: \(error)")
+                if let apiError = error as? APIError { print(apiError.debugSummary) }
+                #endif
                 messages.append(.init(role: .assistant, text: "Sorry, something went wrong. Please try again.", timestamp: Date()))
             }
             isWaiting = false
