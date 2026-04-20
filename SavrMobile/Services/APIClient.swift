@@ -83,7 +83,7 @@ final class APIClient {
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.httpBody = body
-        request.timeoutInterval = 10
+        request.timeoutInterval = 60
 
         for (key, value) in headers {
             request.setValue(value, forHTTPHeaderField: key)
