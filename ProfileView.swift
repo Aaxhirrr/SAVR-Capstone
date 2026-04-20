@@ -341,7 +341,7 @@ private struct UserDetailsSection: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            feedbackBanners(viewModel: viewModel)
+            FeedbackBanners(viewModel: viewModel)
 
             ProfileCard(title: "User Details", subtitle: "Manage your email and password settings.") {
                 VStack(alignment: .leading, spacing: 10) {
@@ -407,7 +407,7 @@ private struct AccountSection: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            feedbackBanners(viewModel: viewModel)
+            FeedbackBanners(viewModel: viewModel)
 
             // Connected Accounts
             ProfileCard(title: "Connected Accounts", subtitle: "Link your accounts for faster sign-in.") {
@@ -544,7 +544,7 @@ private struct DietarySection: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            feedbackBanners(viewModel: viewModel)
+            FeedbackBanners(viewModel: viewModel)
 
             ProfileCard(title: "Common Dietary Preferences", subtitle: "Select your dietary preferences and add any custom notes.") {
                 VStack(alignment: .leading, spacing: 14) {
@@ -668,7 +668,7 @@ private struct BrandsSection: View {
 
     var body: some View {
         VStack(spacing: 14) {
-            feedbackBanners(viewModel: viewModel)
+            FeedbackBanners(viewModel: viewModel)
 
             // Brands You Like
             brandInputCard(
@@ -878,26 +878,31 @@ private struct ProfileFieldStyle: TextFieldStyle {
     }
 }
 
-@ViewBuilder
-private func feedbackBanners(viewModel: ProfileViewModel) -> some View {
-    if let success = viewModel.successMessage {
-        HStack(spacing: 8) {
-            Image(systemName: "checkmark.circle.fill").foregroundStyle(SavrColors.brandGreen)
-            Text(success).font(.system(size: 13, weight: .medium)).foregroundStyle(Color(red: 0.10, green: 0.40, blue: 0.15))
+private struct FeedbackBanners: View {
+    @ObservedObject var viewModel: ProfileViewModel
+
+    var body: some View {
+        VStack(spacing: 8) {
+            if let success = viewModel.successMessage {
+                HStack(spacing: 8) {
+                    Image(systemName: "checkmark.circle.fill").foregroundStyle(SavrColors.brandGreen)
+                    Text(success).font(.system(size: 13, weight: .medium)).foregroundStyle(Color(red: 0.10, green: 0.40, blue: 0.15))
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color(red: 0.88, green: 0.97, blue: 0.88))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
+            if let error = viewModel.errorMessage {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.circle.fill").foregroundStyle(.orange)
+                    Text(error).font(.system(size: 13, weight: .medium)).foregroundStyle(Color(red: 0.55, green: 0.30, blue: 0.05))
+                }
+                .padding(12)
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .background(Color(red: 1.0, green: 0.95, blue: 0.85))
+                .clipShape(RoundedRectangle(cornerRadius: 12))
+            }
         }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(red: 0.88, green: 0.97, blue: 0.88))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
-    }
-    if let error = viewModel.errorMessage {
-        HStack(spacing: 8) {
-            Image(systemName: "exclamationmark.circle.fill").foregroundStyle(.orange)
-            Text(error).font(.system(size: 13, weight: .medium)).foregroundStyle(Color(red: 0.55, green: 0.30, blue: 0.05))
-        }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(red: 1.0, green: 0.95, blue: 0.85))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
     }
 }
