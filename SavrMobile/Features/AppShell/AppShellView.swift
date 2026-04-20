@@ -22,6 +22,11 @@ struct AppShellView: View {
                 .tabItem {
                     Label("Stores", systemImage: "storefront.fill")
                 }
+
+            ProfileView()
+                .tabItem {
+                    Label("Profile", systemImage: "person.circle.fill")
+                }
         }
         .tint(Color(red: 0.13, green: 0.69, blue: 0.30))
     }
