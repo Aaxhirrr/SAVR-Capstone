@@ -1,5 +1,6 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { SavrTheme } from "../../constants/theme";
 
 export type MetricItem = {
   value: string;
@@ -43,15 +44,15 @@ export default function MetricsBar({ metrics }: MetricsBarProps) {
   );
 }
 
-const METRICS_GREEN = "#2F7A3E";
+const { colors, spacing, radius, borderWidth, typography } = SavrTheme;
 
 const styles = StyleSheet.create({
   outerPadding: {
-    paddingHorizontal: 20,
+    paddingHorizontal: spacing.lg,
   },
   container: {
-    backgroundColor: METRICS_GREEN,
-    borderRadius: 28,
+    backgroundColor: colors.metricsGreen,
+    borderRadius: radius.xl + 8,
     overflow: "hidden",
   },
   grid: {
@@ -63,35 +64,33 @@ const styles = StyleSheet.create({
     minHeight: 120,
     alignItems: "center",
     justifyContent: "center",
-    paddingHorizontal: 10,
-    paddingVertical: 16,
+    paddingHorizontal: spacing.xs + 2,
+    paddingVertical: spacing.md,
   },
   rightDivider: {
-    borderRightWidth: StyleSheet.hairlineWidth,
+    borderRightWidth: borderWidth.hairline,
     borderRightColor: "rgba(255,255,255,0.08)",
   },
   noRightDivider: {},
   topDivider: {
-    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopWidth: borderWidth.hairline,
     borderTopColor: "rgba(255,255,255,0.08)",
   },
   noTopDivider: {},
   value: {
-    fontSize: 34,
-    fontWeight: "900",
-    color: "#FFFFFF",
+    ...typography.sectionTitle,
+    color: colors.inputBackground,
     lineHeight: 40,
   },
   label: {
-    marginTop: 8,
-    fontSize: 14,
-    fontWeight: "700",
+    marginTop: spacing.xs,
+    ...typography.overline,
     color: "rgba(255,255,255,0.92)",
     textAlign: "center",
   },
   sublabel: {
-    marginTop: 4,
-    fontSize: 11,
+    marginTop: spacing.xxs,
+    ...typography.caption,
     fontWeight: "500",
     color: "rgba(255,255,255,0.75)",
     textAlign: "center",

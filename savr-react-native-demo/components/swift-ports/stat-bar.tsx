@@ -1,5 +1,6 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { SavrTheme } from "../../constants/theme";
 
 export type StatItem = [string, string];
 
@@ -29,36 +30,38 @@ export default function StatBar({ stats }: StatBarProps) {
   );
 }
 
+const { colors, radius, spacing, typography, borderWidth } = SavrTheme;
+
 const styles = StyleSheet.create({
   container: {
-    backgroundColor: "#2F7A3E",
-    borderRadius: 24,
-    paddingHorizontal: 18,
-    paddingVertical: 28,
+    backgroundColor: colors.statBar,
+    borderRadius: radius.xl + 4,
+    paddingHorizontal: spacing.md + 2,
+    paddingVertical: spacing.xl + 4,
     overflow: "hidden",
   },
   statBlock: {
     alignItems: "center",
     justifyContent: "center",
-    gap: 8,
+    gap: spacing.xs,
   },
   value: {
+    ...typography.heroTitle,
     fontSize: 44,
     lineHeight: 50,
-    fontWeight: "900",
-    color: "#FFFFFF",
+    color: colors.inputBackground,
     textAlign: "center",
   },
   label: {
-    fontSize: 16,
+    ...typography.body,
     lineHeight: 22,
     fontWeight: "500",
     color: "rgba(255,255,255,0.75)",
     textAlign: "center",
   },
   separator: {
-    height: 1,
+    height: borderWidth.hairline,
     backgroundColor: "rgba(255,255,255,0.10)",
-    marginVertical: 18,
+    marginVertical: spacing.md + 2,
   },
 });

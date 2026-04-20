@@ -1,6 +1,7 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { SavrTheme } from "../../constants/theme";
 
 export type FeatureCardProps = {
   title: string;
@@ -32,40 +33,41 @@ export default function FeatureCard({
   );
 }
 
+const { colors, spacing, radius, borderWidth, typography, shadows } = SavrTheme;
+
 const styles = StyleSheet.create({
   card: {
     flex: 1,
     minHeight: 220,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 20,
-    borderWidth: 1,
-    borderColor: "#E6E9EC",
+    backgroundColor: colors.inputBackground,
+    borderRadius: radius.xl,
+    borderWidth: borderWidth.hairline,
+    borderColor: colors.cardStroke,
+    ...shadows.soft,
   },
   content: {
     flex: 1,
     alignItems: "flex-start",
-    padding: 22,
+    padding: spacing.lg + 2,
   },
   iconContainer: {
     width: 44,
     height: 44,
-    borderRadius: 14,
+    borderRadius: radius.md + 2,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 18,
+    marginBottom: spacing.lg - 2,
   },
   title: {
-    fontSize: 18,
+    ...typography.cardTitle,
     lineHeight: 22,
-    fontWeight: "900",
-    color: "#1A4D2E",
-    marginBottom: 18,
+    color: colors.textPrimary,
+    marginBottom: spacing.lg - 2,
   },
   body: {
-    fontSize: 16,
+    ...typography.body,
     lineHeight: 24,
-    fontWeight: "400",
-    color: "#5A6670",
+    color: colors.textSecondary,
   },
   spacer: {
     flex: 1,

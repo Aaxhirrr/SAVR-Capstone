@@ -1,5 +1,6 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
+import { SavrTheme } from "../../constants/theme";
 
 export default function FooterView() {
   return (
@@ -31,15 +32,15 @@ const styles = StyleSheet.create({
     width: "100%",
   },
   divider: {
-    height: StyleSheet.hairlineWidth,
-    backgroundColor: "#DDE3E8",
+    height: SavrTheme.borderWidth.hairline,
+    backgroundColor: SavrTheme.colors.cardStroke,
   },
   content: {
-    paddingHorizontal: 28,
-    paddingVertical: 24,
+    paddingHorizontal: SavrTheme.spacing.xxl - 4,
+    paddingVertical: SavrTheme.spacing.xl,
     alignItems: "center",
     justifyContent: "center",
-    gap: 18,
+    gap: SavrTheme.spacing.lg - 2,
   },
   logoWrap: {
     position: "relative",
@@ -47,34 +48,35 @@ const styles = StyleSheet.create({
     justifyContent: "center",
   },
   logoText: {
+    ...SavrTheme.typography.heroTitle,
     fontSize: 28,
-    fontWeight: "900",
-    color: "#6EC774",
+    color: SavrTheme.colors.brandGreen,
     includeFontPadding: false,
   },
   logoDot: {
     position: "absolute",
-    width: 7,
-    height: 7,
-    borderRadius: 3.5,
-    backgroundColor: "#FF3B30",
+    width: SavrTheme.spacing.xs - 1,
+    height: SavrTheme.spacing.xs - 1,
+    borderRadius: (SavrTheme.spacing.xs - 1) / 2,
+    backgroundColor: SavrTheme.colors.orangeBorder,
     top: 1,
     right: -1,
   },
   caption: {
+    ...SavrTheme.typography.body,
     fontSize: 15,
     fontWeight: "500",
-    color: "#6A7280",
+    color: SavrTheme.colors.textSecondary,
     textAlign: "center",
   },
   linksRow: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 24,
+    gap: SavrTheme.spacing.xl,
   },
   link: {
+    ...SavrTheme.typography.nav,
     fontSize: 15,
-    fontWeight: "600",
-    color: "#1F3B2D",
+    color: SavrTheme.colors.textPrimary,
   },
 });

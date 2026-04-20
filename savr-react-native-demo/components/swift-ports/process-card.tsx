@@ -1,6 +1,7 @@
 import React from "react";
 import { StyleSheet, Text, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { SavrTheme } from "../../constants/theme";
 
 export type ProcessCardProps = {
   number: string;
@@ -39,51 +40,49 @@ const styles = StyleSheet.create({
     flex: 1,
     minHeight: 250,
     alignItems: "center",
-    paddingHorizontal: 24,
-    paddingVertical: 24,
-    backgroundColor: "#F5F9F5",
-    borderRadius: 22,
+    paddingHorizontal: SavrTheme.spacing.xl,
+    paddingVertical: SavrTheme.spacing.xl,
+    backgroundColor: SavrTheme.colors.mintGlow,
+    borderRadius: SavrTheme.radius.xl + 2,
   },
   numberRow: {
     width: "100%",
     alignItems: "flex-end",
-    marginBottom: 6,
+    marginBottom: SavrTheme.spacing.xs - 2,
   },
   number: {
-    fontSize: 34,
-    fontWeight: "900",
+    ...SavrTheme.typography.sectionTitle,
     lineHeight: 38,
     color: "rgba(0,0,0,0.08)",
   },
   iconWrap: {
     width: 52,
     height: 52,
-    borderRadius: 16,
-    backgroundColor: "#6DC271",
+    borderRadius: SavrTheme.radius.lg,
+    backgroundColor: SavrTheme.colors.brandGreen,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 14,
+    marginBottom: SavrTheme.spacing.sm + 2,
   },
   step: {
     fontSize: 12,
     fontWeight: "700",
     letterSpacing: 0.4,
-    color: "#6DC271",
-    marginBottom: 6,
+    color: SavrTheme.colors.brandGreen,
+    marginBottom: SavrTheme.spacing.xs - 2,
     textTransform: "uppercase",
   },
   title: {
-    fontSize: 18,
-    fontWeight: "900",
+    ...SavrTheme.typography.cardTitle,
     lineHeight: 22,
-    color: "#1A4D2E",
+    color: SavrTheme.colors.textPrimary,
     textAlign: "center",
-    marginBottom: 8,
+    marginBottom: SavrTheme.spacing.xs,
   },
   body: {
-    fontSize: 16,
+    ...SavrTheme.typography.body,
     lineHeight: 22,
-    color: "#5A6670",
+    color: SavrTheme.colors.textSecondary,
     textAlign: "center",
   },
 });
