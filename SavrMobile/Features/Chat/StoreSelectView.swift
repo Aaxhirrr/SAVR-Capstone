@@ -3,8 +3,8 @@ import MapKit
 import CoreLocation
 
 // MARK: - Known Canadian grocery chains
-// Logo images: add to Assets.xcassets with names matching each `brand` string below.
-// Expected asset names: nofrills, loblaws, walmart, metro, sobeys, freshco, foodbasics, superstore
+// Asset names: nofrills, loblaws, walmart, metro, sobeys, freshco, foodbasics, superstore,
+//              tandt, independent, atlanticsuperstore, foodland, maxi
 
 struct KnownStore: Identifiable {
     let id = UUID()
@@ -19,14 +19,19 @@ struct KnownStore: Identifiable {
 }
 
 let knownStores: [KnownStore] = [
-    KnownStore(name: "No Frills",    brand: "nofrills",    address: "No Frills Canada",           postalCode: "M5V 3A8", latitude: 43.6426, longitude: -79.3871, color: Color(red: 0.98, green: 0.75, blue: 0.05), initial: "NF"),
-    KnownStore(name: "Loblaws",      brand: "loblaws",     address: "Loblaws Canada",              postalCode: "M5V 3A8", latitude: 43.6532, longitude: -79.3832, color: Color(red: 0.85, green: 0.10, blue: 0.10), initial: "L"),
-    KnownStore(name: "Walmart",      brand: "walmart",     address: "Walmart Canada",              postalCode: "M5V 3A8", latitude: 43.6480, longitude: -79.3920, color: Color(red: 0.07, green: 0.40, blue: 0.75), initial: "W"),
-    KnownStore(name: "Metro",        brand: "metro",       address: "Metro Canada",                postalCode: "M5V 3A8", latitude: 43.6510, longitude: -79.3795, color: Color(red: 0.10, green: 0.60, blue: 0.20), initial: "M"),
-    KnownStore(name: "Sobeys",       brand: "sobeys",      address: "Sobeys Canada",               postalCode: "M5V 3A8", latitude: 43.6495, longitude: -79.3850, color: Color(red: 0.92, green: 0.35, blue: 0.10), initial: "S"),
-    KnownStore(name: "FreshCo",      brand: "freshco",     address: "FreshCo Canada",              postalCode: "M5V 3A8", latitude: 43.6460, longitude: -79.3910, color: Color(red: 0.10, green: 0.55, blue: 0.35), initial: "FC"),
-    KnownStore(name: "Food Basics",  brand: "foodbasics",  address: "Food Basics Canada",          postalCode: "M5V 3A8", latitude: 43.6445, longitude: -79.3880, color: Color(red: 0.55, green: 0.10, blue: 0.75), initial: "FB"),
-    KnownStore(name: "Superstore",   brand: "superstore",  address: "Real Canadian Superstore",    postalCode: "M5V 3A8", latitude: 43.6520, longitude: -79.3940, color: Color(red: 0.80, green: 0.15, blue: 0.15), initial: "SS"),
+    KnownStore(name: "No Frills",            brand: "nofrills",           address: "No Frills Canada",              postalCode: "M5V 3A8", latitude: 43.6426, longitude: -79.3871, color: Color(red: 0.98, green: 0.75, blue: 0.05), initial: "NF"),
+    KnownStore(name: "Loblaws",              brand: "loblaws",            address: "Loblaws Canada",                postalCode: "M5V 3A8", latitude: 43.6532, longitude: -79.3832, color: Color(red: 0.85, green: 0.10, blue: 0.10), initial: "L"),
+    KnownStore(name: "Walmart",              brand: "walmart",            address: "Walmart Canada",                postalCode: "M5V 3A8", latitude: 43.6480, longitude: -79.3920, color: Color(red: 0.07, green: 0.40, blue: 0.75), initial: "W"),
+    KnownStore(name: "Metro",                brand: "metro",              address: "Metro Canada",                  postalCode: "M5V 3A8", latitude: 43.6510, longitude: -79.3795, color: Color(red: 0.10, green: 0.60, blue: 0.20), initial: "M"),
+    KnownStore(name: "Sobeys",               brand: "sobeys",             address: "Sobeys Canada",                 postalCode: "M5V 3A8", latitude: 43.6495, longitude: -79.3850, color: Color(red: 0.92, green: 0.35, blue: 0.10), initial: "S"),
+    KnownStore(name: "FreshCo",              brand: "freshco",            address: "FreshCo Canada",                postalCode: "M5V 3A8", latitude: 43.6460, longitude: -79.3910, color: Color(red: 0.10, green: 0.55, blue: 0.35), initial: "FC"),
+    KnownStore(name: "Food Basics",          brand: "foodbasics",         address: "Food Basics Canada",            postalCode: "M5V 3A8", latitude: 43.6445, longitude: -79.3880, color: Color(red: 0.55, green: 0.10, blue: 0.75), initial: "FB"),
+    KnownStore(name: "Superstore",           brand: "superstore",         address: "Real Canadian Superstore",      postalCode: "M5V 3A8", latitude: 43.6520, longitude: -79.3940, color: Color(red: 0.80, green: 0.15, blue: 0.15), initial: "SS"),
+    KnownStore(name: "T&T Supermarket",      brand: "tandt",              address: "T&T Supermarket Canada",        postalCode: "M5V 3A8", latitude: 43.6440, longitude: -79.3800, color: Color(red: 0.88, green: 0.10, blue: 0.18), initial: "T&T"),
+    KnownStore(name: "Independent Grocer",   brand: "independent",        address: "Your Independent Grocer",       postalCode: "M5V 3A8", latitude: 43.6470, longitude: -79.3960, color: Color(red: 0.20, green: 0.50, blue: 0.20), initial: "IG"),
+    KnownStore(name: "Atlantic Superstore",  brand: "atlanticsuperstore", address: "Atlantic Superstore Canada",    postalCode: "B3J 1A1", latitude: 44.6480, longitude: -63.5750, color: Color(red: 0.80, green: 0.15, blue: 0.15), initial: "AS"),
+    KnownStore(name: "Foodland",             brand: "foodland",           address: "Foodland Canada",               postalCode: "M5V 3A8", latitude: 43.6415, longitude: -79.3830, color: Color(red: 0.10, green: 0.45, blue: 0.80), initial: "FL"),
+    KnownStore(name: "Maxi",                 brand: "maxi",               address: "Maxi Canada",                   postalCode: "H2X 1Y4", latitude: 45.5080, longitude: -73.5540, color: Color(red: 0.95, green: 0.20, blue: 0.25), initial: "MX"),
 ]
 
 // MARK: - Location Manager
@@ -34,6 +39,7 @@ let knownStores: [KnownStore] = [
 final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var userLocation: CLLocationCoordinate2D?
     @Published var authStatus: CLAuthorizationStatus = .notDetermined
+    @Published var locationVersion: Int = 0  // increments each time location updates, workaround for non-Equatable CLLocationCoordinate2D
 
     private let manager = CLLocationManager()
 
@@ -58,6 +64,7 @@ final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelega
 
     func locationManager(_ manager: CLLocationManager, didUpdateLocations locations: [CLLocation]) {
         userLocation = locations.last?.coordinate
+        locationVersion += 1
     }
 
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error) {}
@@ -205,12 +212,10 @@ struct StoreSelectView: View {
     @StateObject private var viewModel = StoreSelectViewModel()
     @StateObject private var locationManager = LocationManager()
 
-    // Map camera — starts over Canada, moves to user location when available
-    @State private var mapPosition: MapCameraPosition = .region(
-        MKCoordinateRegion(
-            center: CLLocationCoordinate2D(latitude: 56.0, longitude: -96.0),
-            span: MKCoordinateSpan(latitudeDelta: 40, longitudeDelta: 40)
-        )
+    // Map region — starts over Canada, moves to user location when available
+    @State private var mapRegion = MKCoordinateRegion(
+        center: CLLocationCoordinate2D(latitude: 56.0, longitude: -96.0),
+        span: MKCoordinateSpan(latitudeDelta: 40, longitudeDelta: 40)
     )
 
     var body: some View {
@@ -218,26 +223,21 @@ struct StoreSelectView: View {
             Color(red: 0.97, green: 0.98, blue: 0.97).ignoresSafeArea()
 
             VStack(spacing: 0) {
-                // Header
                 headerSection
 
-                // Map
                 mapSection
-                    .frame(height: 230)
+                    .frame(height: 320)
 
-                // Store count bar
                 limitBar
                     .padding(.horizontal, 20)
                     .padding(.vertical, 10)
 
-                // Error
                 if let error = viewModel.errorMessage {
                     errorBanner(error)
                         .padding(.horizontal, 16)
                         .padding(.bottom, 8)
                 }
 
-                // Horizontal store cards
                 if viewModel.isLoading {
                     Spacer()
                     ProgressView()
@@ -253,13 +253,13 @@ struct StoreSelectView: View {
             await viewModel.load()
             locationManager.requestLocation()
         }
-        .onChange(of: locationManager.userLocation) { _, location in
-            if let loc = location {
+        .onChange(of: locationManager.locationVersion) { _ in
+            if let loc = locationManager.userLocation {
                 withAnimation {
-                    mapPosition = .region(MKCoordinateRegion(
+                    mapRegion = MKCoordinateRegion(
                         center: loc,
                         span: MKCoordinateSpan(latitudeDelta: 0.15, longitudeDelta: 0.15)
-                    ))
+                    )
                 }
             }
         }
@@ -284,42 +284,32 @@ struct StoreSelectView: View {
         .padding(.bottom, 10)
     }
 
-    // MARK: - Map
+    // MARK: - Map (iOS 16 compatible)
 
     private var mapSection: some View {
-        Map(position: $mapPosition) {
-            // User location dot
-            UserAnnotation()
-
-            // Store pins
-            ForEach(knownStores) { store in
+        Map(
+            coordinateRegion: $mapRegion,
+            showsUserLocation: true,
+            annotationItems: knownStores
+        ) { store in
+            MapAnnotation(coordinate: CLLocationCoordinate2D(latitude: store.latitude, longitude: store.longitude)) {
                 let isSelected = viewModel.isSelected(store)
                 let isHighlighted = viewModel.highlightedStore?.id == store.id
-                Annotation(store.name, coordinate: CLLocationCoordinate2D(latitude: store.latitude, longitude: store.longitude)) {
-                    storePinView(store: store, isSelected: isSelected, isHighlighted: isHighlighted)
-                        .onTapGesture {
-                            withAnimation(.spring(response: 0.3)) {
-                                viewModel.highlightedStore = store
-                            }
-                            // Fly to pin
-                            withAnimation {
-                                mapPosition = .region(MKCoordinateRegion(
-                                    center: CLLocationCoordinate2D(latitude: store.latitude, longitude: store.longitude),
-                                    span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
-                                ))
-                            }
+                storePinView(store: store, isSelected: isSelected, isHighlighted: isHighlighted)
+                    .onTapGesture {
+                        withAnimation(.spring(response: 0.3)) {
+                            viewModel.highlightedStore = store
                         }
-                }
+                        withAnimation {
+                            mapRegion = MKCoordinateRegion(
+                                center: CLLocationCoordinate2D(latitude: store.latitude, longitude: store.longitude),
+                                span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
+                            )
+                        }
+                    }
             }
         }
-        .mapStyle(.standard(elevation: .flat, pointsOfInterest: .excludingAll))
-        .mapControls {
-            MapUserLocationButton()
-            MapZoomStepper()
-        }
-        .clipShape(Rectangle())
         .overlay(alignment: .bottomLeading) {
-            // Tap hint
             Text("Tap a pin to highlight · Tap a card to select")
                 .font(.system(size: 10, weight: .medium))
                 .foregroundStyle(.white)
@@ -333,14 +323,13 @@ struct StoreSelectView: View {
 
     @ViewBuilder
     private func storePinView(store: KnownStore, isSelected: Bool, isHighlighted: Bool) -> some View {
+        let size: CGFloat = isHighlighted ? 40 : 32
         ZStack {
             Circle()
                 .fill(isSelected ? store.color : Color.white)
-                .frame(width: isHighlighted ? 40 : 32, height: isHighlighted ? 40 : 32)
+                .frame(width: size, height: size)
                 .shadow(color: store.color.opacity(0.5), radius: isHighlighted ? 8 : 4, x: 0, y: 2)
-                .overlay(
-                    Circle().stroke(isSelected ? Color.white : store.color, lineWidth: 2)
-                )
+                .overlay(Circle().stroke(isSelected ? Color.white : store.color, lineWidth: 2))
 
             if UIImage(named: store.brand) != nil {
                 Image(store.brand)
@@ -390,15 +379,14 @@ struct StoreSelectView: View {
                         Task { await viewModel.toggle(store) }
                     }
                     .onTapGesture {
-                        // Highlight on map when card tapped
                         withAnimation(.spring(response: 0.3)) {
                             viewModel.highlightedStore = store
                         }
                         withAnimation {
-                            mapPosition = .region(MKCoordinateRegion(
+                            mapRegion = MKCoordinateRegion(
                                 center: CLLocationCoordinate2D(latitude: store.latitude, longitude: store.longitude),
                                 span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
-                            ))
+                            )
                         }
                     }
                 }
