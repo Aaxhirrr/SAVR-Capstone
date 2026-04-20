@@ -109,8 +109,14 @@ final class FlyersViewModel: ObservableObject {
     private let tokenStore = AuthTokenStore()
     private let listService = GroceryListService()
 
+    /// Chain names from saved stores — always show all selected stores as columns
     var allStoreNames: [String] {
-        Array(Set(comparisons.flatMap { $0.storeResults.map { $0.storeName } })).sorted()
+        if !savedStores.isEmpty {
+            return Array(Set(savedStores.map { cleanStoreName($0.storeName) })).sorted()
+        }
+        // Fallback to whatever's in results
+        let raw = comparisons.flatMap { $0.storeResults.map { $0.storeName } }
+        return Array(Set(raw.map { cleanStoreName($0) })).sorted()
     }
 
     func load() async {
@@ -216,31 +222,52 @@ final class FlyersViewModel: ObservableObject {
         for (k, v) in headers { req.setValue(v, forHTTPHeaderField: k) }
         guard let (data, _) = try? await URLSession.shared.data(for: req) else { return nil }
 
+        #if DEBUG
+        if let raw = String(data: data, encoding: .utf8) {
+            print("[FlyersDebug] latest-search raw response:\n\(raw)")
+        }
+        #endif
+
         // The results field is: { "item_name": { "store_name": [products] } }
         guard let raw = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let resultsRaw = raw["results"] as? [String: Any], !resultsRaw.isEmpty else { return nil }
 
-        let storeNames = Array(Set(resultsRaw.values.compactMap { $0 as? [String: Any] }.flatMap { $0.keys })).sorted()
+        let rawStoreNames = Array(Set(resultsRaw.values.compactMap { $0 as? [String: Any] }.flatMap { $0.keys }))
+        let chainNames = Array(Set(rawStoreNames.map { cleanStoreName($0) })).sorted()
 
         var comps: [ItemComparison] = []
         for (itemName, storeDict) in resultsRaw {
             guard let storeMap = storeDict as? [String: Any] else { continue }
             var storeResults: [ItemComparison.StoreResult] = []
-            for storeName in storeNames {
-                if let productsRaw = storeMap[storeName] as? [[String: Any]], let first = productsRaw.first {
-                    let product = NoFrillsProduct(
-                        brand: first["brand"] as? String,
-                        name: first["name"] as? String ?? itemName,
-                        price: first["price"] as? String,
-                        size: first["size"] as? String,
-                        pricePerUnit: first["pricePerUnit"] as? String,
-                        store: storeName
-                    )
-                    storeResults.append(.init(storeName: storeName, product: product))
-                } else {
-                    storeResults.append(.init(storeName: storeName, product: nil))
+
+            for chainName in chainNames {
+                // Find all raw store keys that belong to this chain
+                let matchingKeys = rawStoreNames.filter { cleanStoreName($0) == chainName }
+
+                // Collect all products from all locations of this chain
+                var bestProduct: NoFrillsProduct? = nil
+                var bestPrice = Double.infinity
+
+                for key in matchingKeys {
+                    guard let productsRaw = storeMap[key] as? [[String: Any]],
+                          let first = productsRaw.first else { continue }
+                    let price = priceValue(first["price"] as? String)
+                    if price < bestPrice {
+                        bestPrice = price
+                        bestProduct = NoFrillsProduct(
+                            brand: first["brand"] as? String,
+                            name: first["name"] as? String ?? itemName,
+                            price: first["price"] as? String,
+                            size: first["size"] as? String,
+                            pricePerUnit: first["pricePerUnit"] as? String,
+                            store: chainName
+                        )
+                    }
                 }
+
+                storeResults.append(.init(storeName: chainName, product: bestProduct))
             }
+
             if storeResults.contains(where: { $0.product != nil }) {
                 comps.append(ItemComparison(itemName: itemName, storeResults: storeResults))
             }
@@ -336,7 +363,7 @@ struct FlyersView: View {
                 VStack(alignment: .leading, spacing: 4) {
                     Text("Price Comparison")
                         .font(.system(size: 26, weight: .black, design: .rounded))
-                    Text("Best deals for \"\(viewModel.listName)\"")
+                    Text("Price comparison for \"\(viewModel.listName)\"")
                         .font(.system(size: 14, weight: .medium))
                         .foregroundStyle(.secondary)
                 }
@@ -364,12 +391,21 @@ struct FlyersView: View {
     private var storeLegend: some View {
         ScrollView(.horizontal, showsIndicators: false) {
             HStack(spacing: 8) {
-                ForEach(Array(viewModel.allStoreNames.enumerated()), id: \.offset) { idx, store in
+                ForEach(viewModel.allStoreNames, id: \.self) { store in
+                    let color = storeColor(for: store)
+                    let assetName = brandAssetName(for: store)
                     HStack(spacing: 5) {
-                        Circle()
-                            .fill(storeColor(idx))
-                            .frame(width: 8, height: 8)
-                        Text(store)
+                        if UIImage(named: assetName) != nil {
+                            Image(assetName)
+                                .resizable()
+                                .scaledToFit()
+                                .frame(width: 16, height: 16)
+                        } else {
+                            Circle()
+                                .fill(color)
+                                .frame(width: 8, height: 8)
+                        }
+                        Text(cleanStoreName(store))
                             .font(.system(size: 12, weight: .semibold))
                             .foregroundStyle(Color(red: 0.25, green: 0.30, blue: 0.25))
                     }
@@ -377,7 +413,7 @@ struct FlyersView: View {
                     .padding(.vertical, 6)
                     .background(.white)
                     .clipShape(Capsule())
-                    .overlay(Capsule().stroke(storeColor(idx).opacity(0.4), lineWidth: 1))
+                    .overlay(Capsule().stroke(color.opacity(0.4), lineWidth: 1))
                 }
             }
         }
@@ -404,7 +440,7 @@ private struct ItemComparisonRow: View {
                     HStack(spacing: 4) {
                         Image(systemName: "tag.fill")
                             .font(.system(size: 10))
-                        Text("Best: \(cheapest.storeName.components(separatedBy: " ").first ?? cheapest.storeName)")
+                        Text("Best: \(cleanStoreName(cheapest.storeName))")
                             .font(.system(size: 11, weight: .bold))
                     }
                     .foregroundStyle(.white)
@@ -417,12 +453,12 @@ private struct ItemComparisonRow: View {
 
             // Store price columns
             HStack(spacing: 8) {
-                ForEach(Array(allStores.enumerated()), id: \.offset) { idx, storeName in
+                ForEach(allStores, id: \.self) { storeName in
                     let result = comparison.storeResults.first { $0.storeName == storeName }
                     StorePriceCell(
                         storeName: storeName,
                         product: result?.product,
-                        color: storeColor(idx),
+                        color: storeColor(for: storeName),
                         isCheapest: comparison.cheapestStore?.storeName == storeName
                     )
                 }
@@ -449,11 +485,20 @@ private struct StorePriceCell: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 4) {
-            // Store name
-            Text(storeName.components(separatedBy: " ").first ?? storeName)
-                .font(.system(size: 10, weight: .bold))
-                .foregroundStyle(color)
-                .lineLimit(1)
+            // Store logo or name
+            let assetName = brandAssetName(for: storeName)
+            if UIImage(named: assetName) != nil {
+                Image(assetName)
+                    .resizable()
+                    .scaledToFit()
+                    .frame(height: 18)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+            } else {
+                Text(cleanStoreName(storeName))
+                    .font(.system(size: 10, weight: .bold))
+                    .foregroundStyle(color)
+                    .lineLimit(1)
+            }
 
             if let p = product {
                 // Price
@@ -489,6 +534,61 @@ private struct StorePriceCell: View {
 }
 
 // MARK: - Helpers
+
+/// Maps a clean chain name to the image asset name in Assets.xcassets
+func brandAssetName(for name: String) -> String {
+    let lower = name.lowercased()
+    if lower.contains("sobeys")                                      { return "sobeys" }
+    if lower.contains("walmart")                                     { return "walmart" }
+    if lower.contains("freshco")                                     { return "freshco" }
+    if lower.contains("no frills") || lower.contains("nofrills")    { return "nofrills" }
+    if lower.contains("loblaws")                                     { return "loblaws" }
+    if lower.contains("metro")                                       { return "metro" }
+    if lower.contains("food basics") || lower.contains("foodbasics") { return "foodbasics" }
+    if lower.contains("atlantic superstore") || lower.contains("atlanticsuperstore") { return "atlanticsuperstore" }
+    if lower.contains("superstore")                                  { return "superstore" }
+    if lower.contains("t&t") || lower.contains("tandt")             { return "tandt" }
+    if lower.contains("independent")                                 { return "independent" }
+    if lower.contains("foodland")                                    { return "foodland" }
+    if lower.contains("maxi")                                        { return "maxi" }
+    return lower.replacingOccurrences(of: " ", with: "")
+}
+
+/// Cleans up internal store IDs like "sobeys::10 Elizabeth Ave" -> "Sobeys"
+func cleanStoreName(_ raw: String) -> String {
+    // Split on "::" and take the first part, then capitalize
+    let base = raw.components(separatedBy: "::").first ?? raw
+    let trimmed = base.trimmingCharacters(in: .whitespacesAndNewlines)
+    // Replace underscores/hyphens with spaces and capitalize each word
+    return trimmed
+        .replacingOccurrences(of: "_", with: " ")
+        .replacingOccurrences(of: "-", with: " ")
+        .split(separator: " ")
+        .map { $0.prefix(1).uppercased() + $0.dropFirst().lowercased() }
+        .joined(separator: " ")
+}
+
+/// Returns a brand-appropriate color for known store names, falls back to indexed colors
+func storeColor(for name: String) -> Color {
+    let lower = name.lowercased()
+    if lower.contains("sobeys")     { return Color(red: 0.82, green: 0.09, blue: 0.13) }
+    if lower.contains("nofrills") || lower.contains("no frills") { return Color(red: 0.98, green: 0.75, blue: 0.02) }
+    if lower.contains("loblaws")    { return Color(red: 0.20, green: 0.53, blue: 0.20) }
+    if lower.contains("metro")      { return Color(red: 0.00, green: 0.39, blue: 0.73) }
+    if lower.contains("foodbasics") || lower.contains("food basics") { return Color(red: 0.95, green: 0.35, blue: 0.10) }
+    if lower.contains("walmart")    { return Color(red: 0.00, green: 0.47, blue: 0.87) }
+    if lower.contains("costco")     { return Color(red: 0.80, green: 0.10, blue: 0.10) }
+    if lower.contains("freshco")    { return Color(red: 0.07, green: 0.53, blue: 0.25) }
+    // Fallback indexed colors
+    let colors: [Color] = [
+        Color(red: 0.12, green: 0.67, blue: 0.28),
+        Color(red: 0.20, green: 0.40, blue: 0.85),
+        Color(red: 0.90, green: 0.45, blue: 0.10),
+        Color(red: 0.60, green: 0.20, blue: 0.80),
+    ]
+    let idx = abs(name.hashValue) % colors.count
+    return colors[idx]
+}
 
 private func storeColor(_ index: Int) -> Color {
     let colors: [Color] = [
