@@ -7,6 +7,7 @@ import {
   TextInputProps,
   View,
 } from "react-native";
+import { SavrTheme } from "../../constants/theme";
 
 type AuthFieldProps = {
   title: string;
@@ -56,20 +57,19 @@ const styles = StyleSheet.create({
     alignSelf: "stretch",
   },
   title: {
-    fontSize: 14,
-    fontWeight: "700",
-    color: "rgb(46,59,84)",
-    marginBottom: 8,
+    ...SavrTheme.typography.overline,
+    color: SavrTheme.colors.textPrimary,
+    marginBottom: SavrTheme.spacing.xs,
   },
   input: {
     paddingHorizontal: 14,
     paddingVertical: 13,
-    backgroundColor: "rgb(242,245,247)",
-    borderRadius: 10,
-    borderWidth: 1.5,
-    borderColor: "rgb(199,207,217)",
-    fontSize: 16,
+    backgroundColor: SavrTheme.colors.softCard,
+    borderRadius: SavrTheme.radius.md - 2,
+    borderWidth: SavrTheme.borderWidth.thin,
+    borderColor: SavrTheme.colors.cardStroke,
+    ...SavrTheme.typography.body,
     fontWeight: "500",
-    color: "#1B2430",
+    color: SavrTheme.colors.textPrimary,
   },
 });

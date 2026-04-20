@@ -1,6 +1,7 @@
 import React from "react";
 import { Pressable, StyleSheet, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { SavrTheme } from "../../constants/theme";
 
 export type SavrSearchBarProps = {
   text: string;
@@ -24,7 +25,7 @@ export default function SavrSearchBar({
           value={text}
           onChangeText={onChangeText}
           placeholder={placeholder}
-          placeholderTextColor="#8A93A0"
+          placeholderTextColor={colors.textSecondary}
           style={styles.input}
           autoCapitalize="sentences"
           autoCorrect
@@ -41,7 +42,11 @@ export default function SavrSearchBar({
             pressed && styles.pressed,
           ]}
         >
-          <Ionicons name="camera-outline" size={18} color="#5A6472" />
+          <Ionicons
+            name="camera-outline"
+            size={18}
+            color={colors.textSecondary}
+          />
         </Pressable>
 
         <Pressable
@@ -53,33 +58,39 @@ export default function SavrSearchBar({
             pressed && styles.pressed,
           ]}
         >
-          <Ionicons name="arrow-up-circle" size={22} color="#6EC774" />
+          <Ionicons
+            name="arrow-up-circle"
+            size={22}
+            color={colors.brandGreen}
+          />
         </Pressable>
       </View>
     </View>
   );
 }
 
+const { colors, spacing, radius, borderWidth, shadows, typography } = SavrTheme;
+
 const styles = StyleSheet.create({
   outer: {
-    paddingHorizontal: 16,
+    paddingHorizontal: spacing.md,
   },
   container: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
-    paddingHorizontal: 14,
-    paddingVertical: 12,
-    borderRadius: 18,
-    backgroundColor: "rgba(255,255,255,0.9)",
-    borderWidth: 1,
-    borderColor: "#D7DDE2",
-    boxShadow: "0px 6px 10px rgba(0, 0, 0, 0.06)",
+    gap: spacing.xs + 2,
+    paddingHorizontal: spacing.sm + 2,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.lg + 2,
+    backgroundColor: colors.softCard,
+    borderWidth: borderWidth.hairline,
+    borderColor: colors.cardStroke,
+    ...shadows.soft,
   },
   input: {
     flex: 1,
-    fontSize: 16,
-    color: "#1C2430",
+    ...typography.body,
+    color: colors.textPrimary,
     paddingVertical: 0,
   },
   iconButton: {

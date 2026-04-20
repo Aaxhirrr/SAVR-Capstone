@@ -1,6 +1,7 @@
 import React from "react";
 import { Pressable, StyleSheet, TextInput, View } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { SavrTheme } from "../../constants/theme";
 
 type HeroSearchBarProps = {
   text: string;
@@ -28,7 +29,11 @@ export default function HeroSearchBar({
         accessibilityRole="button"
         accessibilityLabel="Open camera"
       >
-        <Ionicons name="camera" size={20} color="#5A6170" />
+        <Ionicons
+          name="camera"
+          size={20}
+          color={SavrTheme.colors.textSecondary}
+        />
       </Pressable>
 
       <TextInput
@@ -60,11 +65,11 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    gap: 12,
-    backgroundColor: "#FFFFFF",
-    borderRadius: 18,
-    borderWidth: 2,
-    borderColor: "#E6C9A7",
+    gap: SavrTheme.spacing.sm,
+    backgroundColor: SavrTheme.colors.inputBackground,
+    borderRadius: SavrTheme.radius.lg + 2,
+    borderWidth: SavrTheme.borderWidth.regular,
+    borderColor: SavrTheme.colors.line,
     paddingHorizontal: 14,
     paddingVertical: 10,
   },
@@ -72,24 +77,24 @@ const styles = StyleSheet.create({
     flex: 1,
     fontSize: 17,
     fontWeight: "500",
-    color: "#202938",
-    paddingVertical: 8,
+    color: SavrTheme.colors.textPrimary,
+    paddingVertical: SavrTheme.spacing.xs,
   },
   iconButtonCamera: {
     width: 42,
     height: 42,
-    borderRadius: 14,
+    borderRadius: SavrTheme.radius.md + 2,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#EFE8DC",
+    backgroundColor: SavrTheme.colors.peach,
   },
   iconButtonSubmit: {
     width: 42,
     height: 42,
-    borderRadius: 14,
+    borderRadius: SavrTheme.radius.md + 2,
     alignItems: "center",
     justifyContent: "center",
-    backgroundColor: "#6DC271",
+    backgroundColor: SavrTheme.colors.brandGreen,
   },
   pressed: {
     opacity: 0.8,

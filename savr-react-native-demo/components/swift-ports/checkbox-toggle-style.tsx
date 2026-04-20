@@ -8,6 +8,7 @@ import {
   View,
   ViewStyle,
 } from "react-native";
+import { SavrTheme } from "../../constants/theme";
 
 export interface CheckboxToggleStyleProps {
   isOn: boolean;
@@ -72,29 +73,30 @@ const styles = StyleSheet.create({
   row: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: 10,
+    gap: SavrTheme.spacing.xs + 2,
   },
   box: {
     width: 22,
     height: 22,
-    borderRadius: 6,
-    borderWidth: 1,
-    borderColor: "#C9CFD8",
+    borderRadius: SavrTheme.radius.sm - 2,
+    borderWidth: SavrTheme.borderWidth.hairline,
+    borderColor: SavrTheme.colors.cardStroke,
     alignItems: "center",
     justifyContent: "center",
     backgroundColor: "transparent",
   },
   boxOn: {
-    backgroundColor: "rgba(109, 180, 115, 0.20)",
+    backgroundColor: SavrTheme.colors.mintGlow,
   },
   checkmark: {
-    fontSize: 13,
+    ...SavrTheme.typography.caption,
     fontWeight: "800",
-    color: "#6DB473",
+    color: SavrTheme.colors.brandGreen,
     lineHeight: 15,
   },
   label: {
-    color: "#5B6472",
+    ...SavrTheme.typography.caption,
+    color: SavrTheme.colors.textSecondary,
     fontSize: 12,
     fontWeight: "500",
     lineHeight: 18,

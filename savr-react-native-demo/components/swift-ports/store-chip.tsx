@@ -1,5 +1,6 @@
 import React from "react";
 import { StyleSheet, Text, View, ViewStyle } from "react-native";
+import { SavrTheme } from "../../constants/theme";
 
 export type StoreChipProps = {
   text: string;
@@ -17,17 +18,16 @@ export default function StoreChip({ text, style }: StoreChipProps) {
 const styles = StyleSheet.create({
   chip: {
     alignSelf: "flex-start",
-    backgroundColor: "#FFFFFF",
-    borderRadius: 999,
-    borderWidth: 1.2,
-    borderColor: "#DDE3E8",
-    paddingHorizontal: 20,
-    paddingVertical: 14,
+    backgroundColor: SavrTheme.colors.inputBackground,
+    borderRadius: SavrTheme.radius.pill,
+    borderWidth: SavrTheme.borderWidth.thin,
+    borderColor: SavrTheme.colors.cardStroke,
+    paddingHorizontal: SavrTheme.spacing.lg,
+    paddingVertical: SavrTheme.spacing.sm,
   },
   text: {
-    fontSize: 16,
+    ...SavrTheme.typography.nav,
     lineHeight: 20,
-    fontWeight: "600",
-    color: "#1F3B2D",
+    color: SavrTheme.colors.textPrimary,
   },
 });
