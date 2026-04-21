@@ -4,10 +4,7 @@ struct ChatView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = ChatViewModel()
 
-    @State private var showLists = false
-    @State private var showFlyers = false
-    @State private var showStores = false
-    @State private var showPreferences = false
+    @State private var showProfile = false
 
     private var greetingName: String {
         let first = appState.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -70,20 +67,8 @@ struct ChatView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(chatBackground)
-        .sheet(isPresented: $showLists) {
-            ListsView()
-                .environmentObject(appState)
-        }
-        .sheet(isPresented: $showFlyers) {
-            FlyersView()
-                .environmentObject(appState)
-        }
-        .sheet(isPresented: $showStores) {
-            StoreSelectView()
-                .environmentObject(appState)
-        }
-        .sheet(isPresented: $showPreferences) {
-            PreferencesView()
+        .sheet(isPresented: $showProfile) {
+            ProfileView()
                 .environmentObject(appState)
         }
     }
@@ -97,10 +82,7 @@ struct ChatView: View {
             Spacer()
 
             Menu {
-                Button("Flyers") { showFlyers = true }
-                Button("My Lists") { showLists = true }
-                Button("Stores") { showStores = true }
-                Button("Preferences") { showPreferences = true }
+                Button("Profile") { showProfile = true }
                 Button("Logout") { appState.signOut() }
             } label: {
                 ZStack {
