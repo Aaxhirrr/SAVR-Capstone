@@ -63,10 +63,17 @@ struct ChatView: View {
                     .padding(.horizontal, 12)
                     .padding(.bottom, 14)
                     .padding(.top, 8)
-                    .background(.clear)
+                    .background(
+                        LinearGradient(
+                            colors: [Color(red: 0.985, green: 0.985, blue: 0.985).opacity(0), Color(red: 0.985, green: 0.985, blue: 0.985)],
+                            startPoint: .top,
+                            endPoint: .bottom
+                        )
+                        .ignoresSafeArea(edges: .bottom)
+                    )
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
-        .background(chatBackground)
+        .background(chatBackground.ignoresSafeArea())
         .sheet(isPresented: $showProfile) {
             ProfileView()
                 .environmentObject(appState)
@@ -87,7 +94,7 @@ struct ChatView: View {
             } label: {
                 ZStack {
                     RoundedRectangle(cornerRadius: 12, style: .continuous)
-                        .fill(.white.opacity(0.88))
+                        .fill(.ultraThinMaterial)
                         .frame(width: 42, height: 42)
                         .overlay(
                             RoundedRectangle(cornerRadius: 12, style: .continuous)
@@ -102,6 +109,14 @@ struct ChatView: View {
         .padding(.horizontal, 16)
         .padding(.top, 10)
         .padding(.bottom, 8)
+        .background(
+            LinearGradient(
+                colors: [Color(red: 0.985, green: 0.985, blue: 0.985), Color(red: 0.985, green: 0.985, blue: 0.985).opacity(0)],
+                startPoint: .top,
+                endPoint: .bottom
+            )
+            .ignoresSafeArea(edges: .top)
+        )
     }
 
     // MARK: - Greeting
