@@ -47,5 +47,9 @@
         <key>NSAllowsArbitraryLoads</key>
         <true/>
     </dict>
+    <key>NSCameraUsageDescription</key>
+    <string>Savr uses your camera so you can photograph grocery items and receipts for instant list building.</string>
+    <key>NSPhotoLibraryUsageDescription</key>
+    <string>Savr accesses your photo library so you can pick grocery photos or receipts to build your shopping list.</string>
 </dict>
 </plist>

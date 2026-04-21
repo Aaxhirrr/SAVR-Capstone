@@ -1,10 +1,14 @@
 import SwiftUI
+import UIKit
 
 struct ChatView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = ChatViewModel()
 
     @State private var showProfile = false
+    @State private var showDietaryPrefs = false
+    @State private var showImageSourceSheet = false
+
 
     private var greetingName: String {
         let first = appState.firstName.trimmingCharacters(in: .whitespacesAndNewlines)
@@ -77,6 +81,47 @@ struct ChatView: View {
         .sheet(isPresented: $showProfile) {
             ProfileView()
                 .environmentObject(appState)
+        }
+        .sheet(isPresented: $showDietaryPrefs) {
+            ProfileView(initialTab: .dietary)
+                .environmentObject(appState)
+        }
+        .sheet(isPresented: $viewModel.showImagePicker) {
+            ImagePicker(sourceType: viewModel.imagePickerSource) { image in
+                viewModel.handlePickedImage(image)
+            }
+            .ignoresSafeArea()
+        }
+        .confirmationDialog("Add a Photo", isPresented: $showImageSourceSheet, titleVisibility: .visible) {
+            if UIImagePickerController.isSourceTypeAvailable(.camera) {
+                Button("Take Photo") {
+                    viewModel.imagePickerSource = .camera
+                    viewModel.showImagePicker = true
+                }
+            }
+            Button("Choose from Library") {
+                viewModel.imagePickerSource = .photoLibrary
+                viewModel.showImagePicker = true
+            }
+            Button("Cancel", role: .cancel) {}
+        }
+        .overlay {
+            if viewModel.isProcessingImage {
+                ZStack {
+                    Color.black.opacity(0.35).ignoresSafeArea()
+                    VStack(spacing: 14) {
+                        ProgressView()
+                            .tint(.white)
+                            .scaleEffect(1.4)
+                        Text("Reading image…")
+                            .font(.system(size: 15, weight: .semibold, design: .rounded))
+                            .foregroundStyle(.white)
+                    }
+                    .padding(28)
+                    .background(.ultraThinMaterial)
+                    .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+                }
+            }
         }
     }
 
@@ -185,9 +230,14 @@ struct ChatView: View {
 
             HStack {
                 HStack(spacing: 10) {
-                    composerIcon("camera.fill")
-                    composerIcon("heart")
-                    composerIcon("storefront")
+                    Button { showImageSourceSheet = true } label: {
+                        composerIcon("camera.fill")
+                    }
+                    .buttonStyle(.plain)
+                    Button { showDietaryPrefs = true } label: {
+                        composerIcon("heart")
+                    }
+                    .buttonStyle(.plain)
                 }
                 Spacer()
                 Button(action: { viewModel.send() }) {
@@ -325,6 +375,41 @@ private struct UserBubble: View {
 #Preview {
     ChatView()
         .environmentObject(AppState())
+}
+
+// MARK: - Image Picker
+
+private struct ImagePicker: UIViewControllerRepresentable {
+    let sourceType: UIImagePickerController.SourceType
+    let onPick: (UIImage) -> Void
+
+    func makeCoordinator() -> Coordinator { Coordinator(onPick: onPick) }
+
+    func makeUIViewController(context: Context) -> UIImagePickerController {
+        let picker = UIImagePickerController()
+        picker.sourceType = sourceType
+        picker.delegate = context.coordinator
+        return picker
+    }
+
+    func updateUIViewController(_ uiViewController: UIImagePickerController, context: Context) {}
+
+    final class Coordinator: NSObject, UIImagePickerControllerDelegate, UINavigationControllerDelegate {
+        let onPick: (UIImage) -> Void
+        init(onPick: @escaping (UIImage) -> Void) { self.onPick = onPick }
+
+        func imagePickerController(_ picker: UIImagePickerController,
+                                   didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey: Any]) {
+            if let image = info[.editedImage] as? UIImage ?? info[.originalImage] as? UIImage {
+                onPick(image)
+            }
+            picker.dismiss(animated: true)
+        }
+
+        func imagePickerControllerDidCancel(_ picker: UIImagePickerController) {
+            picker.dismiss(animated: true)
+        }
+    }
 }
 
 private struct TypingIndicator: View {
