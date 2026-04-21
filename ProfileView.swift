@@ -89,31 +89,60 @@ final class ProfileViewModel: ObservableObject {
     func load() async {
         isLoading = true
         errorMessage = nil
-        if let p = try? await authService.fetchProfile() {
+        do {
+            let p = try await authService.fetchProfile()
             profile = p
             firstName = p.firstName ?? ""
             lastName  = p.lastName ?? ""
+            phone     = p.phone ?? ""
+
+            // Dietary: backend wins over local cache
+            if !p.dietaryRestrictions.isEmpty {
+                // Separate standard vs custom options
+                let standard = Set(commonDietaryOptions)
+                selectedDietary = Set(p.dietaryRestrictions.filter { standard.contains($0) })
+                customDietaryRestrictions = p.dietaryRestrictions.filter { !standard.contains($0) }
+            } else {
+                selectedDietary = Set(UserDefaults.standard.stringArray(forKey: "savr_dietary_prefs") ?? [])
+                customDietaryRestrictions = UserDefaults.standard.stringArray(forKey: "savr_custom_dietary") ?? []
+            }
+
+            // Brands: backend wins
+            if !p.likedBrands.isEmpty || !p.dislikedBrands.isEmpty {
+                likedBrands    = p.likedBrands.map    { BrandEntry(category: $0.category, brandName: $0.brand) }
+                dislikedBrands = p.dislikedBrands.map { BrandEntry(category: $0.category, brandName: $0.brand) }
+            } else {
+                loadBrandsFromCache()
+            }
+
+            // Address from UserDefaults (we store a single string on device)
+            address = UserDefaults.standard.string(forKey: "savr_address") ?? ""
+        } catch {
+            // Fall back to cached values if network fails
+            selectedDietary = Set(UserDefaults.standard.stringArray(forKey: "savr_dietary_prefs") ?? [])
+            customDietaryRestrictions = UserDefaults.standard.stringArray(forKey: "savr_custom_dietary") ?? []
+            address = UserDefaults.standard.string(forKey: "savr_address") ?? ""
+            phone   = UserDefaults.standard.string(forKey: "savr_phone") ?? ""
+            loadBrandsFromCache()
         }
-        // Load persisted preferences
-        selectedDietary = Set(UserDefaults.standard.stringArray(forKey: "savr_dietary_prefs") ?? [])
-        customDietaryRestrictions = UserDefaults.standard.stringArray(forKey: "savr_custom_dietary") ?? []
-        if let likedData = UserDefaults.standard.data(forKey: "savr_liked_brands"),
-           let decoded = try? JSONDecoder().decode([[String: String]].self, from: likedData) {
+        isLoading = false
+    }
+
+    private func loadBrandsFromCache() {
+        if let data = UserDefaults.standard.data(forKey: "savr_liked_brands"),
+           let decoded = try? JSONDecoder().decode([[String: String]].self, from: data) {
             likedBrands = decoded.compactMap {
                 guard let c = $0["category"], let b = $0["brand"] else { return nil }
                 return BrandEntry(category: c, brandName: b)
             }
         }
-        if let dislikedData = UserDefaults.standard.data(forKey: "savr_disliked_brands"),
-           let decoded = try? JSONDecoder().decode([[String: String]].self, from: dislikedData) {
+        if let data = UserDefaults.standard.data(forKey: "savr_disliked_brands"),
+           let decoded = try? JSONDecoder().decode([[String: String]].self, from: data) {
             dislikedBrands = decoded.compactMap {
                 guard let c = $0["category"], let b = $0["brand"] else { return nil }
                 return BrandEntry(category: c, brandName: b)
             }
         }
-        address = UserDefaults.standard.string(forKey: "savr_address") ?? ""
-        phone   = UserDefaults.standard.string(forKey: "savr_phone") ?? ""
-        isLoading = false
     }
 
     func changePassword() async {
@@ -157,16 +186,56 @@ final class ProfileViewModel: ObservableObject {
         isSaving = false
     }
 
-    func saveAccount() {
+    func saveAccount() async {
+        isSaving = true
+        errorMessage = nil
+        successMessage = nil
+
+        // Persist address locally (single string)
         UserDefaults.standard.set(address, forKey: "savr_address")
         UserDefaults.standard.set(phone,   forKey: "savr_phone")
-        successMessage = "Account information saved."
+
+        do {
+            try await authService.updateProfile(
+                firstName: firstName,
+                lastName: lastName,
+                phone: phone,
+                address: address,
+                dietaryRestrictions: Array(selectedDietary) + customDietaryRestrictions,
+                likedBrands: likedBrands.map { (category: $0.category, brand: $0.brandName) },
+                dislikedBrands: dislikedBrands.map { (category: $0.category, brand: $0.brandName) }
+            )
+            successMessage = "Account information saved."
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        isSaving = false
     }
 
-    func saveDietary() {
+    func saveDietary() async {
+        isSaving = true
+        errorMessage = nil
+        successMessage = nil
+
+        // Cache locally
         UserDefaults.standard.set(Array(selectedDietary), forKey: "savr_dietary_prefs")
         UserDefaults.standard.set(customDietaryRestrictions, forKey: "savr_custom_dietary")
-        successMessage = "Dietary preferences saved."
+
+        do {
+            try await authService.updateProfile(
+                firstName: firstName,
+                lastName: lastName,
+                phone: phone.isEmpty ? nil : phone,
+                address: address.isEmpty ? nil : address,
+                dietaryRestrictions: Array(selectedDietary) + customDietaryRestrictions,
+                likedBrands: likedBrands.map { (category: $0.category, brand: $0.brandName) },
+                dislikedBrands: dislikedBrands.map { (category: $0.category, brand: $0.brandName) }
+            )
+            successMessage = "Dietary preferences saved."
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        isSaving = false
     }
 
     func addCustomDietary() {
@@ -186,12 +255,12 @@ final class ProfileViewModel: ObservableObject {
         guard !brand.isEmpty else { return }
         likedBrands.append(BrandEntry(category: cat, brandName: brand))
         likedCategory = ""; likedBrandName = ""
-        saveBrands()
+        Task { await saveBrands() }
     }
 
     func removeLikedBrand(at offsets: IndexSet) {
         likedBrands.remove(atOffsets: offsets)
-        saveBrands()
+        Task { await saveBrands() }
     }
 
     func addDislikedBrand() {
@@ -200,15 +269,16 @@ final class ProfileViewModel: ObservableObject {
         guard !brand.isEmpty else { return }
         dislikedBrands.append(BrandEntry(category: cat, brandName: brand))
         dislikedCategory = ""; dislikedBrandName = ""
-        saveBrands()
+        Task { await saveBrands() }
     }
 
     func removeDislikedBrand(at offsets: IndexSet) {
         dislikedBrands.remove(atOffsets: offsets)
-        saveBrands()
+        Task { await saveBrands() }
     }
 
-    private func saveBrands() {
+    private func saveBrands() async {
+        // Cache locally
         let likedEncoded = likedBrands.map { ["category": $0.category, "brand": $0.brandName] }
         let dislikedEncoded = dislikedBrands.map { ["category": $0.category, "brand": $0.brandName] }
         if let data = try? JSONEncoder().encode(likedEncoded) {
@@ -217,6 +287,29 @@ final class ProfileViewModel: ObservableObject {
         if let data = try? JSONEncoder().encode(dislikedEncoded) {
             UserDefaults.standard.set(data, forKey: "savr_disliked_brands")
         }
+
+        // Sync to backend
+        try? await authService.updateProfile(
+            firstName: firstName,
+            lastName: lastName,
+            phone: phone.isEmpty ? nil : phone,
+            address: address.isEmpty ? nil : address,
+            dietaryRestrictions: Array(selectedDietary) + customDietaryRestrictions,
+            likedBrands: likedBrands.map { (category: $0.category, brand: $0.brandName) },
+            dislikedBrands: dislikedBrands.map { (category: $0.category, brand: $0.brandName) }
+        )
+    }
+
+    func deleteAccount() async {
+        isSaving = true
+        errorMessage = nil
+        do {
+            try await authService.deleteAccount()
+            // authService.deleteAccount() clears the token — AppState will detect signout on next check
+        } catch {
+            errorMessage = error.localizedDescription
+        }
+        isSaving = false
     }
 }
 
@@ -227,6 +320,7 @@ struct ProfileView: View {
     @StateObject private var viewModel = ProfileViewModel()
     @State private var selectedTab: ProfileTab = .userDetails
     @State private var showSignOutConfirm = false
+    @State private var showDeleteConfirm = false
 
     var body: some View {
         ZStack {
@@ -253,6 +347,17 @@ struct ProfileView: View {
             Button("Cancel", role: .cancel) {}
         } message: {
             Text("You'll need to sign in again to use SAVR.")
+        }
+        .confirmationDialog("Delete Account", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+            Button("Permanently Delete My Account", role: .destructive) {
+                Task {
+                    await viewModel.deleteAccount()
+                    appState.signOut()
+                }
+            }
+            Button("Cancel", role: .cancel) {}
+        } message: {
+            Text("This will permanently delete your account and all data. This cannot be undone.")
         }
     }
 
@@ -327,7 +432,7 @@ struct ProfileView: View {
     private var tabContent: some View {
         switch selectedTab {
         case .userDetails: UserDetailsSection(viewModel: viewModel)
-        case .account:     AccountSection(viewModel: viewModel, showSignOut: $showSignOutConfirm)
+        case .account:     AccountSection(viewModel: viewModel, showSignOut: $showSignOutConfirm, showDeleteAccount: $showDeleteConfirm)
         case .dietary:     DietarySection(viewModel: viewModel)
         case .brands:      BrandsSection(viewModel: viewModel)
         }
@@ -404,6 +509,7 @@ private struct UserDetailsSection: View {
 private struct AccountSection: View {
     @ObservedObject var viewModel: ProfileViewModel
     @Binding var showSignOut: Bool
+    @Binding var showDeleteAccount: Bool
 
     var body: some View {
         VStack(spacing: 14) {
@@ -488,19 +594,45 @@ private struct AccountSection: View {
                         .keyboardType(.phonePad)
 
                     Button {
-                        viewModel.saveAccount()
+                        Task { await viewModel.saveAccount() }
                     } label: {
-                        Text("Save Changes")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 13)
-                            .background(SavrColors.brandGreen)
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        HStack(spacing: 6) {
+                            if viewModel.isSaving {
+                                ProgressView().scaleEffect(0.75).tint(.white)
+                            }
+                            Text("Save Changes")
+                                .font(.system(size: 14, weight: .bold))
+                        }
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 13)
+                        .background(SavrColors.brandGreen)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
                     .buttonStyle(.plain)
+                    .disabled(viewModel.isSaving)
                     .padding(.top, 4)
                 }
+            }
+
+            // Sign Out
+            ProfileCard(title: "Sign Out", subtitle: nil) {
+                Button {
+                    showSignOut = true
+                } label: {
+                    Text("Sign Out of SAVR")
+                        .font(.system(size: 14, weight: .bold))
+                        .foregroundStyle(Color(red: 0.80, green: 0.15, blue: 0.15))
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 13)
+                        .background(Color(red: 0.80, green: 0.15, blue: 0.15).opacity(0.10))
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        .overlay(
+                            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                                .stroke(Color(red: 0.80, green: 0.15, blue: 0.15).opacity(0.3), lineWidth: 1)
+                        )
+                }
+                .buttonStyle(.plain)
             }
 
             // Danger Zone
@@ -512,9 +644,9 @@ private struct AccountSection: View {
                         .fixedSize(horizontal: false, vertical: true)
 
                     Button {
-                        showSignOut = true
+                        showDeleteAccount = true
                     } label: {
-                        Text("Sign Out of SAVR")
+                        Text("Delete My Account")
                             .font(.system(size: 14, weight: .bold))
                             .foregroundStyle(Color(red: 0.80, green: 0.15, blue: 0.15))
                             .frame(maxWidth: .infinity)
@@ -597,17 +729,23 @@ private struct DietarySection: View {
                     .padding(.top, 4)
 
                     Button {
-                        viewModel.saveDietary()
+                        Task { await viewModel.saveDietary() }
                     } label: {
-                        Text("Save Preferences")
-                            .font(.system(size: 14, weight: .bold))
-                            .foregroundStyle(.white)
-                            .frame(maxWidth: .infinity)
-                            .padding(.vertical, 13)
-                            .background(SavrColors.brandGreen)
-                            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                        HStack(spacing: 6) {
+                            if viewModel.isSaving {
+                                ProgressView().scaleEffect(0.75).tint(.white)
+                            }
+                            Text("Save Preferences")
+                                .font(.system(size: 14, weight: .bold))
+                        }
+                        .foregroundStyle(.white)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 13)
+                        .background(SavrColors.brandGreen)
+                        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
                     }
                     .buttonStyle(.plain)
+                    .disabled(viewModel.isSaving)
                 }
             }
 

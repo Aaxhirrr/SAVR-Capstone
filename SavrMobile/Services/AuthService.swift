@@ -109,6 +109,70 @@ final class AuthService {
         return session
     }
 
+    func updateProfile(
+        firstName: String?,
+        lastName: String?,
+        phone: String?,
+        address: String?,
+        dietaryRestrictions: [String],
+        likedBrands: [(category: String, brand: String)],
+        dislikedBrands: [(category: String, brand: String)]
+    ) async throws {
+        guard let session = tokenStore.loadSession() else {
+            throw APIError.requestFailed(statusCode: 401, message: "Not signed in.", responseBody: nil, requestURL: nil, method: "PUT")
+        }
+
+        var body: [String: Any] = [:]
+        if let firstName, !firstName.isEmpty { body["first_name"] = firstName }
+        if let lastName, !lastName.isEmpty { body["last_name"] = lastName }
+        if let phone, !phone.isEmpty { body["phone"] = phone }
+
+        // Address is stored as a plain string on the mobile side — send as street
+        if let address, !address.isEmpty {
+            body["address"] = ["street": address]
+        }
+
+        body["dietary_restrictions"] = dietaryRestrictions
+
+        var liked: [String: String] = [:]
+        for entry in likedBrands where !entry.brand.isEmpty {
+            liked[entry.category.isEmpty ? entry.brand : entry.category] = entry.brand
+        }
+        var disliked: [String: String] = [:]
+        for entry in dislikedBrands where !entry.brand.isEmpty {
+            disliked[entry.category.isEmpty ? entry.brand : entry.category] = entry.brand
+        }
+        body["brand_preferences"] = ["liked": liked, "disliked": disliked]
+
+        let data = try JSONSerialization.data(withJSONObject: body)
+        let _: UserProfileResponse = try await apiClient.send(
+            path: "auth/profile",
+            method: "PUT",
+            headers: [
+                "Authorization": "Bearer \(session.accessToken)",
+                "Content-Type": "application/json",
+                "Accept": "application/json"
+            ],
+            body: data
+        )
+    }
+
+    func deleteAccount() async throws {
+        guard let session = tokenStore.loadSession() else {
+            throw APIError.requestFailed(statusCode: 401, message: "Not signed in.", responseBody: nil, requestURL: nil, method: "DELETE")
+        }
+        struct DeleteResponse: Decodable { let message: String? }
+        let _: DeleteResponse = try await apiClient.send(
+            path: "auth/account",
+            method: "DELETE",
+            headers: [
+                "Authorization": "Bearer \(session.accessToken)",
+                "Accept": "application/json"
+            ]
+        )
+        try tokenStore.clear()
+    }
+
     func logout() throws {
         try tokenStore.clear()
     }
