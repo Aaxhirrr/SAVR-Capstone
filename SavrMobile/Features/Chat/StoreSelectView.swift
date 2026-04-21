@@ -3,8 +3,6 @@ import MapKit
 import CoreLocation
 
 // MARK: - Known Canadian grocery chains
-// Asset names: nofrills, loblaws, walmart, metro, sobeys, freshco, foodbasics, superstore,
-//              tandt, independent, atlanticsuperstore, foodland, maxi
 
 struct KnownStore: Identifiable {
     let id = UUID()
@@ -18,20 +16,21 @@ struct KnownStore: Identifiable {
     let initial: String
 }
 
+// Real representative HQ/flagship coordinates for each chain
 let knownStores: [KnownStore] = [
-    KnownStore(name: "No Frills",            brand: "nofrills",           address: "No Frills Canada",              postalCode: "M5V 3A8", latitude: 43.6426, longitude: -79.3871, color: Color(red: 0.98, green: 0.75, blue: 0.05), initial: "NF"),
-    KnownStore(name: "Loblaws",              brand: "loblaws",            address: "Loblaws Canada",                postalCode: "M5V 3A8", latitude: 43.6532, longitude: -79.3832, color: Color(red: 0.85, green: 0.10, blue: 0.10), initial: "L"),
-    KnownStore(name: "Walmart",              brand: "walmart",            address: "Walmart Canada",                postalCode: "M5V 3A8", latitude: 43.6480, longitude: -79.3920, color: Color(red: 0.07, green: 0.40, blue: 0.75), initial: "W"),
-    KnownStore(name: "Metro",                brand: "metro",              address: "Metro Canada",                  postalCode: "M5V 3A8", latitude: 43.6510, longitude: -79.3795, color: Color(red: 0.10, green: 0.60, blue: 0.20), initial: "M"),
-    KnownStore(name: "Sobeys",               brand: "sobeys",             address: "Sobeys Canada",                 postalCode: "M5V 3A8", latitude: 43.6495, longitude: -79.3850, color: Color(red: 0.92, green: 0.35, blue: 0.10), initial: "S"),
-    KnownStore(name: "FreshCo",              brand: "freshco",            address: "FreshCo Canada",                postalCode: "M5V 3A8", latitude: 43.6460, longitude: -79.3910, color: Color(red: 0.10, green: 0.55, blue: 0.35), initial: "FC"),
-    KnownStore(name: "Food Basics",          brand: "foodbasics",         address: "Food Basics Canada",            postalCode: "M5V 3A8", latitude: 43.6445, longitude: -79.3880, color: Color(red: 0.55, green: 0.10, blue: 0.75), initial: "FB"),
-    KnownStore(name: "Superstore",           brand: "superstore",         address: "Real Canadian Superstore",      postalCode: "M5V 3A8", latitude: 43.6520, longitude: -79.3940, color: Color(red: 0.80, green: 0.15, blue: 0.15), initial: "SS"),
-    KnownStore(name: "T&T Supermarket",      brand: "tandt",              address: "T&T Supermarket Canada",        postalCode: "M5V 3A8", latitude: 43.6440, longitude: -79.3800, color: Color(red: 0.88, green: 0.10, blue: 0.18), initial: "T&T"),
-    KnownStore(name: "Independent Grocer",   brand: "independent",        address: "Your Independent Grocer",       postalCode: "M5V 3A8", latitude: 43.6470, longitude: -79.3960, color: Color(red: 0.20, green: 0.50, blue: 0.20), initial: "IG"),
-    KnownStore(name: "Atlantic Superstore",  brand: "atlanticsuperstore", address: "Atlantic Superstore Canada",    postalCode: "B3J 1A1", latitude: 44.6480, longitude: -63.5750, color: Color(red: 0.80, green: 0.15, blue: 0.15), initial: "AS"),
-    KnownStore(name: "Foodland",             brand: "foodland",           address: "Foodland Canada",               postalCode: "M5V 3A8", latitude: 43.6415, longitude: -79.3830, color: Color(red: 0.10, green: 0.45, blue: 0.80), initial: "FL"),
-    KnownStore(name: "Maxi",                 brand: "maxi",               address: "Maxi Canada",                   postalCode: "H2X 1Y4", latitude: 45.5080, longitude: -73.5540, color: Color(red: 0.95, green: 0.20, blue: 0.25), initial: "MX"),
+    KnownStore(name: "No Frills",           brand: "nofrills",           address: "900 Dufferin St",              postalCode: "M6H 4B1", latitude: 43.6607, longitude: -79.4344, color: Color(red: 0.98, green: 0.75, blue: 0.05), initial: "NF"),
+    KnownStore(name: "Loblaws",             brand: "loblaws",            address: "500 Lake Shore Blvd W",        postalCode: "M5V 2V9", latitude: 43.6370, longitude: -79.4056, color: Color(red: 0.85, green: 0.10, blue: 0.10), initial: "L"),
+    KnownStore(name: "Walmart",             brand: "walmart",            address: "900 Sheppard Ave W",           postalCode: "M3H 2T4", latitude: 43.7518, longitude: -79.4519, color: Color(red: 0.07, green: 0.40, blue: 0.75), initial: "W"),
+    KnownStore(name: "Metro",               brand: "metro",              address: "777 Lawrence Ave E",           postalCode: "M3C 1P2", latitude: 43.7257, longitude: -79.3361, color: Color(red: 0.10, green: 0.60, blue: 0.20), initial: "M"),
+    KnownStore(name: "Sobeys",              brand: "sobeys",             address: "2600 John St",                 postalCode: "L3R 3W4", latitude: 43.8408, longitude: -79.3377, color: Color(red: 0.92, green: 0.35, blue: 0.10), initial: "S"),
+    KnownStore(name: "FreshCo",             brand: "freshco",            address: "1677 Wilson Ave",              postalCode: "M3L 1A5", latitude: 43.7337, longitude: -79.4861, color: Color(red: 0.10, green: 0.55, blue: 0.35), initial: "FC"),
+    KnownStore(name: "Food Basics",         brand: "foodbasics",         address: "2150 Dundas St W",             postalCode: "M6R 1X3", latitude: 43.6573, longitude: -79.4533, color: Color(red: 0.55, green: 0.10, blue: 0.75), initial: "FB"),
+    KnownStore(name: "Superstore",          brand: "superstore",         address: "3221 Derry Rd W",              postalCode: "L5N 7L7", latitude: 43.6235, longitude: -79.7616, color: Color(red: 0.80, green: 0.15, blue: 0.15), initial: "SS"),
+    KnownStore(name: "T&T Supermarket",     brand: "tandt",              address: "222 Cherry St",                postalCode: "M5A 3L2", latitude: 43.6471, longitude: -79.3568, color: Color(red: 0.88, green: 0.10, blue: 0.18), initial: "T&T"),
+    KnownStore(name: "Independent Grocer",  brand: "independent",        address: "2881 Bayview Ave",             postalCode: "M2K 1E6", latitude: 43.7717, longitude: -79.3867, color: Color(red: 0.20, green: 0.50, blue: 0.20), initial: "IG"),
+    KnownStore(name: "Atlantic Superstore", brand: "atlanticsuperstore",  address: "6169 Lady Hammond Rd",         postalCode: "B3K 2R9", latitude: 44.6680, longitude: -63.6282, color: Color(red: 0.80, green: 0.15, blue: 0.15), initial: "AS"),
+    KnownStore(name: "Foodland",            brand: "foodland",           address: "46 Main St S",                 postalCode: "N0B 1M0", latitude: 43.6761, longitude: -80.3786, color: Color(red: 0.10, green: 0.45, blue: 0.80), initial: "FL"),
+    KnownStore(name: "Maxi",               brand: "maxi",               address: "7373 Boul Newman",             postalCode: "H8N 1X1", latitude: 45.4571, longitude: -73.6368, color: Color(red: 0.95, green: 0.20, blue: 0.25), initial: "MX"),
 ]
 
 // MARK: - Location Manager
@@ -39,7 +38,7 @@ let knownStores: [KnownStore] = [
 final class LocationManager: NSObject, ObservableObject, CLLocationManagerDelegate {
     @Published var userLocation: CLLocationCoordinate2D?
     @Published var authStatus: CLAuthorizationStatus = .notDetermined
-    @Published var locationVersion: Int = 0  // increments each time location updates, workaround for non-Equatable CLLocationCoordinate2D
+    @Published var locationVersion: Int = 0
 
     private let manager = CLLocationManager()
 
@@ -212,41 +211,31 @@ struct StoreSelectView: View {
     @StateObject private var viewModel = StoreSelectViewModel()
     @StateObject private var locationManager = LocationManager()
 
-    // Map region — starts over Canada, moves to user location when available
     @State private var mapRegion = MKCoordinateRegion(
-        center: CLLocationCoordinate2D(latitude: 56.0, longitude: -96.0),
-        span: MKCoordinateSpan(latitudeDelta: 40, longitudeDelta: 40)
+        center: CLLocationCoordinate2D(latitude: 43.70, longitude: -79.42),
+        span: MKCoordinateSpan(latitudeDelta: 0.35, longitudeDelta: 0.35)
     )
 
+    // Track which store card to scroll to
+    @State private var scrollToStoreId: UUID?
+
     var body: some View {
-        ZStack {
-            Color(red: 0.97, green: 0.98, blue: 0.97).ignoresSafeArea()
+        GeometryReader { geo in
+            ZStack(alignment: .top) {
+                // Full-screen map as base layer
+                mapLayer
+                    .ignoresSafeArea()
 
-            VStack(spacing: 0) {
-                headerSection
-
-                mapSection
-                    .frame(height: 320)
-
-                limitBar
-                    .padding(.horizontal, 20)
-                    .padding(.vertical, 10)
-
-                if let error = viewModel.errorMessage {
-                    errorBanner(error)
-                        .padding(.horizontal, 16)
-                        .padding(.bottom, 8)
+                // Bottom sheet overlay
+                VStack(spacing: 0) {
+                    Spacer()
+                    bottomSheet
+                        .frame(height: geo.size.height * 0.38)
                 }
+                .ignoresSafeArea(edges: .bottom)
 
-                if viewModel.isLoading {
-                    Spacer()
-                    ProgressView()
-                    Spacer()
-                } else {
-                    horizontalStoreList
-                        .padding(.bottom, 16)
-                    Spacer()
-                }
+                // Header overlaid on top of map
+                headerOverlay
             }
         }
         .task {
@@ -258,72 +247,99 @@ struct StoreSelectView: View {
                 withAnimation {
                     mapRegion = MKCoordinateRegion(
                         center: loc,
-                        span: MKCoordinateSpan(latitudeDelta: 0.15, longitudeDelta: 0.15)
+                        span: MKCoordinateSpan(latitudeDelta: 0.12, longitudeDelta: 0.12)
                     )
                 }
             }
         }
     }
 
-    // MARK: - Header
+    // MARK: - Map Layer
 
-    private var headerSection: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            Text("My Stores")
-                .font(.system(size: 28, weight: .black, design: .rounded))
-            Text(viewModel.atLimit
-                 ? "You have 3 stores. Remove one to swap."
-                 : "Pick up to 3 stores. Prices are compared across them in Flyers.")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.secondary)
-                .fixedSize(horizontal: false, vertical: true)
+    private var mapLayer: some View {
+        ZStack(alignment: .bottomTrailing) {
+            Map(
+                coordinateRegion: $mapRegion,
+                showsUserLocation: true,
+                annotationItems: knownStores
+            ) { store in
+                MapAnnotation(coordinate: CLLocationCoordinate2D(latitude: store.latitude, longitude: store.longitude)) {
+                    let isSelected = viewModel.isSelected(store)
+                    let isHighlighted = viewModel.highlightedStore?.id == store.id
+                    storePinView(store: store, isSelected: isSelected, isHighlighted: isHighlighted)
+                        .onTapGesture {
+                            withAnimation(.spring(response: 0.3)) {
+                                viewModel.highlightedStore = store
+                            }
+                            withAnimation {
+                                mapRegion = MKCoordinateRegion(
+                                    center: CLLocationCoordinate2D(latitude: store.latitude, longitude: store.longitude),
+                                    span: MKCoordinateSpan(latitudeDelta: 0.04, longitudeDelta: 0.04)
+                                )
+                            }
+                            scrollToStoreId = store.id
+                        }
+                }
+            }
+
+            // Zoom controls
+            zoomControls
+                .padding(.trailing, 12)
+                .padding(.bottom, 200) // sit above bottom sheet
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(.horizontal, 20)
-        .padding(.top, 16)
-        .padding(.bottom, 10)
     }
 
-    // MARK: - Map (iOS 16 compatible)
+    // MARK: - Zoom Controls
 
-    private var mapSection: some View {
-        Map(
-            coordinateRegion: $mapRegion,
-            showsUserLocation: true,
-            annotationItems: knownStores
-        ) { store in
-            MapAnnotation(coordinate: CLLocationCoordinate2D(latitude: store.latitude, longitude: store.longitude)) {
-                let isSelected = viewModel.isSelected(store)
-                let isHighlighted = viewModel.highlightedStore?.id == store.id
-                storePinView(store: store, isSelected: isSelected, isHighlighted: isHighlighted)
-                    .onTapGesture {
-                        withAnimation(.spring(response: 0.3)) {
-                            viewModel.highlightedStore = store
-                        }
-                        withAnimation {
-                            mapRegion = MKCoordinateRegion(
-                                center: CLLocationCoordinate2D(latitude: store.latitude, longitude: store.longitude),
-                                span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
-                            )
-                        }
-                    }
+    private var zoomControls: some View {
+        VStack(spacing: 0) {
+            Button {
+                withAnimation {
+                    mapRegion = MKCoordinateRegion(
+                        center: mapRegion.center,
+                        span: MKCoordinateSpan(
+                            latitudeDelta: max(mapRegion.span.latitudeDelta / 2, 0.005),
+                            longitudeDelta: max(mapRegion.span.longitudeDelta / 2, 0.005)
+                        )
+                    )
+                }
+            } label: {
+                Image(systemName: "plus")
+                    .font(.system(size: 16, weight: .semibold))
+                    .frame(width: 40, height: 40)
+                    .background(.regularMaterial)
+                    .foregroundStyle(.primary)
+            }
+
+            Divider().frame(width: 40)
+
+            Button {
+                withAnimation {
+                    mapRegion = MKCoordinateRegion(
+                        center: mapRegion.center,
+                        span: MKCoordinateSpan(
+                            latitudeDelta: min(mapRegion.span.latitudeDelta * 2, 60),
+                            longitudeDelta: min(mapRegion.span.longitudeDelta * 2, 60)
+                        )
+                    )
+                }
+            } label: {
+                Image(systemName: "minus")
+                    .font(.system(size: 16, weight: .semibold))
+                    .frame(width: 40, height: 40)
+                    .background(.regularMaterial)
+                    .foregroundStyle(.primary)
             }
         }
-        .overlay(alignment: .bottomLeading) {
-            Text("Tap a pin to highlight · Tap a card to select")
-                .font(.system(size: 10, weight: .medium))
-                .foregroundStyle(.white)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
-                .background(Color.black.opacity(0.45))
-                .clipShape(Capsule())
-                .padding(10)
-        }
+        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .shadow(color: .black.opacity(0.15), radius: 6, x: 0, y: 3)
     }
+
+    // MARK: - Store Pin
 
     @ViewBuilder
     private func storePinView(store: KnownStore, isSelected: Bool, isHighlighted: Bool) -> some View {
-        let size: CGFloat = isHighlighted ? 40 : 32
+        let size: CGFloat = isHighlighted ? 42 : 32
         ZStack {
             Circle()
                 .fill(isSelected ? store.color : Color.white)
@@ -335,7 +351,7 @@ struct StoreSelectView: View {
                 Image(store.brand)
                     .resizable()
                     .scaledToFit()
-                    .frame(width: isHighlighted ? 24 : 18, height: isHighlighted ? 24 : 18)
+                    .frame(width: isHighlighted ? 26 : 18, height: isHighlighted ? 26 : 18)
             } else {
                 Text(store.initial)
                     .font(.system(size: isHighlighted ? 12 : 9, weight: .black, design: .rounded))
@@ -346,76 +362,138 @@ struct StoreSelectView: View {
         .animation(.spring(response: 0.3), value: isSelected)
     }
 
-    // MARK: - Limit Bar
+    // MARK: - Header Overlay (floats on top of map)
 
-    private var limitBar: some View {
-        HStack(spacing: 8) {
-            HStack(spacing: 5) {
-                ForEach(0..<3, id: \.self) { i in
-                    RoundedRectangle(cornerRadius: 4)
-                        .fill(i < viewModel.savedStores.count ? SavrColors.brandGreen : Color(red: 0.88, green: 0.92, blue: 0.88))
-                        .frame(height: 5)
-                }
-            }
-            Text("\(viewModel.savedStores.count)/3 selected")
-                .font(.system(size: 12, weight: .semibold))
-                .foregroundStyle(.secondary)
-        }
-    }
-
-    // MARK: - Horizontal Store Cards
-
-    private var horizontalStoreList: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
+    private var headerOverlay: some View {
+        VStack(spacing: 0) {
+            // Glass pill header
             HStack(spacing: 12) {
-                ForEach(knownStores) { store in
-                    StoreCard(
-                        store: store,
-                        isSelected: viewModel.isSelected(store),
-                        isHighlighted: viewModel.highlightedStore?.id == store.id,
-                        isSaving: viewModel.isSaving,
-                        atLimit: viewModel.atLimit
-                    ) {
-                        Task { await viewModel.toggle(store) }
-                    }
-                    .onTapGesture {
-                        withAnimation(.spring(response: 0.3)) {
-                            viewModel.highlightedStore = store
-                        }
-                        withAnimation {
-                            mapRegion = MKCoordinateRegion(
-                                center: CLLocationCoordinate2D(latitude: store.latitude, longitude: store.longitude),
-                                span: MKCoordinateSpan(latitudeDelta: 0.05, longitudeDelta: 0.05)
-                            )
-                        }
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("My Stores")
+                        .font(.system(size: 20, weight: .black, design: .rounded))
+                        .foregroundStyle(.primary)
+                    Text(viewModel.atLimit
+                         ? "3/3 selected — remove one to swap"
+                         : "Pick up to 3 stores · \(viewModel.savedStores.count)/3 selected")
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                // Mini slot indicators
+                HStack(spacing: 5) {
+                    ForEach(0..<3, id: \.self) { i in
+                        Circle()
+                            .fill(i < viewModel.savedStores.count ? SavrColors.brandGreen : Color.secondary.opacity(0.3))
+                            .frame(width: 8, height: 8)
                     }
                 }
             }
             .padding(.horizontal, 16)
-            .padding(.vertical, 4)
+            .padding(.vertical, 12)
+            .background(.regularMaterial)
+            .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+            .shadow(color: .black.opacity(0.1), radius: 8, x: 0, y: 4)
+            .padding(.horizontal, 16)
+            .padding(.top, 8)
+
+            Spacer()
         }
     }
 
-    // MARK: - Error Banner
+    // MARK: - Bottom Sheet
 
-    private func errorBanner(_ text: String) -> some View {
-        HStack(spacing: 8) {
-            Image(systemName: "exclamationmark.circle.fill")
-                .foregroundStyle(.orange)
-            Text(text)
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(Color(red: 0.55, green: 0.30, blue: 0.05))
+    private var bottomSheet: some View {
+        VStack(spacing: 0) {
+            // Drag handle
+            Capsule()
+                .fill(Color.secondary.opacity(0.3))
+                .frame(width: 36, height: 4)
+                .padding(.top, 10)
+                .padding(.bottom, 8)
+
+            // Error banner
+            if let error = viewModel.errorMessage {
+                HStack(spacing: 8) {
+                    Image(systemName: "exclamationmark.circle.fill")
+                        .foregroundStyle(.orange)
+                    Text(error)
+                        .font(.system(size: 12, weight: .medium))
+                        .foregroundStyle(Color(red: 0.55, green: 0.30, blue: 0.05))
+                    Spacer()
+                    Button {
+                        viewModel.errorMessage = nil
+                    } label: {
+                        Image(systemName: "xmark")
+                            .font(.system(size: 11, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                    }
+                }
+                .padding(.horizontal, 14)
+                .padding(.vertical, 8)
+                .background(Color(red: 1.0, green: 0.95, blue: 0.85))
+                .clipShape(RoundedRectangle(cornerRadius: 10))
+                .padding(.horizontal, 16)
+                .padding(.bottom, 6)
+            }
+
+            // Store cards scroll
+            if viewModel.isLoading {
+                Spacer()
+                ProgressView()
+                Spacer()
+            } else {
+                ScrollViewReader { proxy in
+                    ScrollView(.horizontal, showsIndicators: false) {
+                        HStack(spacing: 10) {
+                            ForEach(knownStores) { store in
+                                CompactStoreCard(
+                                    store: store,
+                                    isSelected: viewModel.isSelected(store),
+                                    isHighlighted: viewModel.highlightedStore?.id == store.id,
+                                    isSaving: viewModel.isSaving,
+                                    atLimit: viewModel.atLimit
+                                ) {
+                                    Task { await viewModel.toggle(store) }
+                                }
+                                .id(store.id)
+                                .onTapGesture {
+                                    withAnimation(.spring(response: 0.3)) {
+                                        viewModel.highlightedStore = store
+                                    }
+                                    withAnimation {
+                                        mapRegion = MKCoordinateRegion(
+                                            center: CLLocationCoordinate2D(latitude: store.latitude, longitude: store.longitude),
+                                            span: MKCoordinateSpan(latitudeDelta: 0.04, longitudeDelta: 0.04)
+                                        )
+                                    }
+                                }
+                            }
+                        }
+                        .padding(.horizontal, 16)
+                        .padding(.vertical, 4)
+                    }
+                    .onChange(of: scrollToStoreId) { id in
+                        if let id {
+                            withAnimation {
+                                proxy.scrollTo(id, anchor: .center)
+                            }
+                            scrollToStoreId = nil
+                        }
+                    }
+                }
+            }
+
+            Spacer(minLength: 0)
         }
-        .padding(12)
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .background(Color(red: 1.0, green: 0.95, blue: 0.85))
-        .clipShape(RoundedRectangle(cornerRadius: 12))
+        .background(.regularMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: 24, style: .continuous))
+        .shadow(color: .black.opacity(0.12), radius: 20, x: 0, y: -4)
     }
 }
 
-// MARK: - Store Card (horizontal)
+// MARK: - Compact Store Card
 
-private struct StoreCard: View {
+private struct CompactStoreCard: View {
     let store: KnownStore
     let isSelected: Bool
     let isHighlighted: Bool
@@ -424,72 +502,77 @@ private struct StoreCard: View {
     let onToggle: () -> Void
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            // Logo / initial
+        HStack(spacing: 10) {
+            // Logo / initial badge
             ZStack {
-                RoundedRectangle(cornerRadius: 12, style: .continuous)
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
                     .fill(Color.white)
-                    .frame(width: 50, height: 50)
-                    .shadow(color: .black.opacity(0.07), radius: 4, x: 0, y: 2)
+                    .frame(width: 44, height: 44)
+                    .shadow(color: .black.opacity(0.06), radius: 3, x: 0, y: 1)
                 if UIImage(named: store.brand) != nil {
                     Image(store.brand)
                         .resizable()
                         .scaledToFit()
-                        .frame(width: 36, height: 36)
+                        .frame(width: 32, height: 32)
                 } else {
                     ZStack {
-                        RoundedRectangle(cornerRadius: 12, style: .continuous)
+                        RoundedRectangle(cornerRadius: 10, style: .continuous)
                             .fill(store.color)
-                            .frame(width: 50, height: 50)
+                            .frame(width: 44, height: 44)
                         Text(store.initial)
-                            .font(.system(size: store.initial.count > 1 ? 13 : 17, weight: .black, design: .rounded))
+                            .font(.system(size: store.initial.count > 2 ? 11 : 13, weight: .black, design: .rounded))
                             .foregroundStyle(.white)
                     }
                 }
             }
 
-            // Name + status
+            // Name
             VStack(alignment: .leading, spacing: 2) {
                 Text(store.name)
                     .font(.system(size: 13, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color(red: 0.12, green: 0.20, blue: 0.12))
-                    .lineLimit(2)
-                    .fixedSize(horizontal: false, vertical: true)
+                    .foregroundStyle(.primary)
+                    .lineLimit(1)
                 Text(isSelected ? "Selected" : (atLimit ? "At limit" : "Tap to add"))
-                    .font(.system(size: 10))
+                    .font(.system(size: 10, weight: .medium))
                     .foregroundStyle(isSelected ? SavrColors.brandGreen : .secondary)
             }
 
-            Spacer()
+            Spacer(minLength: 4)
 
             // Toggle button
             Button(action: onToggle) {
                 if isSaving {
-                    ProgressView().scaleEffect(0.75)
-                        .frame(maxWidth: .infinity)
+                    ProgressView()
+                        .frame(width: 28, height: 28)
                 } else {
                     Image(systemName: isSelected ? "checkmark.circle.fill" : "plus.circle.fill")
-                        .font(.system(size: 22))
-                        .foregroundStyle(isSelected ? SavrColors.brandGreen : (atLimit ? Color(red: 0.80, green: 0.82, blue: 0.80) : store.color))
-                        .frame(maxWidth: .infinity)
+                        .font(.system(size: 26))
+                        .foregroundStyle(
+                            isSelected
+                                ? SavrColors.brandGreen
+                                : (!isSelected && atLimit ? Color.secondary.opacity(0.4) : store.color)
+                        )
                 }
             }
             .buttonStyle(.plain)
             .disabled(isSaving || (!isSelected && atLimit))
         }
-        .padding(12)
-        .frame(width: 110, height: 160)
-        .background(isSelected ? store.color.opacity(0.07) : Color.white)
-        .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .frame(width: 220)
+        .background(
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
+                .fill(isSelected ? store.color.opacity(0.08) : Color(UIColor.secondarySystemGroupedBackground))
+        )
         .overlay(
-            RoundedRectangle(cornerRadius: 18, style: .continuous)
+            RoundedRectangle(cornerRadius: 16, style: .continuous)
                 .stroke(
-                    isHighlighted ? store.color : (isSelected ? store.color.opacity(0.4) : Color(red: 0.88, green: 0.92, blue: 0.88)),
-                    lineWidth: isHighlighted ? 2.5 : 1.5
+                    isHighlighted ? store.color : (isSelected ? store.color.opacity(0.35) : Color.clear),
+                    lineWidth: isHighlighted ? 2 : 1.5
                 )
         )
-        .shadow(color: isHighlighted ? store.color.opacity(0.25) : .black.opacity(0.04), radius: isHighlighted ? 10 : 5, x: 0, y: 2)
-        .opacity(!isSelected && atLimit ? 0.5 : 1.0)
+        .shadow(color: isHighlighted ? store.color.opacity(0.2) : .black.opacity(0.04), radius: isHighlighted ? 8 : 3, x: 0, y: 2)
+        .opacity(!isSelected && atLimit ? 0.55 : 1.0)
         .animation(.spring(response: 0.3), value: isHighlighted)
         .animation(.spring(response: 0.3), value: isSelected)
     }
