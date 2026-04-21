@@ -221,16 +221,51 @@ struct StoreSelectView: View {
 
     var body: some View {
         GeometryReader { geo in
+            let sheetHeight = geo.size.height * 0.32
+
             ZStack(alignment: .top) {
                 // Full-screen map as base layer
-                mapLayer
-                    .ignoresSafeArea()
+                Map(
+                    coordinateRegion: $mapRegion,
+                    showsUserLocation: true,
+                    annotationItems: knownStores
+                ) { store in
+                    MapAnnotation(coordinate: CLLocationCoordinate2D(latitude: store.latitude, longitude: store.longitude)) {
+                        let isSelected = viewModel.isSelected(store)
+                        let isHighlighted = viewModel.highlightedStore?.id == store.id
+                        storePinView(store: store, isSelected: isSelected, isHighlighted: isHighlighted)
+                            .onTapGesture {
+                                withAnimation(.spring(response: 0.3)) {
+                                    viewModel.highlightedStore = store
+                                }
+                                withAnimation {
+                                    mapRegion = MKCoordinateRegion(
+                                        center: CLLocationCoordinate2D(latitude: store.latitude, longitude: store.longitude),
+                                        span: MKCoordinateSpan(latitudeDelta: 0.04, longitudeDelta: 0.04)
+                                    )
+                                }
+                                scrollToStoreId = store.id
+                            }
+                    }
+                }
+                .ignoresSafeArea()
+
+                // Zoom controls — anchored above the bottom sheet, right edge
+                VStack {
+                    Spacer()
+                    HStack {
+                        Spacer()
+                        zoomControls
+                            .padding(.trailing, 14)
+                            .padding(.bottom, sheetHeight + 16)
+                    }
+                }
 
                 // Bottom sheet overlay
                 VStack(spacing: 0) {
                     Spacer()
                     bottomSheet
-                        .frame(height: geo.size.height * 0.38)
+                        .frame(height: sheetHeight)
                 }
                 .ignoresSafeArea(edges: .bottom)
 
@@ -251,41 +286,6 @@ struct StoreSelectView: View {
                     )
                 }
             }
-        }
-    }
-
-    // MARK: - Map Layer
-
-    private var mapLayer: some View {
-        ZStack(alignment: .bottomTrailing) {
-            Map(
-                coordinateRegion: $mapRegion,
-                showsUserLocation: true,
-                annotationItems: knownStores
-            ) { store in
-                MapAnnotation(coordinate: CLLocationCoordinate2D(latitude: store.latitude, longitude: store.longitude)) {
-                    let isSelected = viewModel.isSelected(store)
-                    let isHighlighted = viewModel.highlightedStore?.id == store.id
-                    storePinView(store: store, isSelected: isSelected, isHighlighted: isHighlighted)
-                        .onTapGesture {
-                            withAnimation(.spring(response: 0.3)) {
-                                viewModel.highlightedStore = store
-                            }
-                            withAnimation {
-                                mapRegion = MKCoordinateRegion(
-                                    center: CLLocationCoordinate2D(latitude: store.latitude, longitude: store.longitude),
-                                    span: MKCoordinateSpan(latitudeDelta: 0.04, longitudeDelta: 0.04)
-                                )
-                            }
-                            scrollToStoreId = store.id
-                        }
-                }
-            }
-
-            // Zoom controls
-            zoomControls
-                .padding(.trailing, 12)
-                .padding(.bottom, 200) // sit above bottom sheet
         }
     }
 
