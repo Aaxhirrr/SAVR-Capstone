@@ -1,0 +1,20 @@
+import { defineConfig } from 'vite';
+import react from '@vitejs/plugin-react';
+
+export default defineConfig({
+  plugins: [react()],
+  server: {
+    proxy: {
+      // Keep existing /chat proxy
+      '/chat': {
+        target: 'http://localhost:8000',
+        changeOrigin: true,
+        secure: false,
+      },
+      // Add the new proxies
+      '/user': 'http://localhost:8000',
+      '/stores': 'http://localhost:8000',
+      // Add other API routes as needed
+    },
+  },
+}); 

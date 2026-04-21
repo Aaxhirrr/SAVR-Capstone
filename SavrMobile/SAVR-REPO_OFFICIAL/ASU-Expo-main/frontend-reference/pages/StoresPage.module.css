@@ -1,0 +1,38 @@
+.theme-slider {
+  accent-color: #6FCF97; /* fallback for browsers that support accent-color */
+}
+
+.theme-slider::-webkit-slider-thumb {
+  background: #6FCF97;
+  border: 2px solid #43B06A;
+}
+
+.theme-slider::-webkit-slider-runnable-track {
+  background: #E6F4EA;
+}
+
+.theme-slider::-moz-range-thumb {
+  background: #6FCF97;
+  border: 2px solid #43B06A;
+}
+
+.theme-slider::-moz-range-track {
+  background: #E6F4EA;
+}
+
+.theme-slider::-ms-thumb {
+  background: #6FCF97;
+  border: 2px solid #43B06A;
+}
+
+.theme-slider::-ms-fill-lower {
+  background: #E6F4EA;
+}
+
+.theme-slider::-ms-fill-upper {
+  background: #E6F4EA;
+}
+
+.theme-slider:focus {
+  outline: none;
+} 

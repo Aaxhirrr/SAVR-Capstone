@@ -23,28 +23,91 @@ final class ListsViewModel: ObservableObject {
         try? await service.deleteList(id: id)
         lists.removeAll { $0.id == id }
     }
+
+    func rename(id: String, newName: String) {
+        guard let index = lists.firstIndex(where: { $0.id == id }) else { return }
+        let old = lists[index]
+        lists[index] = GroceryList(
+            id: old.id, name: newName, items: old.items, createdAt: old.createdAt,
+            isActive: old.isActive, savingsAmount: old.savingsAmount,
+            leastExpensiveStoreName: old.leastExpensiveStoreName,
+            leastExpensiveStorePrice: old.leastExpensiveStorePrice,
+            mostExpensiveStoreName: old.mostExpensiveStoreName,
+            mostExpensiveStorePrice: old.mostExpensiveStorePrice,
+            sessionId: old.sessionId
+        )
+    }
 }
 
 struct ListsView: View {
     @StateObject private var viewModel = ListsViewModel()
 
-    var body: some View {
-        ZStack {
-            LinearGradient(colors: [SavrColors.bgTop, SavrColors.bgBottom],
-                           startPoint: .top, endPoint: .bottom)
-                .ignoresSafeArea()
+    // Rename sheet state
+    @State private var listToRename: GroceryList?
+    @State private var renameText: String = ""
 
-            if viewModel.isLoading {
-                ProgressView()
-                    .scaleEffect(1.3)
-            } else if viewModel.lists.isEmpty {
-                emptyState
-            } else {
-                listContent
+    var body: some View {
+        NavigationStack {
+            ZStack {
+                LinearGradient(colors: [SavrColors.bgTop, SavrColors.bgBottom],
+                               startPoint: .top, endPoint: .bottom)
+                    .ignoresSafeArea()
+
+                if viewModel.isLoading {
+                    ProgressView()
+                        .scaleEffect(1.3)
+                } else if viewModel.lists.isEmpty {
+                    emptyState
+                } else {
+                    listContent
+                }
+            }
+            .task { await viewModel.load() }
+            .refreshable { await viewModel.load() }
+            .navigationDestination(for: GroceryList.self) { list in
+                ListDetailView(list: list)
+            }
+            .sheet(item: $listToRename) { list in
+                renameSheet(for: list)
             }
         }
-        .task { await viewModel.load() }
-        .refreshable { await viewModel.load() }
+    }
+
+    // MARK: - Rename Sheet
+
+    private func renameSheet(for list: GroceryList) -> some View {
+        NavigationStack {
+            VStack(spacing: 20) {
+                TextField("List name", text: $renameText)
+                    .font(.system(size: 17, design: .rounded))
+                    .padding(14)
+                    .background(Color(red: 0.96, green: 0.97, blue: 0.96))
+                    .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+                    .padding(.horizontal, 20)
+                    .padding(.top, 20)
+
+                Spacer()
+            }
+            .navigationTitle("Rename List")
+            .navigationBarTitleDisplayMode(.inline)
+            .toolbar {
+                ToolbarItem(placement: .cancellationAction) {
+                    Button("Cancel") { listToRename = nil }
+                }
+                ToolbarItem(placement: .confirmationAction) {
+                    Button("Save") {
+                        let trimmed = renameText.trimmingCharacters(in: .whitespacesAndNewlines)
+                        if !trimmed.isEmpty {
+                            viewModel.rename(id: list.id, newName: trimmed)
+                        }
+                        listToRename = nil
+                    }
+                    .disabled(renameText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
+                }
+            }
+        }
+        .presentationDetents([.height(180)])
+        .presentationDragIndicator(.visible)
     }
 
     // MARK: - Empty State
@@ -85,9 +148,15 @@ struct ListsView: View {
 
                 LazyVStack(spacing: 14) {
                     ForEach(viewModel.lists) { list in
-                        GroceryListCard(list: list) {
-                            Task { await viewModel.delete(id: list.id) }
+                        NavigationLink(value: list) {
+                            GroceryListCard(list: list, onRename: {
+                                renameText = list.name
+                                listToRename = list
+                            }, onDelete: {
+                                Task { await viewModel.delete(id: list.id) }
+                            })
                         }
+                        .buttonStyle(.plain)
                         .padding(.horizontal, 16)
                     }
                 }
@@ -101,9 +170,8 @@ struct ListsView: View {
 
 private struct GroceryListCard: View {
     let list: GroceryList
+    let onRename: () -> Void
     let onDelete: () -> Void
-
-    @State private var expanded = false
 
     private var dateLabel: String {
         let formatter = ISO8601DateFormatter()
@@ -118,75 +186,42 @@ private struct GroceryListCard: View {
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            // Header
-            Button {
-                withAnimation(.spring(response: 0.3)) { expanded.toggle() }
-            } label: {
-                HStack(alignment: .top) {
-                    VStack(alignment: .leading, spacing: 4) {
-                        Text(list.name)
-                            .font(.system(size: 17, weight: .bold, design: .rounded))
-                            .foregroundStyle(Color(red: 0.10, green: 0.30, blue: 0.16))
+        HStack(alignment: .center, spacing: 0) {
+            VStack(alignment: .leading, spacing: 4) {
+                Text(list.name)
+                    .font(.system(size: 17, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color(red: 0.10, green: 0.30, blue: 0.16))
+                    .multilineTextAlignment(.leading)
 
-                        Text("\(list.items.count) item\(list.items.count == 1 ? "" : "s") · \(dateLabel)")
-                            .font(.system(size: 13, weight: .medium))
-                            .foregroundStyle(.secondary)
-                    }
-
-                    Spacer()
-
-                    Image(systemName: expanded ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 14, weight: .semibold))
-                        .foregroundStyle(.secondary)
-                }
-                .padding(16)
+                Text("\(list.items.count) item\(list.items.count == 1 ? "" : "s") · \(dateLabel)")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.secondary)
             }
-            .buttonStyle(.plain)
+            .padding(16)
 
-            // Items (expandable)
-            if expanded {
-                Divider().padding(.horizontal, 16)
+            Spacer()
 
-                VStack(alignment: .leading, spacing: 8) {
-                    ForEach(list.items) { item in
-                        HStack(spacing: 10) {
-                            Image(systemName: "circle.fill")
-                                .font(.system(size: 6))
-                                .foregroundStyle(SavrColors.brandGreen)
-
-                            Text(item.name)
-                                .font(.system(size: 15, weight: .medium, design: .rounded))
-
-                            Spacer()
-
-                            if let qty = item.quantity, !qty.isEmpty {
-                                Text(qty)
-                                    .font(.system(size: 13))
-                                    .foregroundStyle(.secondary)
-                            }
-                        }
-                    }
+            // 3-dot menu
+            Menu {
+                Button {
+                    onRename()
+                } label: {
+                    Label("Rename", systemImage: "pencil")
                 }
-                .padding(.horizontal, 20)
-                .padding(.vertical, 14)
 
-                Divider().padding(.horizontal, 16)
-
-                // Delete button
                 Button(role: .destructive) {
                     onDelete()
                 } label: {
-                    HStack {
-                        Spacer()
-                        Label("Delete List", systemImage: "trash")
-                            .font(.system(size: 14, weight: .semibold))
-                        Spacer()
-                    }
-                    .padding(.vertical, 12)
+                    Label("Delete", systemImage: "trash")
                 }
-                .foregroundStyle(.red)
+            } label: {
+                Image(systemName: "ellipsis")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(Color(red: 0.55, green: 0.60, blue: 0.55))
+                    .frame(width: 44, height: 44)
+                    .contentShape(Rectangle())
             }
+            .padding(.trailing, 6)
         }
         .background(.white.opacity(0.85))
         .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))

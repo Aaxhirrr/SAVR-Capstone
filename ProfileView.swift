@@ -2,7 +2,7 @@ import SwiftUI
 
 // MARK: - Profile Tab Enum
 
-private enum ProfileTab: String, CaseIterable {
+enum ProfileTab: String, CaseIterable {
     case userDetails = "User Details"
     case account     = "Account"
     case dietary     = "Dietary"
@@ -318,9 +318,13 @@ final class ProfileViewModel: ObservableObject {
 struct ProfileView: View {
     @EnvironmentObject private var appState: AppState
     @StateObject private var viewModel = ProfileViewModel()
-    @State private var selectedTab: ProfileTab = .userDetails
+    @State private var selectedTab: ProfileTab
     @State private var showSignOutConfirm = false
     @State private var showDeleteConfirm = false
+
+    init(initialTab: ProfileTab = .userDetails) {
+        _selectedTab = State(initialValue: initialTab)
+    }
 
     var body: some View {
         ZStack {

@@ -1,0 +1,233 @@
+/* Carousel Scrollbar Styles */
+
+/* Wrapper that maintains consistent height regardless of scrollbar */
+.carousel-scrollbar-wrapper {
+  position: relative;
+  /* Reserve exact space needed for content + scrollbar */
+  height: 150px; /* Adjust based on your card height + padding */
+  overflow: hidden;
+}
+
+/* Inner container that can scroll */
+.carousel-scrollbar-inner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
+/* Base scrollbar styles - hidden by default */
+.carousel-scrollbar-hidden {
+  /* Firefox */
+  scrollbar-width: none;
+  
+  /* Webkit browsers (Chrome, Safari, Edge) */
+  -ms-overflow-style: none;
+}
+
+.carousel-scrollbar-hidden::-webkit-scrollbar {
+  display: none;
+}
+
+/* Remove focus outline to prevent blue border */
+.carousel-scrollbar-hidden:focus,
+.carousel-scrollbar-visible:focus {
+  outline: none;
+}
+
+/* Visible scrollbar styles with smooth transition */
+.carousel-scrollbar-visible {
+  /* Firefox */
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.6) transparent;
+  
+  /* Webkit browsers */
+  -ms-overflow-style: auto;
+}
+
+.carousel-scrollbar-visible::-webkit-scrollbar {
+  height: 6px;
+  display: block;
+}
+
+.carousel-scrollbar-visible::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 3px;
+}
+
+.carousel-scrollbar-visible::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.6);
+  border-radius: 3px;
+  transition: background-color 0.2s ease-in-out;
+}
+
+.carousel-scrollbar-visible::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.8);
+}
+
+.carousel-scrollbar-visible::-webkit-scrollbar-thumb:active {
+  background: rgba(107, 114, 128, 0.9);
+}
+
+/* Smooth transition for scrollbar appearance */
+.carousel-scrollbar-visible::-webkit-scrollbar,
+.carousel-scrollbar-visible::-webkit-scrollbar-thumb {
+  transition: opacity 0.3s ease-in-out;
+}
+
+/* Dark mode support */
+@media (prefers-color-scheme: dark) {
+  .carousel-scrollbar-visible {
+    scrollbar-color: rgba(75, 85, 99, 0.6) transparent;
+  }
+
+  .carousel-scrollbar-visible::-webkit-scrollbar-thumb {
+    background: rgba(75, 85, 99, 0.6);
+  }
+
+  .carousel-scrollbar-visible::-webkit-scrollbar-thumb:hover {
+    background: rgba(75, 85, 99, 0.8);
+  }
+
+  .carousel-scrollbar-visible::-webkit-scrollbar-thumb:active {
+    background: rgba(55, 65, 81, 0.9);
+  }
+}
+
+/* =====================================================
+   LIST CAROUSEL STYLES - For expandable list cards
+   ===================================================== */
+
+/* Wrapper allows vertical expansion */
+.list-carousel-wrapper {
+  position: relative;
+  overflow: visible;
+}
+
+/* Inner scrollable container */
+.list-carousel-inner {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+/* Hidden scrollbar state */
+.list-carousel-hidden {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.list-carousel-hidden::-webkit-scrollbar {
+  display: none;
+}
+
+.list-carousel-hidden:focus,
+.list-carousel-visible:focus {
+  outline: none;
+}
+
+/* Visible scrollbar state */
+.list-carousel-visible {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.6) transparent;
+  -ms-overflow-style: auto;
+}
+
+.list-carousel-visible::-webkit-scrollbar {
+  height: 6px;
+  display: block;
+}
+
+.list-carousel-visible::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 3px;
+}
+
+.list-carousel-visible::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.6);
+  border-radius: 3px;
+}
+
+.list-carousel-visible::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.8);
+}
+
+/* Dark mode for list carousel */
+.dark .list-carousel-visible {
+  scrollbar-color: rgba(75, 85, 99, 0.6) transparent;
+}
+
+.dark .list-carousel-visible::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.6);
+}
+
+.dark .list-carousel-visible::-webkit-scrollbar-thumb:hover {
+  background: rgba(75, 85, 99, 0.8);
+}
+
+/* =====================================================
+   STORE CAROUSEL STYLES - For price comparison cards
+   ===================================================== */
+
+.store-carousel-wrapper {
+  position: relative;
+  overflow: visible;
+}
+
+.store-carousel-inner {
+  overflow-x: auto;
+  overflow-y: visible;
+}
+
+.store-carousel-hidden {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.store-carousel-hidden::-webkit-scrollbar {
+  display: none;
+}
+
+.store-carousel-hidden:focus,
+.store-carousel-visible:focus {
+  outline: none;
+}
+
+.store-carousel-visible {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(156, 163, 175, 0.6) transparent;
+  -ms-overflow-style: auto;
+}
+
+.store-carousel-visible::-webkit-scrollbar {
+  height: 6px;
+  display: block;
+}
+
+.store-carousel-visible::-webkit-scrollbar-track {
+  background: transparent;
+  border-radius: 3px;
+}
+
+.store-carousel-visible::-webkit-scrollbar-thumb {
+  background: rgba(156, 163, 175, 0.6);
+  border-radius: 3px;
+}
+
+.store-carousel-visible::-webkit-scrollbar-thumb:hover {
+  background: rgba(156, 163, 175, 0.8);
+}
+
+.dark .store-carousel-visible {
+  scrollbar-color: rgba(75, 85, 99, 0.6) transparent;
+}
+
+.dark .store-carousel-visible::-webkit-scrollbar-thumb {
+  background: rgba(75, 85, 99, 0.6);
+}
+
+.dark .store-carousel-visible::-webkit-scrollbar-thumb:hover {
+  background: rgba(75, 85, 99, 0.8);
+} 

@@ -11,7 +11,7 @@ struct GroceryListItem: Decodable, Identifiable, Hashable {
     let unit: String?
 }
 
-struct GroceryList: Decodable, Identifiable {
+struct GroceryList: Decodable, Identifiable, Hashable {
     let id: String
     let name: String
     let items: [GroceryListItem]
@@ -22,6 +22,8 @@ struct GroceryList: Decodable, Identifiable {
     let leastExpensiveStorePrice: Double?
     let mostExpensiveStoreName: String?
     let mostExpensiveStorePrice: Double?
+    /// The chat session that generated this list (may be nil for older lists)
+    let sessionId: String?
 
     private enum CodingKeys: String, CodingKey {
         case id, name, items
@@ -32,6 +34,7 @@ struct GroceryList: Decodable, Identifiable {
         case leastExpensiveStorePrice = "least_expensive_store_price"
         case mostExpensiveStoreName = "most_expensive_store_name"
         case mostExpensiveStorePrice = "most_expensive_store_price"
+        case sessionId = "session_id"
     }
 }
 
@@ -125,7 +128,8 @@ final class GroceryListService {
                     leastExpensiveStoreName: nil,
                     leastExpensiveStorePrice: nil,
                     mostExpensiveStoreName: nil,
-                    mostExpensiveStorePrice: nil
+                    mostExpensiveStorePrice: nil,
+                    sessionId: sessionId
                 )
                 result.append(gl)
             }

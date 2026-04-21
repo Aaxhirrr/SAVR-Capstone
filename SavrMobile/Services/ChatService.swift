@@ -36,6 +36,36 @@ final class ChatService {
         self.tokenStore = tokenStore
     }
 
+    func fetchHistory(sessionId: String) async throws -> [ChatMessage] {
+        guard let session = tokenStore.loadSession() else {
+            throw APIError.requestFailed(statusCode: 401, message: "Not signed in.", responseBody: nil, requestURL: nil, method: "GET")
+        }
+        // Backend returns array of { id, content, is_user, timestamp }
+        struct HistoryMessage: Decodable {
+            let id: String
+            let content: String
+            let is_user: Bool
+            let timestamp: String
+        }
+        let history: [HistoryMessage] = try await apiClient.send(
+            path: "chat/history/\(sessionId)",
+            method: "GET",
+            headers: [
+                "Authorization": "Bearer \(session.accessToken)",
+                "Accept": "application/json"
+            ]
+        )
+        let formatter = ISO8601DateFormatter()
+        formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
+        return history.map { msg in
+            ChatMessage(
+                role: msg.is_user ? .user : .assistant,
+                text: msg.content,
+                timestamp: formatter.date(from: msg.timestamp) ?? Date()
+            )
+        }
+    }
+
     func sendMessage(text: String, sessionId: String?) async throws -> ChatAPIResponse {
         guard let session = tokenStore.loadSession() else {
             throw APIError.requestFailed(

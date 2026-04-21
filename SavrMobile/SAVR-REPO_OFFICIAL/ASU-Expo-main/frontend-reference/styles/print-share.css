@@ -1,0 +1,32 @@
+@media print {
+  html, body { font-size: 12.5pt; line-height: 1.4; background: #fff !important; }
+  .max-w-3xl { max-width: none !important; }
+  /* Keep modest padding for readability; zero out only where explicitly needed */
+  .px-4.print\:p-0, .py-3.print\:p-0 { padding: 0 !important; }
+  .shadow-sm { box-shadow: none !important; }
+  .border { border-color: #eee !important; }
+  img { max-height: 48px !important; object-fit: contain !important; }
+  .shadow-sm, .print-item { break-inside: avoid; page-break-inside: avoid; }
+  /* Print header style */
+  .print-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 8px; }
+
+  /* Isolate modal content when printing – keep Radix portal that wraps .print-container */
+  body.is-printing > *:not(.print-container):not([data-radix-portal]) { display: none !important; }
+  /* Inside the portal, hide the overlay but keep content */
+  body.is-printing [data-radix-portal] > [data-radix-dialog-overlay] { display: none !important; }
+
+  /* Reset modal positioning for print */
+  .print-container { position: static !important; width: 100% !important; height: auto !important; overflow: visible !important; transform: none !important; box-shadow: none !important; border: none !important; display: block !important; }
+  .print-body { height: auto !important; overflow: visible !important; display: block !important; }
+  .print-scroll { height: auto !important; max-height: none !important; overflow: visible !important; padding-bottom: 1.25rem !important; display: block !important; }
+  .print-scroll::after { content: ""; display: block; height: 1.25rem; }
+
+  /* Hide overlays and interactive-only elements */
+  [data-radix-dialog-overlay], .radix-dialog-overlay, .print:hidden { display: none !important; }
+  .print\:block { display: block !important; }
+
+  /* Avoid orphan headers and prevent clipping at page end */
+  .print-group-header { page-break-after: avoid; break-after: avoid; }
+  /* Secondary print subtotal removed */
+  .print-item { margin-bottom: 0.5rem !important; }
+}

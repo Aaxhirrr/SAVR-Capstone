@@ -1,0 +1,1326 @@
+import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import { Loader2, Send, MessageSquarePlus, XCircle, Heart, ChevronDown, X, Plus, ShoppingCart } from 'lucide-react';
+import { IoCameraOutline } from 'react-icons/io5';
+import useChatStore, { resetChatStore } from '@/stores/chatStore';
+import { GroceryItem, ChatMessage } from '@/services/chatService';
+import authService from '@/services/authService';
+import chatService from '@/services/chatService';
+import { checkServerHealth } from '@/services/api';
+// import { saveGroceryList, startCartBuildingProcess } from '@/services/groceryListService';
+import { useToast } from '@/components/ui/use-toast';
+import '@/styles/typing-indicator.css';
+// import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import heic2any from 'heic2any';
+import MarkdownText from '@/components/MarkdownText';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import logger from '@/utils/logger';
+
+// Helper function to safely get grocery items array
+const getItemsArray = (groceryList: any): GroceryItem[] => {
+  if (!groceryList) return [];
+  if (Array.isArray(groceryList)) return groceryList;
+  if (groceryList.items && Array.isArray(groceryList.items)) return groceryList.items;
+  return [];
+};
+
+// Helper function to safely get the grocery list name
+const getGroceryListName = (list: any): string => {
+  if (!list) return 'Your Grocery List';
+  if (typeof list === 'object' && !Array.isArray(list) && list.name) {
+    return list.name;
+  }
+  return 'Your Grocery List';
+};
+
+// Add this function to compress images before converting to base64
+const compressImage = (file: File, maxWidth = 800, maxHeight = 800, quality = 0.7): Promise<File> => {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      img.src = e.target?.result as string;
+    };
+    reader.onerror = (err) => {
+      reject(err);
+    };
+    img.onload = () => {
+      const canvas = document.createElement('canvas');
+      let width = img.width;
+      let height = img.height;
+      if (width > height) {
+        if (width > maxWidth) {
+          height = Math.floor(height * (maxWidth / width));
+          width = maxWidth;
+        }
+      } else {
+        if (height > maxHeight) {
+          width = Math.floor(width * (maxHeight / height));
+          height = maxHeight;
+        }
+      }
+      canvas.width = width;
+      canvas.height = height;
+      const ctx = canvas.getContext('2d');
+      if (ctx) {
+        ctx.drawImage(img, 0, 0, width, height);
+      }
+      const outputType = 'image/jpeg';
+      const attemptEmit = (b: Blob | null, suffix: string) => {
+        if (b) {
+          const base = file.name.includes('.') ? file.name.substring(0, file.name.lastIndexOf('.')) : file.name;
+          const outName = `${base}${suffix}.jpg`;
+          const compressedFile = new File([b], outName, { type: outputType });
+          resolve(compressedFile);
+        } else {
+          reject(new Error('Compression failed'));
+        }
+      };
+
+      // First pass encode
+      canvas.toBlob((blob) => {
+        if (!blob) {
+          reject(new Error('Compression failed'));
+          return;
+        }
+        // If still large (> ~900KB), try a lower quality
+        if (blob.size > 900 * 1024) {
+          canvas.toBlob((blob2) => {
+            if (!blob2) {
+              attemptEmit(blob, '-q70');
+              return;
+            }
+            if (blob2.size > 900 * 1024) {
+              // Scale down dimensions by 20% and encode again at 0.6
+              const w2 = Math.floor(width * 0.8);
+              const h2 = Math.floor(height * 0.8);
+              canvas.width = w2;
+              canvas.height = h2;
+              if (ctx) {
+                ctx.drawImage(img, 0, 0, w2, h2);
+              }
+              canvas.toBlob((blob3) => {
+                attemptEmit(blob3 || blob2, '-q60-0_8x');
+              }, outputType, 0.6);
+            } else {
+              attemptEmit(blob2, '-q60');
+            }
+          }, outputType, 0.6);
+        } else {
+          attemptEmit(blob, '');
+        }
+      }, outputType, quality);
+    };
+    reader.readAsDataURL(file);
+  });
+};
+
+function ChatPage() {
+  const { messages, streamingMessage, groceryList, isLoading, error, sendMessage, hydrated } = useChatStore();
+  const { toolActivities, isGenerating, spinnerActive, spinnerLabel } = useChatStore((s) => ({
+    toolActivities: s.toolActivities,
+    isGenerating: s.isGenerating,
+    spinnerActive: s.spinnerActive,
+    spinnerLabel: s.spinnerLabel,
+  }));
+  logger.changed('ChatPage:toolActivities', toolActivities);
+  const [input, setInput] = useState('');
+  // Legacy list panel visibility removed (receipt-style list will render inline)
+  // const [isMobile, setIsMobile] = useState(window.innerWidth < 768);
+  // const [isSaving, setIsSaving] = useState(false);
+  const [isCreatingNewChat, setIsCreatingNewChat] = useState(false);
+  const messagesEndRef = useRef<HTMLDivElement>(null);
+  const messagesContainerRef = useRef<HTMLDivElement>(null);
+  const navigate = useNavigate();
+  const { toast } = useToast();
+  const inputRef = useRef<HTMLInputElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null); // Ref for hidden file input
+  const chatInitializedRef = useRef<boolean>(false); // Track if chat has been initialized
+  const [forceReload, setForceReload] = useState<boolean>(false); // Add state to force reload
+  const isNewChatRef = useRef<boolean>(false); // Track if we explicitly want a new chat
+
+  // State for selected image
+  const [selectedImage, setSelectedImage] = useState<File | null>(null);
+  const [imageBase64, setImageBase64] = useState<string | null>(null);
+  const [imagePreviewUrl, setImagePreviewUrl] = useState<string | null>(null);
+  const [isProcessingImage, setIsProcessingImage] = useState(false);
+  const [imageProcessingProgress, setImageProcessingProgress] = useState(0);
+  const [imageProcessingInterval, setImageProcessingInterval] = useState<NodeJS.Timeout | undefined>(undefined);
+
+  // Preferences UI state (inline quick-edit)
+  const [dietaryRestrictions, setDietaryRestrictions] = useState<string[]>([]);
+  const [newDietaryRestriction, setNewDietaryRestriction] = useState('');
+  const [likedBrands, setLikedBrands] = useState<{ [key: string]: string }>({});
+  const [dislikedBrands, setDislikedBrands] = useState<{ [key: string]: string }>({});
+  const [newLikedCategory, setNewLikedCategory] = useState('');
+  const [newLikedBrand, setNewLikedBrand] = useState('');
+  const [newDislikedCategory, setNewDislikedCategory] = useState('');
+  const [newDislikedBrand, setNewDislikedBrand] = useState('');
+
+  // Grouping state for receipt list
+  const [groupBy, setGroupBy] = useState<'category' | 'meal'>('category');
+
+  // Initialize preferences from current user
+  useEffect(() => {
+    try {
+      const user = authService.getCurrentUser() as any;
+      if (user) {
+        const restrictions = user.dietaryRestrictions || user.dietary_restrictions || [];
+        if (Array.isArray(restrictions)) {
+          setDietaryRestrictions(restrictions as string[]);
+        }
+        const prefs = user.brandPreferences || user.brand_preferences;
+        if (prefs && typeof prefs === 'object') {
+          if ('liked' in prefs && 'disliked' in prefs) {
+            setLikedBrands(((prefs as any).liked || {}) as Record<string, string>);
+            setDislikedBrands(((prefs as any).disliked || {}) as Record<string, string>);
+          } else {
+            setLikedBrands(prefs as Record<string, string>);
+            setDislikedBrands({});
+          }
+        }
+      }
+    } catch (e) {
+      console.warn('Failed to load user preferences');
+    }
+  }, []);
+
+  // Debug: log only on change (deduped)
+  useEffect(() => {
+    logger.changed('ChatPage:hydration', { hydrated, messagesCount: messages.length, hasList: !!groceryList }, 'info');
+  }, [hydrated, messages.length, groceryList]);
+
+  // Check for store hydration and inconsistent state
+  useEffect(() => {
+    if (chatInitializedRef.current && messages.length === 0 && !forceReload) {
+      console.log('Message state lost after navigation, setting force reload flag');
+      setForceReload(true);
+    }
+  }, [messages.length, forceReload]);
+
+  // Main initialization effect
+  useEffect(() => {
+    logger.debug('ChatPage mount/update effect');
+    
+    // Check authentication
+    if (!authService.isAuthenticated()) {
+      logger.info('User not logged in, redirecting to login page');
+      navigate('/login');
+      return;
+    }
+
+    if (!hydrated) {
+      logger.debug('Waiting for store hydration to complete...');
+      return;
+    }
+    
+    if (forceReload) {
+      logger.info('Force reload flag set, initializing page');
+      initializePage();
+      setForceReload(false);
+      return;
+    }
+    
+    if (groceryList && getItemsArray(groceryList).length > 0 && messages.length === 0 && hydrated) {
+      logger.warn('Broken state detected after hydration - resetting chat store');
+      resetChatStore();
+      return;
+    }
+    
+    if (!chatInitializedRef.current) {
+      logger.info('First mount - initializing chat');
+      
+      if (isNewChatRef.current) {
+        logger.info('New chat requested - clearing any hydrated messages');
+        isNewChatRef.current = false;
+        initializePage();
+        chatInitializedRef.current = true;
+      } else if (messages.length > 0) {
+        logger.info('Chat already hydrated from storage - skipping init', messages.length);
+        chatInitializedRef.current = true;
+      } else {
+        logger.info('No messages in hydrated store - initializing from server');
+        initializePage();
+        chatInitializedRef.current = true;
+      }
+    } else {
+      logger.changed('ChatPage:alreadyInitializedCount', { messages: messages.length }, 'debug');
+    }
+    
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 100);
+  }, [navigate, hydrated, messages.length, groceryList, forceReload]);
+
+  // Check backend connectivity and load chat history
+  const initializePage = async () => {
+    logger.debug('InitializePage called');
+    
+    if (useChatStore.getState().isInitializing) {
+      logger.debug('Already initializing, skipping');
+      return;
+    }
+    
+    useChatStore.setState({ isLoading: true, isInitializing: true });
+    
+    const safetyTimeout = setTimeout(() => {
+      logger.warn('Safety timeout triggered - forcing loading state to false');
+      useChatStore.setState({ isLoading: false, isInitializing: false });
+    }, 10000);
+    
+    try {
+      const isHealthy = await checkServerHealth();
+      if (!isHealthy) {
+        console.error("Backend server is not reachable!");
+        useChatStore.setState({ 
+          error: "Can't connect to chat service. Try resetting the app.",
+          isLoading: false,
+          isInitializing: false
+        });
+        clearTimeout(safetyTimeout);
+        return;
+      }
+      
+      const { getUserScopedSessionId } = await import('@/stores/chatStore');
+      let sessionId = getUserScopedSessionId();
+      
+      if (isNewChatRef.current) {
+        logger.info('User explicitly requested new chat - not loading any previous sessions');
+        sessionId = null;
+        isNewChatRef.current = false;
+      } else if (!sessionId) {
+        logger.info('No session ID in localStorage, fetching latest session for user');
+        logger.info('Starting fresh with welcome message');
+      }
+      
+      if (sessionId && sessionId.match(/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/)) {
+        try {
+          await useChatStore.getState().loadSession(sessionId);
+          logger.info('Session loaded successfully');
+          try {
+            const draft = await chatService.getCurrentSessionList(sessionId);
+            useChatStore.setState({ groceryList: { name: draft.list?.name || 'My Grocery List', items: draft.items } });
+          } catch (e) {
+            logger.warn('Failed to fetch session draft list:', e);
+          }
+        } catch (error) {
+          console.error('Error loading chat history:', error);
+          if (useChatStore.getState().messages.length === 0) {
+            logger.info('Failed to load history, showing welcome message');
+            useChatStore.setState({ isLoading: true });
+            await showWelcomeMessage();
+          }
+        }
+      } else {
+        logger.info('No valid session ID found, showing welcome message');
+        useChatStore.setState({ isLoading: true });
+        const welcome = await chatService.getWelcomeMessage();
+        if (welcome.session_id && !welcome.session_id.startsWith('error-')) {
+          // Use user-scoped session ID
+          const { setUserScopedSessionId } = await import('@/stores/chatStore');
+          setUserScopedSessionId(welcome.session_id);
+          useChatStore.setState({ currentSession: welcome.session_id });
+          await useChatStore.getState().loadSession(welcome.session_id);
+          try {
+            const draft = await chatService.getCurrentSessionList(welcome.session_id);
+            useChatStore.setState({ groceryList: { name: draft.list?.name || 'My Grocery List', items: draft.items } });
+          } catch (e) {
+            logger.warn('No draft list after welcome (expected for brand-new sessions)');
+          }
+        } else {
+          await showWelcomeMessage();
+        }
+      }
+      
+      clearTimeout(safetyTimeout);
+      useChatStore.setState({ isLoading: false, isInitializing: false });
+      
+    } catch (error) {
+      console.error('Error during page initialization:', error);
+      useChatStore.setState({ 
+        isLoading: false,
+        isInitializing: false,
+        error: 'Failed to initialize chat. Please try refreshing the page.'
+      });
+      
+      clearTimeout(safetyTimeout);
+    }
+  };
+  
+  // Helper function to show welcome message
+  const showWelcomeMessage = async () => {
+    try {
+      useChatStore.setState({ 
+        messages: [],
+        currentSession: null,
+        groceryList: null,
+        isLoading: true
+      });
+      
+      const { setUserScopedSessionId } = await import('@/stores/chatStore');
+      setUserScopedSessionId(null);
+      
+      const welcomeResponse = await chatService.getWelcomeMessage();
+      
+      if (welcomeResponse.session_id && !welcomeResponse.session_id.startsWith('error-')) {
+        // Use user-scoped session ID
+        const { setUserScopedSessionId } = await import('@/stores/chatStore');
+        setUserScopedSessionId(welcomeResponse.session_id);
+        useChatStore.setState({ currentSession: welcomeResponse.session_id });
+        await useChatStore.getState().loadSession(welcomeResponse.session_id);
+      } else {
+        const welcomeMessage: ChatMessage = {
+          id: 'welcome-message',
+          content: welcomeResponse.content,
+          is_user: false,
+          timestamp: welcomeResponse.timestamp
+        };
+        
+        useChatStore.setState({ 
+          messages: [welcomeMessage],
+          isLoading: false
+        });
+      }
+      
+      logger.info('Welcome message loaded with session:', welcomeResponse.session_id);
+    } catch (error) {
+      console.error('Failed to fetch welcome message, using fallback:', error);
+      const welcomeMessage: ChatMessage = {
+        id: 'welcome-message',
+        content: "Hi, I'm Savr! You can tell me what meals you're shopping for, or just give me your shopping list.",
+        is_user: false,
+        timestamp: new Date().toISOString()
+      };
+      
+      useChatStore.setState({ 
+        messages: [welcomeMessage],
+        isLoading: false
+      });
+      
+      logger.info('Fallback welcome message displayed');
+    }
+  };
+
+  // Scroll to bottom whenever messages change
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  // Render debug (deduped)
+  logger.changed('ChatPage:renderSnapshot', {
+    isLoading,
+    isProcessingImage,
+    selectedImage: selectedImage?.name,
+    hasImageBase64: !!imageBase64,
+    inputLength: input.length,
+  }, 'debug');
+  const sendButtonDisabled = isLoading || isProcessingImage || (!input.trim() && !selectedImage) || (selectedImage && !imageBase64);
+  logger.changed('ChatPage:sendButtonDisabled', { disabled: sendButtonDisabled }, 'debug');
+
+  useEffect(() => {
+    return () => {
+      if (imageProcessingInterval) {
+        clearInterval(imageProcessingInterval);
+      }
+    };
+  }, [imageProcessingInterval]);
+
+  // Smart scrollbar: add/remove 'scrolling' class during scroll
+  useEffect(() => {
+    const el = messagesContainerRef.current;
+    if (!el) return;
+    let timer: number | undefined;
+    const onScroll = () => {
+      el.classList.add('scrolling');
+      if (timer) window.clearTimeout(timer);
+      timer = window.setTimeout(() => {
+        el.classList.remove('scrolling');
+      }, 700);
+    };
+    el.addEventListener('scroll', onScroll, { passive: true });
+    return () => {
+      el.removeEventListener('scroll', onScroll as EventListener);
+      if (timer) window.clearTimeout(timer);
+    };
+  }, []);
+
+  // Quick-edit helpers used by Preferences dropdown
+  const addDietaryRestriction = async () => {
+    if (newDietaryRestriction && !dietaryRestrictions.includes(newDietaryRestriction)) {
+      const updated = [...dietaryRestrictions, newDietaryRestriction];
+      setDietaryRestrictions(updated);
+      setNewDietaryRestriction('');
+      try {
+        await authService.updateProfile({ dietaryRestrictions: updated });
+        toast({ title: 'Restriction added', description: 'Your dietary restriction has been saved.' });
+      } catch (e) {
+        toast({ title: 'Save failed', description: 'Could not save dietary restriction.', variant: 'destructive' });
+      }
+    }
+  };
+
+  const removeDietaryRestriction = async (restriction: string) => {
+    const updated = dietaryRestrictions.filter(r => r !== restriction);
+    setDietaryRestrictions(updated);
+    try {
+      await authService.updateProfile({ dietaryRestrictions: updated });
+      toast({ title: 'Restriction removed', description: 'Your dietary restrictions have been updated.' });
+    } catch (e) {
+      toast({ title: 'Save failed', description: 'Could not update dietary restrictions.', variant: 'destructive' });
+    }
+  };
+
+  const addBrand = async (type: 'liked' | 'disliked') => {
+    if (type === 'liked' && newLikedCategory && newLikedBrand) {
+      const next = { ...likedBrands, [newLikedCategory]: newLikedBrand };
+      setLikedBrands(next);
+      setNewLikedCategory('');
+      setNewLikedBrand('');
+      try {
+        await authService.updateProfile({ brandPreferences: { liked: next, disliked: dislikedBrands } });
+        toast({ title: 'Brand added', description: 'Your liked brand has been saved.' });
+      } catch (e) {
+        toast({ title: 'Save failed', description: 'Could not save brand preference.', variant: 'destructive' });
+      }
+    } else if (type === 'disliked' && newDislikedCategory && newDislikedBrand) {
+      const next = { ...dislikedBrands, [newDislikedCategory]: newDislikedBrand };
+      setDislikedBrands(next);
+      setNewDislikedCategory('');
+      setNewDislikedBrand('');
+      try {
+        await authService.updateProfile({ brandPreferences: { liked: likedBrands, disliked: next } });
+        toast({ title: 'Brand added', description: 'Your disliked brand has been saved.' });
+      } catch (e) {
+        toast({ title: 'Save failed', description: 'Could not save brand preference.', variant: 'destructive' });
+      }
+    }
+  };
+
+  const removeBrand = async (type: 'liked' | 'disliked', category: string) => {
+    if (type === 'liked') {
+      const next = { ...likedBrands };
+      delete next[category];
+      setLikedBrands(next);
+      try {
+        await authService.updateProfile({ brandPreferences: { liked: next, disliked: dislikedBrands } });
+        toast({ title: 'Brand removed', description: 'Your liked brands have been updated.' });
+      } catch (e) {
+        toast({ title: 'Save failed', description: 'Could not update brand preferences.', variant: 'destructive' });
+      }
+    } else {
+      const next = { ...dislikedBrands };
+      delete next[category];
+      setDislikedBrands(next);
+      try {
+        await authService.updateProfile({ brandPreferences: { liked: likedBrands, disliked: next } });
+        toast({ title: 'Brand removed', description: 'Your disliked brands have been updated.' });
+      } catch (e) {
+        toast({ title: 'Save failed', description: 'Could not update brand preferences.', variant: 'destructive' });
+      }
+    }
+  };
+
+  // Function to handle file selection
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      console.log("File selected:", file.name, file.type);
+      
+      setIsProcessingImage(true);
+      setImageProcessingProgress(0);
+
+      let processedFile = file;
+
+      if (file.type === 'image/heic' || file.name.toLowerCase().endsWith('.heic')) {
+        try {
+          setImageProcessingProgress(10);
+          console.log("HEIC file detected, attempting conversion to JPEG...");
+          
+          const conversionResult = await heic2any({
+            blob: file,
+            toType: "image/jpeg",
+            quality: 0.8, 
+          });
+          
+          const convertedBlob = Array.isArray(conversionResult) ? conversionResult[0] : conversionResult;
+          const fileNameWithoutExtension = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+          processedFile = new File([convertedBlob], `${fileNameWithoutExtension}.jpg`, { type: 'image/jpeg' });
+          
+          console.log("HEIC converted to JPEG:", processedFile.name, processedFile.type);
+          setImageProcessingProgress(50);
+        } catch (conversionError: any) {
+          console.error("Error converting HEIC to JPEG:", conversionError);
+          if (conversionError && conversionError.code === 1 && conversionError.message && conversionError.message.includes('Image is already browser readable')) {
+            const readableTypeMatch = conversionError.message.match(/readable: (image\/[a-zA-Z]+)/);
+            const assumedType = readableTypeMatch && readableTypeMatch[1] ? readableTypeMatch[1] : 'image/jpeg';
+            
+            console.log(`HEIC conversion skipped: File is already browser readable (reported as ${assumedType}). Using original file content with corrected type.`);
+            
+            if (!file.type || !file.type.startsWith('image/')) {
+              console.log(`Original file type was '${file.type}'. Recreating File object with type '${assumedType}'.`);
+              processedFile = new File([file], file.name, { type: assumedType });
+            } else {
+              console.log(`Original file type '${file.type}' is valid. Using original file as is.`);
+              processedFile = file;
+            }
+            setImageProcessingProgress(50);
+          } else {
+            toast({ title: "HEIC Conversion Error", description: "Could not convert HEIC image. Please try a different format.", variant: "destructive" });
+            clearSelectedImage();
+            if (fileInputRef.current) fileInputRef.current.value = "";
+            return; 
+          }
+        }
+      }
+
+      console.log("After HEIC block - processedFile details:", {
+        name: processedFile.name,
+        type: processedFile.type,
+        size: processedFile.size
+      });
+
+      if (!processedFile.type.startsWith('image/')) {
+        toast({ title: "Invalid File Type", description: "Please select an image file.", variant: "destructive" });
+        clearSelectedImage();
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        return;
+      }
+      
+      if (processedFile.size > 10 * 1024 * 1024) {
+        toast({ title: "File Too Large", description: "Please select an image smaller than 10MB.", variant: "destructive" });
+        clearSelectedImage();
+        if (fileInputRef.current) fileInputRef.current.value = "";
+        return;
+      }
+      
+      compressImage(processedFile)
+        .then((compressedFile) => {
+          console.log("Image compressed:", compressedFile.name, `(${(compressedFile.size / 1024).toFixed(2)} KB)`);
+          setSelectedImage(compressedFile);
+          setImageProcessingProgress(75);
+          
+          const previewReader = new FileReader();
+          previewReader.onloadend = () => {
+            setImagePreviewUrl(previewReader.result as string);
+          };
+          previewReader.readAsDataURL(compressedFile);
+          
+          convertToBase64(compressedFile);
+        })
+        .catch((error) => {
+          console.error("Error compressing image:", error);
+          toast({ title: "Compression Error", description: "Error compressing image. Please try a different image.", variant: "destructive" });
+          clearSelectedImage();
+        });
+    }
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  };
+
+  // Function to convert File to Base64
+  const convertToBase64 = (file: File) => {
+    const reader = new FileReader();
+    reader.onload = () => {
+      console.log("Base64 FileReader onload");
+      const base64String = (reader.result as string).split(',')[1];
+      setImageBase64(base64String);
+      setIsProcessingImage(false);
+      setImageProcessingProgress(100);
+      console.log("Set imageBase64, Set isProcessingImage = false");
+    };
+    reader.onerror = (error) => {
+      console.error("Error converting file to base64:", error);
+      toast({ title: "Error Reading File", description: "Could not process the selected image.", variant: "destructive" });
+      clearSelectedImage();
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Function to trigger hidden file input
+  const handleUploadClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  // Function to clear selected image
+  const clearSelectedImage = useCallback((clearFileInput: boolean = true) => {
+    logger.debug("Clearing selected image");
+    setSelectedImage(null);
+    setImageBase64(null);
+    setImagePreviewUrl(null);
+    setIsProcessingImage(false);
+    setImageProcessingProgress(0);
+    if (clearFileInput && fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
+  }, []);
+
+  const handleSendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    logger.debug("handleSendMessage triggered");
+
+    if (isLoading || isProcessingImage) {
+      logger.debug("handleSendMessage blocked: isLoading or isProcessingImage");
+      return;
+    }
+    if (!input.trim() && !selectedImage) {
+      logger.debug("handleSendMessage blocked: No input and no selected image");
+      return;
+    }
+    if (selectedImage && !imageBase64) {
+      logger.debug("handleSendMessage blocked: Image selected but base64 not ready");
+      toast({ title: "Image Still Processing", description: "Please wait a moment for the image to be ready.", variant: "default" });
+      return;
+    }
+
+    const textToSend = input.trim();
+    const imageToSend = imageBase64;
+    const imageMediaType = selectedImage?.type;
+
+    logger.debug("Proceeding to send message...", { textLen: textToSend.length, imageType: imageMediaType, hasImage: !!imageToSend });
+
+    if (imageToSend) {
+      setImageProcessingProgress(0);
+      if (imageProcessingInterval) {
+        clearInterval(imageProcessingInterval);
+      }
+      let secondsElapsed = 0;
+      const interval = setInterval(() => {
+        secondsElapsed += 1;
+        setImageProcessingProgress(Math.min(secondsElapsed * 10, 100));
+        if (secondsElapsed >= 10) {
+          clearInterval(interval);
+          setImageProcessingInterval(undefined);
+        }
+      }, 1000);
+      setImageProcessingInterval(interval);
+    }
+
+    try {
+      await sendMessage({
+        text: textToSend,
+        imageBase64: imageToSend,
+        imageMediaType: imageMediaType
+      });
+      logger.info("Message sent successfully via store");
+
+      if (imageProcessingInterval) {
+        clearInterval(imageProcessingInterval);
+        setImageProcessingInterval(undefined);
+      }
+      setImageProcessingProgress(0);
+      
+      setInput('');
+      clearSelectedImage();
+    } catch (error: any) {
+      console.error("Error in handleSendMessage catch block:", error);
+      if (imageProcessingInterval) {
+        clearInterval(imageProcessingInterval);
+        setImageProcessingInterval(undefined);
+      }
+      setImageProcessingProgress(0);
+      
+      toast({ 
+        title: "Failed to Send", 
+        description: error?.message || "Could not send message. Image analysis may take longer than expected.", 
+        variant: "destructive" 
+      });
+    }
+
+    setTimeout(() => {
+      inputRef.current?.focus();
+    }, 50);
+  };
+
+  const handleClearChat = async () => {
+    setIsCreatingNewChat(true);
+    try {
+      const { getUserScopedSessionId } = await import('@/stores/chatStore');
+      const existingSessionId = getUserScopedSessionId();
+      if (existingSessionId) {
+        try {
+          await chatService.clearCurrentSessionList(existingSessionId);
+          logger.info('Deleted server-side draft for session:', existingSessionId);
+        } catch (e) {
+          logger.warn('Failed to delete server-side draft (continuing):', e);
+        }
+      }
+      const { setUserScopedSessionId } = await import('@/stores/chatStore');
+      setUserScopedSessionId(null);
+      localStorage.removeItem('savr-chat-storage');
+      
+      useChatStore.getState().clearChat();
+      
+      await showWelcomeMessage();
+    } finally {
+      setIsCreatingNewChat(false);
+    }
+  };
+
+  const handleFullReset = async () => {
+    isNewChatRef.current = true;
+    
+    const { getUserScopedSessionId } = await import('@/stores/chatStore');
+    const existingSessionId = getUserScopedSessionId();
+    if (existingSessionId) {
+      try {
+        await chatService.clearCurrentSessionList(existingSessionId);
+        logger.info('Deleted server-side draft for session (full reset):', existingSessionId);
+      } catch (e) {
+        logger.warn('Failed to delete server-side draft during full reset (continuing):', e);
+      }
+    }
+
+    const { setUserScopedSessionId } = await import('@/stores/chatStore');
+    setUserScopedSessionId(null);
+    localStorage.removeItem('token');
+    localStorage.removeItem('savr-chat-storage');
+    
+    resetChatStore();
+    
+    await showWelcomeMessage();
+  };
+
+  // Modified function to group items based on selection
+  const getGroupedItems = () => {
+    if (!groceryList) return {};
+    const items = getItemsArray(groceryList);
+    if (groupBy === 'category') {
+      return items.reduce<Record<string, GroceryItem[]>>((acc, item) => {
+        const key = item.category || 'Uncategorized';
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(item);
+        return acc;
+      }, {});
+    } else {
+      return items.reduce<Record<string, GroceryItem[]>>((acc, item) => {
+        const key = item.meal || 'Uncategorized';
+        if (!acc[key]) acc[key] = [];
+        acc[key].push(item);
+        return acc;
+      }, {});
+    }
+  };
+
+  // Get the grocery list name
+  const groceryListName = getGroceryListName(groceryList);
+
+  // Receipt-style message renderer
+  const renderGroceryListMessage = () => {
+    if (!groceryList || getItemsArray(groceryList).length === 0) return null;
+    const groupedItems = getGroupedItems();
+    const name = groceryListName;
+    return (
+      <div className="flex justify-start w-full">
+        <div className="w-full lg:w-2/5">
+          {/* Avatar */}
+          <div className="flex items-center mb-2">
+            <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mr-2 sm:mr-3">
+              <ShoppingCart className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
+            </div>
+                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300 font-body">Savr Assistant</span>
+          </div>
+
+          {/* Receipt Style List */}
+          <div className="bg-white dark:bg-slate-800 border-2 border-dashed border-slate-300 dark:border-slate-600 shadow-sm px-0 py-0 relative overflow-hidden" style={{ fontFamily: 'JetBrains Mono, Menlo, monospace' }}>
+            <div className="relative z-10 px-6 py-4">
+              <div className="text-center text-xs text-slate-400 tracking-widest mb-2 select-none">SAVR GROCERY LIST</div>
+              <div className="text-center text-base font-bold text-slate-800 dark:text-white mb-1">{name}</div>
+              <div className="text-center text-xs text-slate-500 dark:text-slate-400 mb-4">{getItemsArray(groceryList).length} items</div>
+
+              {/* Category/Meal Tabs */}
+              <div className="mb-4">
+                <div className="flex bg-slate-100 dark:bg-slate-700 rounded-lg p-1">
+                  <button
+                    onClick={() => setGroupBy('category')}
+                    className={`flex-1 py-2 px-3 text-xs font-medium rounded-md transition-all ${groupBy === 'category' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+                  >
+                    Category
+                  </button>
+                  <button
+                    onClick={() => setGroupBy('meal')}
+                    className={`flex-1 py-2 px-3 text-xs font-medium rounded-md transition-all ${groupBy === 'meal' ? 'bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm' : 'text-slate-600 dark:text-slate-400 hover:text-slate-900 dark:hover:text-white'}`}
+                  >
+                    Meal
+                  </button>
+                </div>
+              </div>
+
+              {/* Grouped Items */}
+              <div className="space-y-4">
+                {Object.entries(groupedItems).map(([groupName, items]) => (
+                  <div key={groupName} className="space-y-2">
+                    <div className="text-xs font-semibold text-slate-600 dark:text-slate-400 uppercase tracking-wide border-b border-dashed border-slate-200 dark:border-slate-700 pb-1 text-center">
+                      {groupName}
+                    </div>
+                    <div className="space-y-1">
+                      {items.map((item, idx) => (
+                        <div key={idx} className="flex justify-between py-1 text-sm text-slate-800 dark:text-slate-100">
+                          <span className="truncate max-w-[60%]">{item.name}</span>
+                          <span className="text-slate-500 dark:text-slate-300">{item.quantity ? `${item.quantity} ${item.unit || ''}` : ''}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              {/* Total row */}
+              <div className="mt-4 pt-2 border-t border-dashed border-slate-300 dark:border-slate-600 flex justify-between text-base font-bold text-slate-900 dark:text-white">
+                <span>TOTAL</span>
+                <span>{getItemsArray(groceryList).length} items</span>
+              </div>
+
+              {/* Action */}
+              <div className="pt-4">
+                <Button
+                  onClick={() => navigate('/lists')}
+                  className="w-full h-9 sm:h-10 bg-green-500 hover:bg-green-600 text-white font-medium rounded-xl transition-all duration-200 text-sm font-sans">
+                  Save & Shop
+                </Button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
+  const renderLoadingIndicator = () => {
+    // Show when any generation or tool activity is ongoing
+    if (!isLoading && !isGenerating && !spinnerActive) return null;
+    return (
+      <div className="flex justify-center items-center py-4">
+        <Loader2 className="h-6 w-6 animate-spin text-green-500" />
+                        <span className="ml-2 text-sm text-slate-500 dark:text-slate-400 font-body" aria-live="polite">
+          {imageProcessingProgress > 0
+            ? `Analyzing image (${imageProcessingProgress}%)`
+            : (spinnerLabel || 'Thinking…')}
+        </span>
+      </div>
+    );
+  };
+
+  return (
+    <div className="h-screen bg-gradient-to-br from-cyan-100 via-teal-100 via-emerald-100 to-green-100 dark:from-cyan-900 dark:via-teal-900 dark:via-emerald-900 dark:to-green-900">
+      {error && (
+        <div className="bg-red-50 dark:bg-red-900/20 border-l-4 border-red-400 px-3 sm:px-4 py-3 fixed top-16 lg:top-20 left-0 right-0 z-25">
+          <div className="flex">
+            <div className="flex-shrink-0">
+              <XCircle className="h-4 w-4 sm:h-5 sm:w-5 text-red-400" />
+            </div>
+            <div className="ml-2 sm:ml-3">
+              <p className="text-xs sm:text-sm text-red-700 dark:text-red-300">
+                {error}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
+      {/* Fixed Header */}
+      <div className="border-b border-slate-200 dark:border-slate-600 bg-white/70 dark:bg-slate-800/70 backdrop-blur-md fixed top-0 left-0 right-0 z-30 h-16 lg:h-20">
+                <div className="flex justify-between items-center h-full px-4 sm:px-6">
+                  <div className="flex items-center space-x-2 sm:space-x-3">
+                    <div className="w-8 h-8 sm:w-10 sm:h-10 bg-gradient-to-br from-green-500 to-green-600 rounded-xl flex items-center justify-center">
+                      <MessageSquarePlus className="h-4 w-4 sm:h-5 sm:w-5 text-white" />
+                    </div>
+                    <div>
+                      <h1 className="text-lg sm:text-xl font-heading font-semibold text-slate-900 dark:text-white">Savr Assistant</h1>
+                      <p className="text-sm font-body text-slate-500 dark:text-slate-400 leading-relaxed">Your AI grocery shopping companion</p>
+                    </div>
+                  </div>
+                  <div className="flex items-center space-x-1 sm:space-x-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handleClearChat}
+                      disabled={isLoading || isCreatingNewChat}
+                      title="Start a new conversation"
+                      className="border-slate-400 dark:border-slate-500 h-8 px-2 sm:h-9 sm:px-3"
+                    >
+                      {isCreatingNewChat ? (
+                        <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 animate-spin" />
+                      ) : (
+                        <MessageSquarePlus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                      )}
+                      <span className="hidden sm:inline">{isCreatingNewChat ? 'Creating...' : 'New Chat'}</span>
+                    </Button>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button
+                          variant="outline"
+                          size="sm"
+                          className="border-slate-400 dark:border-slate-500 h-8 px-2 sm:h-9 sm:px-3"
+                          title="Preferences"
+                        >
+                          <Heart className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                          <span className="hidden sm:inline">Preferences</span>
+                          <ChevronDown className="h-3 w-3 sm:h-4 sm:w-4 ml-1" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end" className="w-80 p-4">
+                        <div className="space-y-4">
+                          {/* Dietary Restrictions */}
+                          <div>
+                            <h3 className="text-sm font-heading font-semibold text-slate-900 dark:text-white mb-2">Dietary Restrictions</h3>
+                            <div className="space-y-2">
+                              <div className="flex space-x-2">
+                                <Input
+                                  placeholder="Add restriction..."
+                                  value={newDietaryRestriction}
+                                  onChange={(e) => setNewDietaryRestriction(e.target.value)}
+                                  className="text-base h-8 font-body"
+                                  onKeyPress={(e) => e.key === 'Enter' && addDietaryRestriction()}
+                                />
+                                <Button size="sm" onClick={addDietaryRestriction} className="h-8 px-2">
+                                  <Plus className="h-3 w-3" />
+                                </Button>
+                              </div>
+                              <div className="space-y-1 max-h-20 overflow-y-auto">
+                                {dietaryRestrictions.map((restriction) => (
+                                  <div key={restriction} className="flex items-center justify-between bg-slate-100 dark:bg-slate-700 px-2 py-1 rounded text-xs">
+                                    <span className="text-slate-700 dark:text-slate-300">{restriction}</span>
+                                    <Button
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => removeDietaryRestriction(restriction)}
+                                      className="h-5 w-5 p-0 hover:bg-slate-200 dark:hover:bg-slate-600"
+                                    >
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                          <DropdownMenuSeparator />
+                          {/* Brand Preferences */}
+                          <div>
+                            <h3 className="text-sm font-heading font-semibold text-slate-900 dark:text-white mb-2">Brand Preferences</h3>
+                            <div className="space-y-2 mb-3">
+                              <h4 className="text-xs font-body font-medium text-slate-600 dark:text-slate-400">Liked Brands</h4>
+                              <div className="flex space-x-2">
+                                <Input placeholder="Category" value={newLikedCategory} onChange={(e) => setNewLikedCategory(e.target.value)} className="text-base h-8 font-body" />
+                                <Input placeholder="Brand" value={newLikedBrand} onChange={(e) => setNewLikedBrand(e.target.value)} className="text-base h-8 font-body" onKeyPress={(e) => e.key === 'Enter' && addBrand('liked')} />
+                                <Button size="sm" onClick={() => addBrand('liked')} className="h-8 px-2">
+                                  <Plus className="h-3 w-3" />
+                                </Button>
+                              </div>
+                              <div className="space-y-1 max-h-16 overflow-y-auto">
+                                {Object.entries(likedBrands as Record<string, string>).map(([category, brand]) => (
+                                  <div key={category} className="flex items-center justify-between bg-green-50 dark:bg-green-900/20 px-2 py-1 rounded text-xs">
+                                    <span className="text-slate-700 dark:text-slate-300">{category}: {brand as string}</span>
+                                    <Button variant="ghost" size="sm" onClick={() => removeBrand('liked', category)} className="h-5 w-5 p-0 hover:bg-green-100 dark:hover:bg-green-800/30">
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                            <div className="space-y-2">
+                              <h4 className="text-xs font-body font-medium text-slate-600 dark:text-slate-400">Disliked Brands</h4>
+                              <div className="flex space-x-2">
+                                <Input placeholder="Category" value={newDislikedCategory} onChange={(e) => setNewDislikedCategory(e.target.value)} className="text-base h-8 font-body" />
+                                <Input placeholder="Brand" value={newDislikedBrand} onChange={(e) => setNewDislikedBrand(e.target.value)} className="text-base h-8 font-body" onKeyPress={(e) => e.key === 'Enter' && addBrand('disliked')} />
+                                <Button size="sm" onClick={() => addBrand('disliked')} className="h-8 px-2">
+                                  <Plus className="h-3 w-3" />
+                                </Button>
+                              </div>
+                              <div className="space-y-1 max-h-16 overflow-y-auto">
+                                {Object.entries(dislikedBrands as Record<string, string>).map(([category, brand]) => (
+                                  <div key={category} className="flex items-center justify-between bg-red-50 dark:bg-red-900/20 px-2 py-1 rounded text-xs">
+                                    <span className="text-slate-700 dark:text-slate-300">{category}: {brand as string}</span>
+                                    <Button variant="ghost" size="sm" onClick={() => removeBrand('disliked', category)} className="h-5 w-5 p-0 hover:bg-red-100 dark:hover:bg-red-800/30">
+                                      <X className="h-3 w-3" />
+                                    </Button>
+                                  </div>
+                                ))}
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                    {error && (
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={handleFullReset}
+                        title="Reset application state"
+                        className="h-8 px-2 sm:h-9 sm:px-3"
+                      >
+                        <span className="hidden sm:inline">Reset</span>
+                        <span className="sm:hidden">!</span>
+                      </Button>
+                    )}
+                  </div>
+                </div>
+              </div>
+      
+      {/* Main Content Area */}
+      <div className="pt-16 lg:pt-20 pb-24 min-h-screen bg-white/60 dark:bg-slate-800/60 backdrop-blur-md">
+                {/* Chat area */}
+                <div className="flex-1 flex flex-col min-h-0">
+                  <div className="flex-1 bg-transparent overflow-hidden flex flex-col min-h-0">
+                    {/* Messages Container */}
+                    <div
+                      ref={messagesContainerRef}
+                      className={`flex-1 overflow-y-auto p-4 space-y-4 sm:space-y-6 chat-messages smart-scrollbar min-h-0 relative z-0 flex flex-col lg:items-center ${error ? 'pt-16 lg:pt-20' : 'pt-4'}`}
+                    >
+                      <div className="w-full lg:max-w-5xl space-y-4 sm:space-y-6">
+                      {messages.length === 0 && !isLoading ? (
+                        <div className="flex flex-col items-center justify-center h-full text-center px-4">
+                          <div className="w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-green-100 to-green-200 dark:from-green-900/20 dark:to-green-800/20 rounded-full flex items-center justify-center mb-3 sm:mb-4">
+                            <MessageSquarePlus className="h-6 w-6 sm:h-8 sm:w-8 text-green-600 dark:text-green-400" />
+                          </div>
+                          <h3 className="text-lg font-heading font-semibold text-slate-900 dark:text-white mb-3">Start your conversation</h3>
+                          <p className="text-base text-slate-500 dark:text-slate-400 max-w-sm sm:max-w-md mb-4 leading-relaxed font-body">
+                            Ask me about recipes, meal planning, or upload a photo of your fridge to get personalized grocery suggestions.
+                          </p>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={handleClearChat}
+                            disabled={isLoading || isCreatingNewChat}
+                            title="Start a new conversation"
+                            className="border-slate-400 dark:border-slate-500"
+                          >
+                            {isCreatingNewChat ? (
+                              <Loader2 className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2 animate-spin" />
+                            ) : (
+                              <MessageSquarePlus className="h-3 w-3 sm:h-4 sm:w-4 mr-1 sm:mr-2" />
+                            )}
+                            {isCreatingNewChat ? 'Creating...' : 'New Chat'}
+                          </Button>
+                        </div>
+                      ) : (
+                        <div className="space-y-4 sm:space-y-6">
+                          {messages.map((message: ChatMessage) => (
+                            <div
+                              key={message.id}
+                              className={`flex ${message.is_user ? 'justify-end' : 'justify-start'}`}
+                            >
+                              <div className={`max-w-[90%] sm:max-w-[85%] lg:max-w-[70%] ${message.is_user ? 'order-2' : 'order-1'}`}>
+                                {/* Avatar */}
+                                {!message.is_user && (
+                                  <div className="flex items-center mb-2">
+                                    <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mr-2 sm:mr-3">
+                                      <MessageSquarePlus className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
+                                    </div>
+                                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300 font-body">Savr Assistant</span>
+                                  </div>
+                                )}
+
+                                {/* Message Bubble */}
+                                <div
+                                  className={`relative message-bubble ${
+                                    message.is_user
+                                      ? 'bg-green-500 text-white'
+                                      : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white'
+                                  } rounded-2xl px-3 sm:px-4 lg:px-6 py-3 sm:py-4`}
+                                >
+                                  {/* Message Content */}
+                                  <div className="space-y-2 sm:space-y-3">
+                                    {/* Spinner is shown only on the Send button; no spinner inside bubbles */}
+                                    <MarkdownText text={message.content} />
+
+                                    {/* Image Display */}
+                                    {message.imageBase64 && message.imageMediaType && (
+                                      <div className="mt-2 sm:mt-3">
+                                        <img
+                                          src={`data:${message.imageMediaType};base64,${message.imageBase64}`}
+                                          alt="User uploaded"
+                                          className="max-h-48 sm:max-h-64 rounded-lg object-cover w-full"
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Timestamp */}
+                                  <div
+                                    className={`text-xs mt-2 sm:mt-3 ${
+                                      message.is_user
+                                        ? 'text-green-100'
+                                        : 'text-slate-500 dark:text-slate-400'
+                                    }`}
+                                  >
+                                    {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          ))}
+
+                          {/* Streaming Message */}
+                          {streamingMessage && (
+                            <div
+                              key={streamingMessage.id}
+                              className={`flex justify-start`}
+                            >
+                              <div className={`max-w-[90%] sm:max-w-[85%] lg:max-w-[70%]`}>
+                                {/* Avatar */}
+                                <div className="flex items-center mb-2">
+                                  <div className="w-6 h-6 sm:w-8 sm:h-8 bg-gradient-to-br from-green-500 to-green-600 rounded-full flex items-center justify-center mr-2 sm:mr-3">
+                                    <MessageSquarePlus className="h-3 w-3 sm:h-4 sm:w-4 text-white" />
+                                  </div>
+                                  <span className="text-sm font-medium text-slate-700 dark:text-slate-300 font-body">Savr Assistant</span>
+                                </div>
+
+                                {/* Message Bubble */}
+                                <div
+                                  className={`relative message-bubble bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-white rounded-2xl px-3 sm:px-4 lg:px-6 py-3 sm:py-4`}
+                                >
+                                  {/* Message Content */}
+                                  <div className="space-y-2 sm:space-y-3">
+                                    <MarkdownText text={streamingMessage.content} />
+
+                                    {/* Image Display */}
+                                    {streamingMessage.imageBase64 && streamingMessage.imageMediaType && (
+                                      <div className="mt-2 sm:mt-3">
+                                        <img
+                                          src={`data:${streamingMessage.imageMediaType};base64,${streamingMessage.imageBase64}`}
+                                          alt="User uploaded"
+                                          className="max-h-48 sm:max-h-64 rounded-lg object-cover w-full"
+                                        />
+                                      </div>
+                                    )}
+                                  </div>
+
+                                  {/* Timestamp */}
+                                  <div
+                                    className={`text-xs mt-2 sm:mt-3 text-slate-500 dark:text-slate-400`}
+                                  >
+                                    {new Date(streamingMessage.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                          
+                          {/* Grocery List Message */}
+                          {renderGroceryListMessage()}
+
+                          {/* Loading Indicator */}
+                          {renderLoadingIndicator()}
+
+                          <div ref={messagesEndRef} />
+                        </div>
+                      )}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+      </div>
+      </div>
+      
+      {/* Fixed Input Area */}
+      <div className="border-t border-slate-200 dark:border-slate-600 p-4 bg-white/70 dark:bg-slate-800/70 backdrop-blur-md fixed bottom-0 left-0 right-0 z-30">
+                    {/* Image Preview */}
+                    {imagePreviewUrl && (
+                      <div className="mb-3 sm:mb-4 relative inline-block">
+                        <div className="relative p-2 bg-white dark:bg-slate-700 rounded-xl border border-slate-200 dark:border-slate-600">
+                          <img
+                            src={imagePreviewUrl}
+                            alt="Selected preview"
+                            className="max-h-16 sm:max-h-20 max-w-full rounded-lg object-cover"
+                          />
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute -top-1 -right-1 sm:-top-2 sm:-right-2 h-5 w-5 sm:h-6 sm:w-6 bg-red-500 hover:bg-red-600 text-white rounded-full"
+                            onClick={() => clearSelectedImage(true)}
+                            title="Remove image"
+                            disabled={isLoading}
+                          >
+                            <XCircle className="h-3 w-3 sm:h-3 sm:w-3" />
+                          </Button>
+                        </div>
+                      </div>
+                    )}
+
+                    {/* Input Form */}
+                    <form onSubmit={handleSendMessage} className="flex items-end space-x-2 sm:space-x-3">
+                      {/* Hidden File Input */}
+                      <input
+                        type="file"
+                        ref={fileInputRef}
+                        onChange={handleFileChange}
+                        accept="image/jpeg,image/png,image/gif,image/webp,image/heic,.heic"
+                        style={{ display: 'none' }}
+                      />
+
+                      {/* Upload Button */}
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="icon"
+                        onClick={handleUploadClick}
+                        disabled={isLoading || isProcessingImage}
+                        title="Upload image"
+                        className="h-10 w-10 sm:h-12 sm:w-12 rounded-xl border-slate-400 dark:border-slate-400 hover:bg-slate-100 dark:hover:bg-slate-700 chat-input-button flex-shrink-0"
+                      >
+                        <IoCameraOutline className="h-4 w-4 sm:h-5 sm:w-5" />
+                      </Button>
+
+                      {/* Text Input */}
+                      <div className="flex-1 relative">
+                        <Input
+                          ref={inputRef}
+                          value={input}
+                          onChange={(e) => setInput(e.target.value)}
+                          placeholder={
+                            isLoading && imageProcessingProgress > 0
+                              ? 'Analyzing your image...'
+                              : selectedImage
+                              ? 'Add a description for the image...'
+                              : 'Type your message or add an image...'
+                          }
+                          disabled={isLoading || isProcessingImage || isGenerating}
+                          className="h-10 sm:h-12 px-3 sm:px-4 rounded-xl border-slate-400 dark:border-slate-400 bg-white dark:bg-slate-700 focus:ring-2 focus:ring-green-500 focus:border-transparent resize-none text-base font-body leading-relaxed"
+                        />
+                      </div>
+
+                      {/* Send Button */}
+                      <Button
+                        type="submit"
+                        disabled={!!(isLoading || isProcessingImage || isGenerating || (!input.trim() && !selectedImage) || (selectedImage && !imageBase64))}
+                        className="h-10 sm:h-12 px-3 sm:px-4 lg:px-6 rounded-xl bg-green-500 hover:bg-green-600 text-white transition-all duration-200 chat-input-button flex-shrink-0"
+                      >
+                        {(isLoading || isProcessingImage || spinnerActive) ? (
+                          <Loader2 className="h-4 w-4 sm:h-5 sm:w-5 animate-spin mr-1 sm:mr-2" />
+                        ) : (
+                          <Send className="h-4 w-4 sm:h-5 sm:w-5 mr-1 sm:mr-2" />
+                        )}
+                        <span className="font-medium text-sm sm:text-base font-body" aria-live="polite">
+                          {(() => {
+                            if (isProcessingImage) return 'Processing...';
+                            if (spinnerActive) return spinnerLabel || 'Thinking…';
+                            if (isLoading) return imageProcessingProgress > 0 ? 'Analyzing...' : 'Thinking…';
+                            return 'Send';
+                          })()}
+                        </span>
+                      </Button>
+                    </form>
+                  </div>
+      
+      {/* Mobile grocery list - temporarily hidden */}
+      {/* {shouldShowGroceryList && listVisible && isMobile && (
+        <div className="fixed bottom-0 inset-x-0 px-4 z-10">
+          <div className="mb-4 h-[300px] flex flex-col bg-white shadow-lg rounded-lg overflow-hidden">
+            {renderGroceryList()}
+          </div>
+        </div>
+      )} */}
+    </div>
+  );
+}
+
+export default ChatPage;
+
+ 
