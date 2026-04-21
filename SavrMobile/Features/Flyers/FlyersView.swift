@@ -55,13 +55,12 @@ private func priceValue(_ str: String?) -> Double {
 
 // Latest search response
 struct LatestSearchResponse: Decodable {
-    let results: [String: [String: [NoFrillsProduct]]]? // item -> store -> products
+    let results: [String: [String: [NoFrillsProduct]]]?
     let status: String?
 
     init(from decoder: Decoder) throws {
         let container = try decoder.container(keyedBy: CodingKeys.self)
         status = try container.decodeIfPresent(String.self, forKey: .status)
-        // results is a dict of item_name -> { store_name -> [products] }
         results = try container.decodeIfPresent([String: [String: [NoFrillsProduct]]].self, forKey: .results)
     }
 
@@ -105,18 +104,39 @@ final class FlyersViewModel: ObservableObject {
     @Published var listName: String = ""
     @Published var savedStores: [UserSavedStore] = []
     @Published var selectedList: GroceryList?
+    @Published var selectedStoreName: String = ""   // which store tab is active
+    @Published var searchText: String = ""
 
     private let tokenStore = AuthTokenStore()
     private let listService = GroceryListService()
 
-    /// Chain names from saved stores — always show all selected stores as columns
+    /// All unique chain names from comparisons
     var allStoreNames: [String] {
         if !savedStores.isEmpty {
             return Array(Set(savedStores.map { cleanStoreName($0.storeName) })).sorted()
         }
-        // Fallback to whatever's in results
         let raw = comparisons.flatMap { $0.storeResults.map { $0.storeName } }
         return Array(Set(raw.map { cleanStoreName($0) })).sorted()
+    }
+
+    /// Items for the active store tab, filtered by search
+    var displayedItems: [FlyerItem] {
+        var items: [FlyerItem] = []
+        for comp in comparisons {
+            guard let result = comp.storeResults.first(where: { $0.storeName == selectedStoreName }),
+                  let product = result.product else { continue }
+            let isCheapest = comp.cheapestStore?.storeName == selectedStoreName
+            items.append(FlyerItem(
+                itemName: comp.itemName,
+                product: product,
+                isCheapest: isCheapest,
+                storeName: selectedStoreName
+            ))
+        }
+        if searchText.isEmpty { return items.sorted { $0.itemName < $1.itemName } }
+        return items
+            .filter { $0.itemName.localizedCaseInsensitiveContains(searchText) || ($0.product.brand ?? "").localizedCaseInsensitiveContains(searchText) }
+            .sorted { $0.itemName < $1.itemName }
     }
 
     func load() async {
@@ -132,12 +152,13 @@ final class FlyersViewModel: ObservableObject {
 
         let headers = ["Authorization": "Bearer \(session.accessToken)", "Accept": "application/json"]
 
-        // 1. Get saved stores
         if let stores = try? await fetchSavedStores(headers: headers) {
             savedStores = stores
+            if selectedStoreName.isEmpty, let first = allStoreNames.first {
+                selectedStoreName = first
+            }
         }
 
-        // 2. Get grocery lists
         guard let lists = try? await listService.fetchAllLists(), let list = lists.first(where: { !$0.items.isEmpty }) else {
             errorMessage = "No grocery lists found. Build one in the chat first."
             isLoading = false
@@ -146,16 +167,17 @@ final class FlyersViewModel: ObservableObject {
         selectedList = list
         listName = list.name
 
-        // 3. Check if we already have search results
         if let existing = await fetchLatestSearch(listId: list.id, headers: headers) {
             comparisons = existing
+            if selectedStoreName.isEmpty, let first = allStoreNames.first {
+                selectedStoreName = first
+            }
             isLoading = false
             return
         }
 
-        // 4. No results yet — trigger a price search
         if savedStores.isEmpty {
-            errorMessage = "No stores saved. Go to Preferences to pick your stores."
+            errorMessage = "No stores saved. Go to Stores to pick your stores."
             isLoading = false
             return
         }
@@ -196,12 +218,14 @@ final class FlyersViewModel: ObservableObject {
             return
         }
 
-        // Poll for results up to 30 seconds
         let pollHeaders = ["Authorization": "Bearer \(session.accessToken)", "Accept": "application/json"]
         for _ in 0..<10 {
             try? await Task.sleep(nanoseconds: 3_000_000_000)
             if let results = await fetchLatestSearch(listId: list.id, headers: pollHeaders) {
                 comparisons = results
+                if selectedStoreName.isEmpty, let first = allStoreNames.first {
+                    selectedStoreName = first
+                }
                 isSearching = false
                 return
             }
@@ -228,7 +252,6 @@ final class FlyersViewModel: ObservableObject {
         }
         #endif
 
-        // The results field is: { "item_name": { "store_name": [products] } }
         guard let raw = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
               let resultsRaw = raw["results"] as? [String: Any], !resultsRaw.isEmpty else { return nil }
 
@@ -241,10 +264,7 @@ final class FlyersViewModel: ObservableObject {
             var storeResults: [ItemComparison.StoreResult] = []
 
             for chainName in chainNames {
-                // Find all raw store keys that belong to this chain
                 let matchingKeys = rawStoreNames.filter { cleanStoreName($0) == chainName }
-
-                // Collect all products from all locations of this chain
                 var bestProduct: NoFrillsProduct? = nil
                 var bestPrice = Double.infinity
 
@@ -276,6 +296,16 @@ final class FlyersViewModel: ObservableObject {
     }
 }
 
+// MARK: - Flyer Item model
+
+struct FlyerItem: Identifiable {
+    let id = UUID()
+    let itemName: String
+    let product: NoFrillsProduct
+    let isCheapest: Bool
+    let storeName: String
+}
+
 // MARK: - View
 
 struct FlyersView: View {
@@ -299,7 +329,7 @@ struct FlyersView: View {
         .refreshable { await viewModel.load() }
     }
 
-    // MARK: - States
+    // MARK: - Loading / Searching
 
     private var loadingView: some View {
         VStack(spacing: 16) {
@@ -316,37 +346,41 @@ struct FlyersView: View {
                 .foregroundStyle(Color(red: 0.10, green: 0.30, blue: 0.16))
                 .multilineTextAlignment(.center)
                 .padding(.horizontal, 40)
-            Text("This takes about 20-30 seconds")
+            Text("This takes about 20–30 seconds")
                 .font(.caption)
                 .foregroundStyle(.secondary)
         }
     }
 
+    // MARK: - Empty State
+
     private var emptyState: some View {
-        VStack(spacing: 16) {
+        VStack(spacing: 20) {
             Image(systemName: "tag.slash")
-                .font(.system(size: 48, weight: .bold))
+                .font(.system(size: 52, weight: .bold))
                 .foregroundStyle(Color(red: 0.60, green: 0.65, blue: 0.60))
 
-            Text("Price Comparison")
-                .font(.system(size: 26, weight: .black, design: .rounded))
-
-            if let error = viewModel.errorMessage {
-                Text(error)
-                    .foregroundStyle(.secondary)
-                    .multilineTextAlignment(.center)
-                    .padding(.horizontal, 36)
+            VStack(spacing: 6) {
+                Text("No Deals Yet")
+                    .font(.system(size: 24, weight: .black, design: .rounded))
+                if let error = viewModel.errorMessage {
+                    Text(error)
+                        .foregroundStyle(.secondary)
+                        .multilineTextAlignment(.center)
+                        .padding(.horizontal, 36)
+                        .font(.system(size: 14))
+                }
             }
 
-            if let list = viewModel.selectedList, !viewModel.savedStores.isEmpty {
+            if viewModel.selectedList != nil, !viewModel.savedStores.isEmpty {
                 Button {
                     Task { await viewModel.load() }
                 } label: {
                     Text("Search Prices Now")
-                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .font(.system(size: 15, weight: .bold, design: .rounded))
                         .foregroundStyle(.white)
                         .padding(.horizontal, 28)
-                        .padding(.vertical, 14)
+                        .padding(.vertical, 13)
                         .background(SavrColors.brandGreen)
                         .clipShape(Capsule())
                 }
@@ -357,179 +391,269 @@ struct FlyersView: View {
     // MARK: - Results
 
     private var resultsView: some View {
-        ScrollView {
-            VStack(alignment: .leading, spacing: 0) {
-                // Header
-                VStack(alignment: .leading, spacing: 4) {
-                    Text("Price Comparison")
-                        .font(.system(size: 26, weight: .black, design: .rounded))
-                    Text("Price comparison for \"\(viewModel.listName)\"")
-                        .font(.system(size: 14, weight: .medium))
-                        .foregroundStyle(.secondary)
-                }
-                .padding(.horizontal, 20)
-                .padding(.top, 20)
-                .padding(.bottom, 4)
+        VStack(spacing: 0) {
+            // Header
+            headerSection
 
-                // Store legend
-                storeLegend
-                    .padding(.horizontal, 20)
-                    .padding(.bottom, 16)
+            // Store selector tabs
+            storeTabs
+                .padding(.top, 4)
+                .padding(.bottom, 8)
 
-                // Item comparison rows
-                LazyVStack(spacing: 12) {
-                    ForEach(viewModel.comparisons) { item in
-                        ItemComparisonRow(comparison: item, allStores: viewModel.allStoreNames)
-                            .padding(.horizontal, 16)
-                    }
-                }
-                .padding(.bottom, 30)
-            }
-        }
-    }
+            // Search bar
+            searchBar
+                .padding(.horizontal, 16)
+                .padding(.bottom, 8)
 
-    private var storeLegend: some View {
-        ScrollView(.horizontal, showsIndicators: false) {
-            HStack(spacing: 8) {
-                ForEach(viewModel.allStoreNames, id: \.self) { store in
-                    let color = storeColor(for: store)
-                    let assetName = brandAssetName(for: store)
-                    HStack(spacing: 5) {
-                        if UIImage(named: assetName) != nil {
-                            Image(assetName)
-                                .resizable()
-                                .scaledToFit()
-                                .frame(width: 16, height: 16)
-                        } else {
-                            Circle()
-                                .fill(color)
-                                .frame(width: 8, height: 8)
-                        }
-                        Text(cleanStoreName(store))
-                            .font(.system(size: 12, weight: .semibold))
-                            .foregroundStyle(Color(red: 0.25, green: 0.30, blue: 0.25))
-                    }
-                    .padding(.horizontal, 10)
-                    .padding(.vertical, 6)
-                    .background(.white)
-                    .clipShape(Capsule())
-                    .overlay(Capsule().stroke(color.opacity(0.4), lineWidth: 1))
-                }
-            }
-        }
-    }
-}
+            Divider()
 
-// MARK: - Item Row
-
-private struct ItemComparisonRow: View {
-    let comparison: ItemComparison
-    let allStores: [String]
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            // Item name + cheapest badge
+            // Deal count
             HStack {
-                Text(comparison.itemName)
-                    .font(.system(size: 16, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color(red: 0.10, green: 0.20, blue: 0.10))
-
+                Text("\(viewModel.displayedItems.count) deals")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(.secondary)
                 Spacer()
-
-                if let cheapest = comparison.cheapestStore {
-                    HStack(spacing: 4) {
-                        Image(systemName: "tag.fill")
-                            .font(.system(size: 10))
-                        Text("Best: \(cleanStoreName(cheapest.storeName))")
-                            .font(.system(size: 11, weight: .bold))
-                    }
-                    .foregroundStyle(.white)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(SavrColors.brandGreen)
-                    .clipShape(Capsule())
-                }
             }
+            .padding(.horizontal, 16)
+            .padding(.vertical, 8)
 
-            // Store price columns
-            HStack(spacing: 8) {
-                ForEach(allStores, id: \.self) { storeName in
-                    let result = comparison.storeResults.first { $0.storeName == storeName }
-                    StorePriceCell(
-                        storeName: storeName,
-                        product: result?.product,
-                        color: storeColor(for: storeName),
-                        isCheapest: comparison.cheapestStore?.storeName == storeName
-                    )
+            // Item list
+            ScrollView {
+                LazyVStack(spacing: 0) {
+                    ForEach(viewModel.displayedItems) { item in
+                        FlyerItemRow(item: item)
+                        Divider()
+                            .padding(.leading, 76)
+                    }
                 }
+                .background(Color.white)
+                .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                .padding(.horizontal, 16)
+                .padding(.bottom, 24)
             }
         }
-        .padding(14)
-        .background(.white)
-        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
-        .overlay(
-            RoundedRectangle(cornerRadius: 16, style: .continuous)
-                .stroke(Color(red: 0.88, green: 0.92, blue: 0.88), lineWidth: 1)
-        )
-        .shadow(color: .black.opacity(0.04), radius: 6, x: 0, y: 2)
+        .background(Color(red: 0.97, green: 0.98, blue: 0.97))
     }
-}
 
-// MARK: - Store Price Cell
+    // MARK: - Header
 
-private struct StorePriceCell: View {
-    let storeName: String
-    let product: NoFrillsProduct?
-    let color: Color
-    let isCheapest: Bool
-
-    var body: some View {
-        VStack(alignment: .leading, spacing: 4) {
-            // Store logo or name
-            let assetName = brandAssetName(for: storeName)
-            if UIImage(named: assetName) != nil {
-                Image(assetName)
-                    .resizable()
-                    .scaledToFit()
-                    .frame(height: 18)
-                    .frame(maxWidth: .infinity, alignment: .leading)
-            } else {
-                Text(cleanStoreName(storeName))
-                    .font(.system(size: 10, weight: .bold))
-                    .foregroundStyle(color)
+    private var headerSection: some View {
+        HStack {
+            VStack(alignment: .leading, spacing: 2) {
+                Text("Flyers")
+                    .font(.system(size: 26, weight: .black, design: .rounded))
+                Text("From \"\(viewModel.listName)\"")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
-
-            if let p = product {
-                // Price
-                Text(p.price ?? "—")
-                    .font(.system(size: 15, weight: .black, design: .rounded))
-                    .foregroundStyle(isCheapest ? SavrColors.brandGreen : Color(red: 0.15, green: 0.20, blue: 0.15))
-
-                // Size
-                if let size = p.size, !size.isEmpty {
-                    Text(size)
-                        .font(.system(size: 10))
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                }
-            } else {
-                Text("—")
-                    .font(.system(size: 14, weight: .medium))
-                    .foregroundStyle(Color(red: 0.75, green: 0.75, blue: 0.75))
-                Text("Not found")
-                    .font(.system(size: 9))
-                    .foregroundStyle(.secondary)
+            Spacer()
+            // Refresh button
+            Button {
+                Task { await viewModel.load() }
+            } label: {
+                Image(systemName: "arrow.clockwise")
+                    .font(.system(size: 16, weight: .semibold))
+                    .foregroundStyle(SavrColors.brandGreen)
+                    .padding(8)
+                    .background(SavrColors.brandGreen.opacity(0.10))
+                    .clipShape(Circle())
             }
         }
-        .frame(maxWidth: .infinity, alignment: .leading)
-        .padding(10)
-        .background(isCheapest ? SavrColors.brandGreen.opacity(0.08) : Color(red: 0.97, green: 0.98, blue: 0.97))
-        .clipShape(RoundedRectangle(cornerRadius: 10, style: .continuous))
+        .padding(.horizontal, 20)
+        .padding(.top, 20)
+        .padding(.bottom, 6)
+    }
+
+    // MARK: - Store Tabs
+
+    private var storeTabs: some View {
+        ScrollView(.horizontal, showsIndicators: false) {
+            HStack(spacing: 0) {
+                ForEach(viewModel.allStoreNames, id: \.self) { store in
+                    let isActive = viewModel.selectedStoreName == store
+                    let assetName = brandAssetName(for: store)
+
+                    Button {
+                        withAnimation(.easeInOut(duration: 0.15)) {
+                            viewModel.selectedStoreName = store
+                        }
+                    } label: {
+                        VStack(spacing: 0) {
+                            HStack(spacing: 8) {
+                                // Store logo
+                                if UIImage(named: assetName) != nil {
+                                    Image(assetName)
+                                        .resizable()
+                                        .scaledToFit()
+                                        .frame(width: 32, height: 32)
+                                } else {
+                                    ZStack {
+                                        RoundedRectangle(cornerRadius: 8)
+                                            .fill(storeColor(for: store))
+                                            .frame(width: 32, height: 32)
+                                        Text(String(store.prefix(2)).uppercased())
+                                            .font(.system(size: 10, weight: .black, design: .rounded))
+                                            .foregroundStyle(.white)
+                                    }
+                                }
+
+                                VStack(alignment: .leading, spacing: 1) {
+                                    Text(store)
+                                        .font(.system(size: 13, weight: isActive ? .bold : .medium))
+                                        .foregroundStyle(isActive ? Color(red: 0.10, green: 0.20, blue: 0.10) : .secondary)
+                                    Text("Canada")
+                                        .font(.system(size: 10))
+                                        .foregroundStyle(.secondary)
+                                }
+                            }
+                            .padding(.horizontal, 16)
+                            .padding(.vertical, 10)
+                            .background(isActive ? Color.white : Color.clear)
+
+                            // Active underline
+                            Rectangle()
+                                .fill(isActive ? SavrColors.brandGreen : Color.clear)
+                                .frame(height: 2)
+                        }
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.leading, 8)
+        }
+        .background(Color(red: 0.95, green: 0.96, blue: 0.95))
+    }
+
+    // MARK: - Search Bar
+
+    private var searchBar: some View {
+        HStack(spacing: 10) {
+            Image(systemName: "magnifyingglass")
+                .foregroundStyle(.secondary)
+                .font(.system(size: 15))
+            TextField("Search deals...", text: $viewModel.searchText)
+                .font(.system(size: 15))
+            if !viewModel.searchText.isEmpty {
+                Button {
+                    viewModel.searchText = ""
+                } label: {
+                    Image(systemName: "xmark.circle.fill")
+                        .foregroundStyle(Color(red: 0.70, green: 0.70, blue: 0.70))
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.horizontal, 12)
+        .padding(.vertical, 10)
+        .background(Color.white)
+        .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
         .overlay(
-            RoundedRectangle(cornerRadius: 10, style: .continuous)
-                .stroke(isCheapest ? SavrColors.brandGreen.opacity(0.3) : Color.clear, lineWidth: 1.5)
+            RoundedRectangle(cornerRadius: 12, style: .continuous)
+                .stroke(Color(red: 0.88, green: 0.90, blue: 0.88), lineWidth: 1)
         )
+    }
+}
+
+// MARK: - Flyer Item Row
+
+private struct FlyerItemRow: View {
+    let item: FlyerItem
+
+    var body: some View {
+        HStack(spacing: 14) {
+            // Product image placeholder — colored square with first letter
+            ZStack {
+                RoundedRectangle(cornerRadius: 10, style: .continuous)
+                    .fill(storeColor(for: item.storeName).opacity(0.12))
+                    .frame(width: 56, height: 56)
+                Image(systemName: productIcon(for: item.itemName))
+                    .font(.system(size: 22))
+                    .foregroundStyle(storeColor(for: item.storeName).opacity(0.7))
+            }
+
+            // Name + brand + date
+            VStack(alignment: .leading, spacing: 3) {
+                Text(item.product.name.isEmpty ? item.itemName : item.product.name)
+                    .font(.system(size: 14, weight: .semibold))
+                    .foregroundStyle(Color(red: 0.10, green: 0.15, blue: 0.10))
+                    .lineLimit(2)
+                    .fixedSize(horizontal: false, vertical: true)
+
+                if let brand = item.product.brand, !brand.isEmpty {
+                    Text(brand)
+                        .font(.system(size: 12))
+                        .foregroundStyle(.secondary)
+                }
+
+                if let size = item.product.size, !size.isEmpty {
+                    Text(size)
+                        .font(.system(size: 11))
+                        .foregroundStyle(Color(red: 0.50, green: 0.55, blue: 0.50))
+                }
+
+                HStack(spacing: 4) {
+                    Image(systemName: "calendar")
+                        .font(.system(size: 10))
+                        .foregroundStyle(.secondary)
+                    Text("Valid now")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+            }
+
+            Spacer()
+
+            // Price + cheapest badge
+            VStack(alignment: .trailing, spacing: 4) {
+                if let price = item.product.price {
+                    Text(price)
+                        .font(.system(size: 18, weight: .black, design: .rounded))
+                        .foregroundStyle(item.isCheapest ? SavrColors.brandGreen : Color(red: 0.10, green: 0.15, blue: 0.10))
+                } else {
+                    Text("—")
+                        .font(.system(size: 18, weight: .black))
+                        .foregroundStyle(.secondary)
+                }
+
+                if item.isCheapest {
+                    Text("Best price")
+                        .font(.system(size: 10, weight: .bold))
+                        .foregroundStyle(.white)
+                        .padding(.horizontal, 7)
+                        .padding(.vertical, 3)
+                        .background(SavrColors.brandGreen)
+                        .clipShape(Capsule())
+                }
+
+                // Checkbox
+                Image(systemName: "square")
+                    .font(.system(size: 18))
+                    .foregroundStyle(Color(red: 0.75, green: 0.80, blue: 0.75))
+            }
+        }
+        .padding(.horizontal, 16)
+        .padding(.vertical, 12)
+        .background(Color.white)
+    }
+
+    /// Pick a SF symbol based on item name keywords
+    private func productIcon(for name: String) -> String {
+        let lower = name.lowercased()
+        if lower.contains("milk") || lower.contains("dairy") || lower.contains("cheese") || lower.contains("yogurt") { return "cup.and.saucer.fill" }
+        if lower.contains("bread") || lower.contains("bagel") || lower.contains("bun") { return "takeoutbag.and.cup.and.straw.fill" }
+        if lower.contains("chicken") || lower.contains("beef") || lower.contains("pork") || lower.contains("meat") || lower.contains("fish") || lower.contains("salmon") { return "fork.knife" }
+        if lower.contains("apple") || lower.contains("banana") || lower.contains("fruit") || lower.contains("berry") || lower.contains("orange") { return "leaf.fill" }
+        if lower.contains("vegetable") || lower.contains("carrot") || lower.contains("lettuce") || lower.contains("salad") || lower.contains("broccoli") { return "leaf.fill" }
+        if lower.contains("juice") || lower.contains("drink") || lower.contains("water") || lower.contains("pop") || lower.contains("soda") { return "cup.and.saucer.fill" }
+        if lower.contains("coffee") || lower.contains("tea") { return "cup.and.saucer.fill" }
+        if lower.contains("chip") || lower.contains("snack") || lower.contains("cracker") { return "circle.grid.2x2.fill" }
+        if lower.contains("cereal") || lower.contains("oat") { return "square.grid.2x2.fill" }
+        if lower.contains("egg") { return "oval.fill" }
+        if lower.contains("pasta") || lower.contains("noodle") || lower.contains("rice") { return "square.3.layers.3d" }
+        if lower.contains("soap") || lower.contains("shampoo") || lower.contains("detergent") || lower.contains("cleaning") { return "bubbles.and.sparkles.fill" }
+        if lower.contains("diaper") || lower.contains("baby") { return "figure.2.and.child.holdinghands" }
+        return "cart.fill"
     }
 }
 
@@ -556,10 +680,8 @@ func brandAssetName(for name: String) -> String {
 
 /// Cleans up internal store IDs like "sobeys::10 Elizabeth Ave" -> "Sobeys"
 func cleanStoreName(_ raw: String) -> String {
-    // Split on "::" and take the first part, then capitalize
     let base = raw.components(separatedBy: "::").first ?? raw
     let trimmed = base.trimmingCharacters(in: .whitespacesAndNewlines)
-    // Replace underscores/hyphens with spaces and capitalize each word
     return trimmed
         .replacingOccurrences(of: "_", with: " ")
         .replacingOccurrences(of: "-", with: " ")
@@ -579,7 +701,11 @@ func storeColor(for name: String) -> Color {
     if lower.contains("walmart")    { return Color(red: 0.00, green: 0.47, blue: 0.87) }
     if lower.contains("costco")     { return Color(red: 0.80, green: 0.10, blue: 0.10) }
     if lower.contains("freshco")    { return Color(red: 0.07, green: 0.53, blue: 0.25) }
-    // Fallback indexed colors
+    if lower.contains("superstore") { return Color(red: 0.80, green: 0.15, blue: 0.15) }
+    if lower.contains("maxi")       { return Color(red: 0.95, green: 0.20, blue: 0.25) }
+    if lower.contains("independent"){ return Color(red: 0.20, green: 0.50, blue: 0.20) }
+    if lower.contains("foodland")   { return Color(red: 0.10, green: 0.45, blue: 0.80) }
+    if lower.contains("t&t") || lower.contains("tandt") { return Color(red: 0.88, green: 0.10, blue: 0.18) }
     let colors: [Color] = [
         Color(red: 0.12, green: 0.67, blue: 0.28),
         Color(red: 0.20, green: 0.40, blue: 0.85),
@@ -588,13 +714,4 @@ func storeColor(for name: String) -> Color {
     ]
     let idx = abs(name.hashValue) % colors.count
     return colors[idx]
-}
-
-private func storeColor(_ index: Int) -> Color {
-    let colors: [Color] = [
-        Color(red: 0.12, green: 0.67, blue: 0.28),
-        Color(red: 0.20, green: 0.40, blue: 0.85),
-        Color(red: 0.90, green: 0.45, blue: 0.10),
-    ]
-    return colors[index % colors.count]
 }
