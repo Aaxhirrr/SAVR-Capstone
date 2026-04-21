@@ -32,6 +32,7 @@ struct ListsView: View {
         ZStack {
             LinearGradient(colors: [SavrColors.bgTop, SavrColors.bgBottom],
                            startPoint: .top, endPoint: .bottom)
+                .ignoresSafeArea()
 
             if viewModel.isLoading {
                 ProgressView()

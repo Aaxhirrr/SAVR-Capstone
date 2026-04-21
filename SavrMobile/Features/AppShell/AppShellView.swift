@@ -3,14 +3,14 @@ import SwiftUI
 struct AppShellView: View {
     var body: some View {
         TabView {
-            ListsView()
-                .tabItem {
-                    Label("My Lists", systemImage: "cart.fill")
-                }
-
             ChatView()
                 .tabItem {
                     Label("Chat", systemImage: "bubble.left.fill")
+                }
+
+            ListsView()
+                .tabItem {
+                    Label("My Lists", systemImage: "cart.fill")
                 }
 
             FlyersView()
