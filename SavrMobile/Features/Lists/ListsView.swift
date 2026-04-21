@@ -144,20 +144,6 @@ private struct GroceryListCard: View {
             }
             .buttonStyle(.plain)
 
-            // Savings badge
-            if let cheapStore = list.leastExpensiveStoreName,
-               let cheapPrice = list.leastExpensiveStorePrice {
-                HStack(spacing: 6) {
-                    Image(systemName: "tag.fill")
-                        .font(.caption)
-                    Text("Best price at \(cheapStore): $\(String(format: "%.2f", cheapPrice))")
-                        .font(.system(size: 13, weight: .semibold))
-                }
-                .foregroundStyle(Color(red: 0.10, green: 0.62, blue: 0.25))
-                .padding(.horizontal, 16)
-                .padding(.bottom, 10)
-            }
-
             // Items (expandable)
             if expanded {
                 Divider().padding(.horizontal, 16)
