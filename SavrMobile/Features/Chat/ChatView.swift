@@ -92,19 +92,6 @@ struct ChatView: View {
             }
             .ignoresSafeArea()
         }
-        .confirmationDialog("Add a Photo", isPresented: $showImageSourceSheet, titleVisibility: .visible) {
-            if UIImagePickerController.isSourceTypeAvailable(.camera) {
-                Button("Take Photo") {
-                    viewModel.imagePickerSource = .camera
-                    viewModel.showImagePicker = true
-                }
-            }
-            Button("Choose from Library") {
-                viewModel.imagePickerSource = .photoLibrary
-                viewModel.showImagePicker = true
-            }
-            Button("Cancel", role: .cancel) {}
-        }
         .overlay {
             if viewModel.isProcessingImage {
                 ZStack {
@@ -234,6 +221,9 @@ struct ChatView: View {
                         composerIcon("camera.fill")
                     }
                     .buttonStyle(.plain)
+                    .popover(isPresented: $showImageSourceSheet, attachmentAnchor: .rect(.bounds), arrowEdge: .bottom) {
+                        cameraSourcePopoverContent
+                    }
                     Button { showDietaryPrefs = true } label: {
                         composerIcon("heart")
                     }
@@ -278,6 +268,29 @@ struct ChatView: View {
                     .font(.system(size: 14, weight: .semibold))
                     .foregroundStyle(Color(red: 0.27, green: 0.31, blue: 0.39))
             )
+    }
+
+    @ViewBuilder
+    private var cameraSourcePopoverContent: some View {
+        let popover = CameraSourcePopover(
+            showsCamera: UIImagePickerController.isSourceTypeAvailable(.camera),
+            onTakePhoto: {
+                showImageSourceSheet = false
+                viewModel.imagePickerSource = .camera
+                viewModel.showImagePicker = true
+            },
+            onChooseFromLibrary: {
+                showImageSourceSheet = false
+                viewModel.imagePickerSource = .photoLibrary
+                viewModel.showImagePicker = true
+            }
+        )
+
+        if #available(iOS 16.4, *) {
+            popover.presentationCompactAdaptation(.popover)
+        } else {
+            popover
+        }
     }
 
     // MARK: - Background
@@ -351,6 +364,54 @@ private struct AssistantBubble: View {
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
                     .stroke(Color(red: 0.88, green: 0.89, blue: 0.92), lineWidth: 1)
             )
+    }
+}
+
+private struct CameraSourcePopover: View {
+    let showsCamera: Bool
+    let onTakePhoto: () -> Void
+    let onChooseFromLibrary: () -> Void
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 8) {
+            if showsCamera {
+                popoverButton(
+                    title: "Take Photo",
+                    systemImage: "camera.fill",
+                    action: onTakePhoto
+                )
+            }
+
+            popoverButton(
+                title: "Choose from Library",
+                systemImage: "photo.on.rectangle.angled",
+                action: onChooseFromLibrary
+            )
+        }
+        .padding(8)
+        .frame(width: 220)
+        .background(.white)
+    }
+
+    private func popoverButton(title: String, systemImage: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            HStack(spacing: 10) {
+                Image(systemName: systemImage)
+                    .font(.system(size: 14, weight: .semibold))
+                    .frame(width: 18)
+
+                Text(title)
+                    .font(.system(size: 14, weight: .semibold, design: .rounded))
+
+                Spacer()
+            }
+            .foregroundStyle(Color(red: 0.20, green: 0.24, blue: 0.32))
+            .padding(.horizontal, 12)
+            .padding(.vertical, 10)
+            .background(Color(red: 0.97, green: 0.97, blue: 0.98))
+            .clipShape(RoundedRectangle(cornerRadius: 12, style: .continuous))
+        }
+        .buttonStyle(.plain)
     }
 }
 
