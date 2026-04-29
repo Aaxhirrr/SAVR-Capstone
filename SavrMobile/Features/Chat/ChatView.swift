@@ -352,10 +352,7 @@ private struct AssistantBubble: View {
     let text: String
 
     var body: some View {
-        Text(text)
-            .font(.system(size: 15, weight: .medium, design: .rounded))
-            .foregroundStyle(Color(red: 0.18, green: 0.22, blue: 0.30))
-            .lineSpacing(5)
+        AssistantFormattedText(text: text)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(16)
             .background(Color(red: 0.96, green: 0.97, blue: 0.98))
@@ -364,6 +361,146 @@ private struct AssistantBubble: View {
                 RoundedRectangle(cornerRadius: 20, style: .continuous)
                     .stroke(Color(red: 0.88, green: 0.89, blue: 0.92), lineWidth: 1)
             )
+    }
+}
+
+private struct AssistantFormattedText: View {
+    let text: String
+
+    private var blocks: [AssistantTextBlock] {
+        AssistantTextFormatter.blocks(from: text)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
+                switch block {
+                case .heading(let value):
+                    Text(value)
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color(red: 0.16, green: 0.21, blue: 0.29))
+                        .lineSpacing(4)
+
+                case .bullet(let value):
+                    HStack(alignment: .top, spacing: 8) {
+                        Text("•")
+                            .font(.system(size: 15, weight: .bold, design: .rounded))
+                            .foregroundStyle(Color(red: 0.12, green: 0.67, blue: 0.28))
+
+                        Text(value)
+                            .font(.system(size: 15, weight: .medium, design: .rounded))
+                            .foregroundStyle(Color(red: 0.18, green: 0.22, blue: 0.30))
+                            .lineSpacing(5)
+                    }
+
+                case .paragraph(let value):
+                    Text(value)
+                        .font(.system(size: 15, weight: .medium, design: .rounded))
+                        .foregroundStyle(Color(red: 0.18, green: 0.22, blue: 0.30))
+                        .lineSpacing(5)
+                }
+            }
+        }
+    }
+}
+
+private enum AssistantTextBlock {
+    case heading(AttributedString)
+    case bullet(AttributedString)
+    case paragraph(AttributedString)
+}
+
+private enum AssistantTextFormatter {
+    static func blocks(from rawText: String) -> [AssistantTextBlock] {
+        let normalized = rawText
+            .replacingOccurrences(of: "\\n", with: "\n")
+            .replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\r", with: "\n")
+
+        let lines = normalized
+            .components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+        var result: [AssistantTextBlock] = []
+        var paragraphBuffer: [String] = []
+
+        func flushParagraph() {
+            guard !paragraphBuffer.isEmpty else { return }
+            let text = paragraphBuffer.joined(separator: " ")
+            result.append(.paragraph(attributed(text)))
+            paragraphBuffer.removeAll()
+        }
+
+        for line in lines {
+            guard !line.isEmpty else {
+                flushParagraph()
+                continue
+            }
+
+            if isHeading(line) {
+                flushParagraph()
+                result.append(.heading(attributed(line)))
+                continue
+            }
+
+            if isBullet(line) {
+                flushParagraph()
+                result.append(.bullet(attributed(cleanBullet(line))))
+                continue
+            }
+
+            paragraphBuffer.append(line)
+        }
+
+        flushParagraph()
+        return result
+    }
+
+    private static func isHeading(_ line: String) -> Bool {
+        line.hasPrefix("**") && line.hasSuffix("**") && line.dropFirst(2).dropLast(2).contains(where: { !$0.isWhitespace })
+    }
+
+    private static func isBullet(_ line: String) -> Bool {
+        if line.hasPrefix("•") || line.hasPrefix("-") || line.hasPrefix("* ") {
+            return true
+        }
+
+        guard line.hasPrefix("**"), let closingRange = line.range(of: "**", options: [], range: line.index(line.startIndex, offsetBy: 2)..<line.endIndex) else {
+            return false
+        }
+
+        let trailing = line[closingRange.upperBound...].trimmingCharacters(in: .whitespacesAndNewlines)
+        return !trailing.isEmpty
+    }
+
+    private static func cleanBullet(_ line: String) -> String {
+        if line.hasPrefix("•") {
+            return line.dropFirst().trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        if line.hasPrefix("-") {
+            return line.dropFirst().trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        if line.hasPrefix("* ") {
+            return String(line.dropFirst(2)).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        return line
+    }
+
+    private static func attributed(_ text: String) -> AttributedString {
+        if let markdown = try? AttributedString(
+            markdown: text,
+            options: AttributedString.MarkdownParsingOptions(
+                interpretedSyntax: .inlineOnlyPreservingWhitespace,
+                failurePolicy: .returnPartiallyParsedIfPossible
+            )
+        ) {
+            return markdown
+        }
+
+        return AttributedString(text)
     }
 }
 
