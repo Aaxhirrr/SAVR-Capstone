@@ -235,7 +235,13 @@ struct ListDetailView: View {
         HStack {
             if msg.role == .user { Spacer(minLength: 60) }
 
-            Text(msg.text)
+            Group {
+                if msg.role == .assistant {
+                    Text(markdownText(from: msg.text))
+                } else {
+                    Text(msg.text)
+                }
+            }
                 .font(.system(size: 15, design: .rounded))
                 .foregroundStyle(msg.role == .user ? .white : Color(red: 0.10, green: 0.30, blue: 0.16))
                 .padding(.horizontal, 14)
@@ -250,6 +256,20 @@ struct ListDetailView: View {
 
             if msg.role == .assistant { Spacer(minLength: 60) }
         }
+    }
+
+    private func markdownText(from text: String) -> AttributedString {
+        if let markdown = try? AttributedString(
+            markdown: text,
+            options: AttributedString.MarkdownParsingOptions(
+                interpretedSyntax: .full,
+                failurePolicy: .returnPartiallyParsedIfPossible
+            )
+        ) {
+            return markdown
+        }
+
+        return AttributedString(text)
     }
 
     private var typingIndicator: some View {
