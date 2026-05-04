@@ -89,15 +89,7 @@ private struct SavrTopBar: View {
             VStack(spacing: 0) {
                 VStack(spacing: compact ? 12 : 14) {
                     HStack(alignment: .center, spacing: 12) {
-                        Text("savr")
-                            .font(.system(size: compact ? 28 : 34, weight: .black, design: .rounded))
-                            .foregroundStyle(SavrColors.brandGreen)
-                            .overlay(alignment: .topTrailing) {
-                                Circle()
-                                    .fill(.red)
-                                    .frame(width: compact ? 7 : 8, height: compact ? 7 : 8)
-                                    .offset(x: -6, y: -2)
-                            }
+                        SavrLogoView(fontSize: compact ? 28 : 34)
 
                         Spacer(minLength: 8)
 
@@ -541,15 +533,7 @@ private struct FooterView: View {
                 .frame(height: 1)
 
             VStack(spacing: 18) {
-                Text("savr")
-                    .font(.system(size: 28, weight: .black, design: .rounded))
-                    .foregroundStyle(SavrColors.brandGreen)
-                    .overlay(alignment: .topTrailing) {
-                        Circle()
-                            .fill(.red)
-                            .frame(width: 7, height: 7)
-                            .offset(x: -5, y: -2)
-                    }
+                SavrLogoView(fontSize: 28)
 
                 Text("Built with love in Canada · 2026 © SAVR")
                     .font(.system(size: 15, weight: .medium, design: .rounded))

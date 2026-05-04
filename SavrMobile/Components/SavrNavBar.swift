@@ -6,16 +6,7 @@ struct SavrNavBar: View {
 
     var body: some View {
         HStack {
-            HStack(spacing: 6) {
-                Text("savr")
-                    .font(.system(size: 26, weight: .heavy, design: .rounded))
-                    .foregroundStyle(SavrColors.brandGreen)
-                Circle()
-                    .fill(.red)
-                    .frame(width: 6, height: 6)
-                    .offset(x: -12, y: -10)
-                    .opacity(0.9)
-            }
+            SavrLogoView(fontSize: 26)
 
             Spacer()
 
