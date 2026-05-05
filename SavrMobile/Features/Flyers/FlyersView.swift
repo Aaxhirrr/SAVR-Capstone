@@ -614,9 +614,9 @@ private struct FlyerDealRow: View {
 
     @ViewBuilder
     private var priceLabel: some View {
-        let pre = deal.prePriceText.map { $0 + " " } ?? ""
-        let post = deal.postPriceText.map { " " + $0 } ?? ""
-        let fullPrice = "\(pre)\(deal.price)\(post)"
+        let pre = cleanedPriceContext(deal.prePriceText, trailingSpace: true)
+        let post = cleanedPriceContext(deal.postPriceText, trailingSpace: false)
+        let fullPrice = "\(pre)\(displayPrice)\(post)"
         Text(fullPrice)
             .font(.system(size: 16, weight: .black, design: .rounded))
             .foregroundStyle(deal.originalPrice != nil ? SavrColors.brandGreen : Color(red: 0.10, green: 0.15, blue: 0.10))
@@ -637,6 +637,34 @@ private struct FlyerDealRow: View {
 
     private func formatPrice(_ value: Double) -> String {
         String(format: "$%.2f", value)
+    }
+
+    private var displayPrice: String {
+        if let numeric = deal.priceFloat {
+            return formatPrice(numeric)
+        }
+
+        let trimmed = deal.price.trimmingCharacters(in: .whitespacesAndNewlines)
+        guard !trimmed.isEmpty else { return "$0.00" }
+
+        if trimmed.contains("$") {
+            return trimmed
+        }
+
+        let normalized = trimmed.replacingOccurrences(of: ",", with: "")
+        if let numeric = Double(normalized) {
+            return formatPrice(numeric)
+        }
+
+        return trimmed
+    }
+
+    private func cleanedPriceContext(_ value: String?, trailingSpace: Bool) -> String {
+        guard let raw = value?.trimmingCharacters(in: .whitespacesAndNewlines), !raw.isEmpty else {
+            return ""
+        }
+
+        return trailingSpace ? "\(raw) " : " \(raw)"
     }
 
     private func productIcon(for name: String) -> String {
