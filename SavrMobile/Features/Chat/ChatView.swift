@@ -461,7 +461,7 @@ private enum AssistantTextFormatter {
     }
 
     private static func isBullet(_ line: String) -> Bool {
-        if line.hasPrefix("•") || line.hasPrefix("-") || line.hasPrefix("* ") {
+        if line.hasPrefix("•") || line.hasPrefix("-") || line.hasPrefix("* ") || hasUnicodeBulletPrefix(line) {
             return true
         }
 
@@ -486,7 +486,16 @@ private enum AssistantTextFormatter {
             return String(line.dropFirst(2)).trimmingCharacters(in: .whitespacesAndNewlines)
         }
 
+        if hasUnicodeBulletPrefix(line) {
+            return line.dropFirst().trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
         return line
+    }
+
+    private static func hasUnicodeBulletPrefix(_ line: String) -> Bool {
+        guard let first = line.first else { return false }
+        return ["・", "◦", "‣"].contains(first)
     }
 
     private static func attributed(_ text: String) -> AttributedString {
