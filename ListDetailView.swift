@@ -472,41 +472,21 @@ struct ListDetailView: View {
         HStack {
             if msg.role == .user { Spacer(minLength: 60) }
 
-            Group {
-                if msg.role == .assistant {
-                    Text(markdownText(from: msg.text))
-                } else {
-                    Text(msg.text)
-                }
+            if msg.role == .assistant {
+                ListDetailAssistantBubble(text: msg.text)
+            } else {
+                Text(msg.text)
+                    .font(.system(size: 15, design: .rounded))
+                    .foregroundStyle(.white)
+                    .padding(.horizontal, 14)
+                    .padding(.vertical, 10)
+                    .background(SavrColors.brandGreen)
+                    .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
+                    .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
             }
-                .font(.system(size: 15, design: .rounded))
-                .foregroundStyle(msg.role == .user ? .white : Color(red: 0.10, green: 0.30, blue: 0.16))
-                .padding(.horizontal, 14)
-                .padding(.vertical, 10)
-                .background(
-                    msg.role == .user
-                        ? SavrColors.brandGreen
-                        : Color.white.opacity(0.90)
-                )
-                .clipShape(RoundedRectangle(cornerRadius: 18, style: .continuous))
-                .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
 
             if msg.role == .assistant { Spacer(minLength: 60) }
         }
-    }
-
-    private func markdownText(from text: String) -> AttributedString {
-        if let markdown = try? AttributedString(
-            markdown: text,
-            options: AttributedString.MarkdownParsingOptions(
-                interpretedSyntax: .full,
-                failurePolicy: .returnPartiallyParsedIfPossible
-            )
-        ) {
-            return markdown
-        }
-
-        return AttributedString(text)
     }
 
     private var typingIndicator: some View {
@@ -950,5 +930,171 @@ private struct ReceiptPaperShape: Shape {
 
         path.closeSubpath()
         return path
+    }
+}
+
+private struct ListDetailAssistantBubble: View {
+    let text: String
+
+    var body: some View {
+        ListDetailAssistantFormattedText(text: text)
+            .frame(maxWidth: .infinity, alignment: .leading)
+            .padding(16)
+            .background(Color(red: 0.96, green: 0.97, blue: 0.98))
+            .clipShape(RoundedRectangle(cornerRadius: 20, style: .continuous))
+            .overlay(
+                RoundedRectangle(cornerRadius: 20, style: .continuous)
+                    .stroke(Color(red: 0.88, green: 0.89, blue: 0.92), lineWidth: 1)
+            )
+            .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 2)
+    }
+}
+
+private struct ListDetailAssistantFormattedText: View {
+    let text: String
+
+    private var blocks: [ListDetailAssistantTextBlock] {
+        ListDetailAssistantTextFormatter.blocks(from: text)
+    }
+
+    var body: some View {
+        VStack(alignment: .leading, spacing: 10) {
+            ForEach(Array(blocks.enumerated()), id: \.offset) { _, block in
+                switch block {
+                case .heading(let value):
+                    Text(value)
+                        .font(.system(size: 16, weight: .bold, design: .rounded))
+                        .foregroundStyle(Color(red: 0.16, green: 0.21, blue: 0.29))
+                        .lineSpacing(4)
+
+                case .bullet(let value):
+                    HStack(alignment: .top, spacing: 8) {
+                        Text("•")
+                            .font(.system(size: 15, weight: .bold, design: .rounded))
+                            .foregroundStyle(Color(red: 0.12, green: 0.67, blue: 0.28))
+
+                        Text(value)
+                            .font(.system(size: 15, weight: .medium, design: .rounded))
+                            .foregroundStyle(Color(red: 0.18, green: 0.22, blue: 0.30))
+                            .lineSpacing(5)
+                    }
+
+                case .paragraph(let value):
+                    Text(value)
+                        .font(.system(size: 15, weight: .medium, design: .rounded))
+                        .foregroundStyle(Color(red: 0.18, green: 0.22, blue: 0.30))
+                        .lineSpacing(5)
+                }
+            }
+        }
+    }
+}
+
+private enum ListDetailAssistantTextBlock {
+    case heading(AttributedString)
+    case bullet(AttributedString)
+    case paragraph(AttributedString)
+}
+
+private enum ListDetailAssistantTextFormatter {
+    static func blocks(from rawText: String) -> [ListDetailAssistantTextBlock] {
+        let normalized = rawText
+            .replacingOccurrences(of: "\\n", with: "\n")
+            .replacingOccurrences(of: "\r\n", with: "\n")
+            .replacingOccurrences(of: "\r", with: "\n")
+
+        let lines = normalized
+            .components(separatedBy: .newlines)
+            .map { $0.trimmingCharacters(in: .whitespacesAndNewlines) }
+
+        var result: [ListDetailAssistantTextBlock] = []
+        var paragraphBuffer: [String] = []
+
+        func flushParagraph() {
+            guard !paragraphBuffer.isEmpty else { return }
+            let text = paragraphBuffer.joined(separator: " ")
+            result.append(.paragraph(attributed(text)))
+            paragraphBuffer.removeAll()
+        }
+
+        for line in lines {
+            guard !line.isEmpty else {
+                flushParagraph()
+                continue
+            }
+
+            if isHeading(line) {
+                flushParagraph()
+                result.append(.heading(attributed(line)))
+                continue
+            }
+
+            if isBullet(line) {
+                flushParagraph()
+                result.append(.bullet(attributed(cleanBullet(line))))
+                continue
+            }
+
+            paragraphBuffer.append(line)
+        }
+
+        flushParagraph()
+        return result
+    }
+
+    private static func isHeading(_ line: String) -> Bool {
+        line.hasPrefix("**") && line.hasSuffix("**") && line.dropFirst(2).dropLast(2).contains(where: { !$0.isWhitespace })
+    }
+
+    private static func isBullet(_ line: String) -> Bool {
+        if line.hasPrefix("•") || line.hasPrefix("-") || line.hasPrefix("* ") || hasUnicodeBulletPrefix(line) {
+            return true
+        }
+
+        guard line.hasPrefix("**"), let closingRange = line.range(of: "**", options: [], range: line.index(line.startIndex, offsetBy: 2)..<line.endIndex) else {
+            return false
+        }
+
+        let trailing = line[closingRange.upperBound...].trimmingCharacters(in: .whitespacesAndNewlines)
+        return !trailing.isEmpty
+    }
+
+    private static func cleanBullet(_ line: String) -> String {
+        if line.hasPrefix("•") {
+            return line.dropFirst().trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        if line.hasPrefix("-") {
+            return line.dropFirst().trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        if line.hasPrefix("* ") {
+            return String(line.dropFirst(2)).trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        if hasUnicodeBulletPrefix(line) {
+            return line.dropFirst().trimmingCharacters(in: .whitespacesAndNewlines)
+        }
+
+        return line
+    }
+
+    private static func hasUnicodeBulletPrefix(_ line: String) -> Bool {
+        guard let first = line.first else { return false }
+        return ["・", "◦", "‣"].contains(first)
+    }
+
+    private static func attributed(_ text: String) -> AttributedString {
+        if let markdown = try? AttributedString(
+            markdown: text,
+            options: AttributedString.MarkdownParsingOptions(
+                interpretedSyntax: .inlineOnlyPreservingWhitespace,
+                failurePolicy: .returnPartiallyParsedIfPossible
+            )
+        ) {
+            return markdown
+        }
+
+        return AttributedString(text)
     }
 }
