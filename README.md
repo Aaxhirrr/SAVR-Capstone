@@ -43,6 +43,8 @@ Current state of the app:
 - core flows are connected to the backend for auth, chat, lists, flyers, profile, and saved stores
 - list detail UI includes a receipt-style presentation inspired by the web UI
 - chat formatting and camera entry interactions have been improved for readability and usability
+- per-list chat sessions now persist locally and recover cleanly when older backend-linked chat sessions are stale
+- the SAVR logo and app icon have been updated to use the corrected brand mark instead of the earlier mocked text treatment
 
 Important honesty note:
 - the homepage query flow is still backed by `MockPriceService`
@@ -138,6 +140,10 @@ The chat page is the core SAVR interaction surface. It supports:
 - persisted session-based messaging
 - assistant message formatting improvements
 - image capture / image library entry point
+- compact camera-source popover anchored to the composer action
+
+Important implementation note:
+- the main chat experience supports readable structured assistant formatting for headings, bullet lists, and paragraphs
 
 Key files:
 - [ChatView.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/SavrMobile/Features/Chat/ChatView.swift)
@@ -156,6 +162,9 @@ Inside each specific list:
 - there is a `List` tab
 - there is a `Chat` tab
 - the list view is presented in a receipt-style layout inspired by the SAVR web product
+- the detail screen refreshes the list from the backend instead of relying only on navigation-passed state
+- each list chat now keeps its own locally persisted transcript and last known good session binding
+- if a stale backend chat session returns `404`, the app recovers by rehydrating context from the current list and recent transcript so the user can keep going in that list thread
 
 Key files:
 - [ListsView.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/ListsView.swift)
@@ -172,6 +181,9 @@ The flyers area supports:
 
 Key file:
 - [FlyersView.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/FlyersView.swift)
+
+Recent polish:
+- flyer prices are normalized for cleaner dollar formatting when backend values vary in shape
 
 ### 6. Stores
 
@@ -239,6 +251,10 @@ Visual direction:
 - SAVR green as the primary accent
 - rounded, friendly, high-contrast SwiftUI components
 - layouts and list detail styling adapted from the SAVR web experience
+
+Brand asset updates:
+- the in-app SAVR wordmark now uses the corrected logo treatment
+- the launcher app icon keeps the existing green background while using the corrected SAVR wordmark and red dot
 
 ## Running the App
 
