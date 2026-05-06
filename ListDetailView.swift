@@ -3,6 +3,33 @@ import SwiftUI
 // MARK: - ViewModel
 
 @MainActor
+final class ListDetailViewModel: ObservableObject {
+    @Published private(set) var list: GroceryList
+    @Published var isRefreshing = false
+    @Published var errorMessage: String?
+
+    private let service: GroceryListService
+
+    init(list: GroceryList, service: GroceryListService = GroceryListService()) {
+        self.list = list
+        self.service = service
+    }
+
+    func loadLatest() async {
+        guard !isRefreshing else { return }
+        isRefreshing = true
+        defer { isRefreshing = false }
+
+        do {
+            list = try await service.fetchList(id: list.id)
+            errorMessage = nil
+        } catch {
+            errorMessage = "Couldn't refresh this list."
+        }
+    }
+}
+
+@MainActor
 final class ListDetailChatViewModel: ObservableObject {
     @Published var messages: [ChatMessage] = []
     @Published var draft: String = ""
@@ -10,21 +37,64 @@ final class ListDetailChatViewModel: ObservableObject {
     @Published var isWaiting: Bool = false
     @Published var errorMessage: String?
 
-    private let sessionId: String
+    private var sessionId: String?
+    private let listId: String
     private let chatService: ChatService
+    private let sessionStore: ListChatSessionStore
+    private var listContext: GroceryList
+    private var hasAttemptedRemoteHistoryLoad = false
 
-    init(sessionId: String, chatService: ChatService = ChatService()) {
-        self.sessionId = sessionId
+    init(
+        list: GroceryList,
+        chatService: ChatService = ChatService(),
+        sessionStore: ListChatSessionStore = ListChatSessionStore()
+    ) {
+        self.listId = list.id
+        self.listContext = list
         self.chatService = chatService
+        self.sessionStore = sessionStore
+        self.sessionId = sessionStore.sessionId(for: list.id) ?? list.sessionId
+        self.messages = sessionStore.messages(for: list.id)
+    }
+
+    func updateList(_ list: GroceryList) {
+        listContext = list
+
+        if let persistedSessionId = sessionStore.sessionId(for: list.id) {
+            sessionId = persistedSessionId
+        } else if sessionId == nil {
+            sessionId = list.sessionId
+        }
+
+        let cachedMessages = sessionStore.messages(for: list.id)
+        if messages.isEmpty, !cachedMessages.isEmpty {
+            messages = cachedMessages
+        }
     }
 
     func loadHistory() async {
-        guard messages.isEmpty else { return }
+        if messages.isEmpty {
+            messages = sessionStore.messages(for: listId)
+        }
+
+        guard let sessionId else { return }
+        guard !hasAttemptedRemoteHistoryLoad else { return }
+
+        hasAttemptedRemoteHistoryLoad = true
         isLoading = true
+        errorMessage = nil
         do {
             messages = try await chatService.fetchHistory(sessionId: sessionId)
+            sessionStore.save(messages: messages, for: listId)
+            sessionStore.save(sessionId: sessionId, for: listId)
         } catch {
-            errorMessage = "Couldn't load chat history."
+            if isMissingSession(error) {
+                self.sessionId = nil
+                sessionStore.clearSessionId(for: listId)
+                errorMessage = nil
+            } else {
+                errorMessage = "Couldn't load chat history."
+            }
         }
         isLoading = false
     }
@@ -33,20 +103,146 @@ final class ListDetailChatViewModel: ObservableObject {
         let trimmed = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !trimmed.isEmpty, !isWaiting else { return }
         draft = ""
-        messages.append(.init(role: .user, text: trimmed, timestamp: Date()))
+        let userMessage = ChatMessage(role: .user, text: trimmed, timestamp: Date())
+        let previousTranscript = messages
+        messages.append(userMessage)
+        sessionStore.save(messages: messages, for: listId)
         isWaiting = true
         errorMessage = nil
 
         Task {
             do {
-                let response = try await chatService.sendMessage(text: trimmed, sessionId: sessionId)
+                let response = try await sendMessage(
+                    userMessage: trimmed,
+                    transcript: previousTranscript
+                )
+                sessionId = response.sessionId
+                sessionStore.save(sessionId: response.sessionId, for: listId)
                 messages.append(.init(role: .assistant, text: response.botResponse, timestamp: Date()))
+                sessionStore.save(messages: messages, for: listId)
             } catch {
                 errorMessage = error.localizedDescription
                 messages.append(.init(role: .assistant, text: "Sorry, something went wrong. Please try again.", timestamp: Date()))
+                sessionStore.save(messages: messages, for: listId)
             }
             isWaiting = false
         }
+    }
+
+    private func sendMessage(
+        userMessage: String,
+        transcript: [ChatMessage]
+    ) async throws -> ChatAPIResponse {
+        do {
+            return try await chatService.sendMessage(
+                text: payload(for: userMessage, transcript: transcript, needsContextBootstrap: sessionId == nil),
+                sessionId: sessionId
+            )
+        } catch {
+            guard isMissingSession(error) else { throw error }
+
+            sessionId = nil
+            sessionStore.clearSessionId(for: listId)
+
+            return try await chatService.sendMessage(
+                text: payload(for: userMessage, transcript: transcript, needsContextBootstrap: true),
+                sessionId: nil
+            )
+        }
+    }
+
+    private func payload(
+        for userMessage: String,
+        transcript: [ChatMessage],
+        needsContextBootstrap: Bool
+    ) -> String {
+        guard needsContextBootstrap else { return userMessage }
+
+        let itemPreview = listContext.items.prefix(12).map { item in
+            let quantity = item.quantity?.isEmpty == false ? " (\(item.quantity!))" : ""
+            let category = item.category?.isEmpty == false ? " - \(item.category!)" : ""
+            return "- \(item.name)\(quantity)\(category)"
+        }.joined(separator: "\n")
+
+        let recentTranscript = transcript.suffix(8).map { message in
+            let speaker = message.role == .user ? "User" : "Assistant"
+            return "\(speaker): \(message.text)"
+        }.joined(separator: "\n")
+
+        return """
+        Continue this SAVR grocery list conversation as the same thread.
+        List name: \(listContext.name)
+        Current list items:
+        \(itemPreview.isEmpty ? "- No items saved yet" : itemPreview)
+
+        Recent conversation context:
+        \(recentTranscript.isEmpty ? "No previous transcript is available." : recentTranscript)
+
+        The user's new message is:
+        \(userMessage)
+
+        Respond naturally as if continuing the existing list chat. Use the prior list context without restating all of it unless helpful.
+        """
+    }
+
+    private func isMissingSession(_ error: Error) -> Bool {
+        guard case let APIError.requestFailed(statusCode, _, _, _, _) = error else { return false }
+        return statusCode == 404
+    }
+}
+
+private struct PersistedListChatMessage: Codable {
+    let role: String
+    let text: String
+    let timestamp: Date
+
+    init(message: ChatMessage) {
+        role = message.role == .user ? "user" : "assistant"
+        text = message.text
+        timestamp = message.timestamp
+    }
+
+    var chatMessage: ChatMessage {
+        ChatMessage(
+            role: role == "user" ? .user : .assistant,
+            text: text,
+            timestamp: timestamp
+        )
+    }
+}
+
+struct ListChatSessionStore {
+    private let defaults = UserDefaults.standard
+    private let sessionPrefix = "savr.list-chat.session."
+    private let messagesPrefix = "savr.list-chat.messages."
+
+    func sessionId(for listId: String) -> String? {
+        defaults.string(forKey: sessionPrefix + listId)
+    }
+
+    func save(sessionId: String, for listId: String) {
+        defaults.set(sessionId, forKey: sessionPrefix + listId)
+    }
+
+    func clearSessionId(for listId: String) {
+        defaults.removeObject(forKey: sessionPrefix + listId)
+    }
+
+    func messages(for listId: String) -> [ChatMessage] {
+        guard
+            let data = defaults.data(forKey: messagesPrefix + listId),
+            let savedMessages = try? JSONDecoder().decode([PersistedListChatMessage].self, from: data)
+        else {
+            return []
+        }
+
+        return savedMessages.map(\.chatMessage)
+    }
+
+    func save(messages: [ChatMessage], for listId: String) {
+        let persistedMessages = messages.map(PersistedListChatMessage.init(message:))
+        guard let data = try? JSONEncoder().encode(persistedMessages) else { return }
+        defaults.set(data, forKey: messagesPrefix + listId)
     }
 }
 
@@ -56,6 +252,7 @@ struct ListDetailView: View {
     let list: GroceryList
 
     @State private var selectedTab: Tab = .list
+    @StateObject private var detailViewModel: ListDetailViewModel
     @StateObject private var chatViewModel: ListDetailChatViewModel
     @State private var selectedGrouping: ReceiptGrouping = .category
     @State private var checkedLineItems: Set<Int> = []
@@ -65,9 +262,8 @@ struct ListDetailView: View {
 
     init(list: GroceryList) {
         self.list = list
-        // Use sessionId from the list, or fall back to list id (for session-based lists)
-        let sid = list.sessionId ?? list.id
-        _chatViewModel = StateObject(wrappedValue: ListDetailChatViewModel(sessionId: sid))
+        _detailViewModel = StateObject(wrappedValue: ListDetailViewModel(list: list))
+        _chatViewModel = StateObject(wrappedValue: ListDetailChatViewModel(list: list))
     }
 
     var body: some View {
@@ -96,6 +292,7 @@ struct ListDetailView: View {
         }
         .navigationBarHidden(true)
         .task {
+            await refreshList()
             if selectedTab == .chat {
                 await chatViewModel.loadHistory()
             }
@@ -105,6 +302,23 @@ struct ListDetailView: View {
                 Task { await chatViewModel.loadHistory() }
             }
         }
+        .onChange(of: detailViewModel.list.id) { _ in
+            syncCheckedItemsWithCurrentList()
+        }
+        .onChange(of: detailViewModel.list.items.count) { _ in
+            syncCheckedItemsWithCurrentList()
+        }
+    }
+
+    private func refreshList() async {
+        await detailViewModel.loadLatest()
+        chatViewModel.updateList(detailViewModel.list)
+        syncCheckedItemsWithCurrentList()
+    }
+
+    private func syncCheckedItemsWithCurrentList() {
+        let validIndexes = Set(detailViewModel.list.items.indices)
+        checkedLineItems = checkedLineItems.intersection(validIndexes)
     }
 
     // MARK: - Nav Bar
@@ -123,16 +337,23 @@ struct ListDetailView: View {
             }
             .buttonStyle(.plain)
 
-            Text(list.name)
+            Text(detailViewModel.list.name)
                 .font(.system(size: 18, weight: .bold, design: .rounded))
                 .foregroundStyle(Color(red: 0.10, green: 0.30, blue: 0.16))
                 .lineLimit(1)
 
             Spacer()
 
-            Text("\(list.items.count) item\(list.items.count == 1 ? "" : "s")")
-                .font(.system(size: 13, weight: .medium))
-                .foregroundStyle(.secondary)
+            HStack(spacing: 8) {
+                if detailViewModel.isRefreshing {
+                    ProgressView()
+                        .controlSize(.small)
+                }
+
+                Text("\(detailViewModel.list.items.count) item\(detailViewModel.list.items.count == 1 ? "" : "s")")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(.secondary)
+            }
         }
         .padding(.horizontal, 20)
         .padding(.top, 16)
@@ -178,14 +399,30 @@ struct ListDetailView: View {
 
     private var listTab: some View {
         ScrollView {
-            ReceiptListCard(
-                list: list,
-                selectedGrouping: $selectedGrouping,
-                checkedLineItems: $checkedLineItems
-            )
+            VStack(spacing: 12) {
+                if let errorMessage = detailViewModel.errorMessage {
+                    Text(errorMessage)
+                        .font(.system(size: 13, weight: .medium, design: .rounded))
+                        .foregroundStyle(.red)
+                        .frame(maxWidth: .infinity, alignment: .leading)
+                        .padding(.horizontal, 18)
+                        .padding(.vertical, 12)
+                        .background(Color.white.opacity(0.82))
+                        .clipShape(RoundedRectangle(cornerRadius: 16, style: .continuous))
+                }
+
+                ReceiptListCard(
+                    list: detailViewModel.list,
+                    selectedGrouping: $selectedGrouping,
+                    checkedLineItems: $checkedLineItems
+                )
+            }
                 .padding(.horizontal, 16)
                 .padding(.top, 10)
                 .padding(.bottom, 40)
+        }
+        .refreshable {
+            await refreshList()
         }
     }
 
