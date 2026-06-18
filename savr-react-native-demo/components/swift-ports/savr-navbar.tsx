@@ -1,6 +1,8 @@
 import React from "react";
 import { Pressable, StyleSheet, Text, View } from "react-native";
 
+import { SavrTheme } from "@/constants/theme";
+
 export type SavrNavBarProps = {
   onSignIn: () => void;
   onGetStarted: () => void;
@@ -11,6 +13,8 @@ type ButtonProps = {
   onPress: () => void;
   variant: "secondary" | "primary";
 };
+
+const { colors, typography, spacing, radius, borderWidth } = SavrTheme;
 
 function NavButton({ title, onPress, variant }: ButtonProps) {
   const isPrimary = variant === "primary";
@@ -64,27 +68,29 @@ const styles = StyleSheet.create({
   container: {
     flexDirection: "row",
     alignItems: "center",
-    paddingHorizontal: 16,
-    paddingTop: 10,
-    paddingBottom: 6,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.xs,
+    backgroundColor: colors.bg,
   },
   logoRow: {
     flexDirection: "row",
     alignItems: "flex-start",
-    gap: 6,
+    gap: spacing.xs,
   },
   logoText: {
-    fontSize: 26,
-    fontWeight: "900",
-    color: "#6DC271",
+    color: colors.brandGreen,
     letterSpacing: 0.2,
     includeFontPadding: false,
+    ...typography.sectionTitle,
+    fontSize: 26,
+    lineHeight: 30,
   },
   logoDot: {
     width: 6,
     height: 6,
     borderRadius: 3,
-    backgroundColor: "#FF3B30",
+    backgroundColor: colors.orangeBorder,
     marginLeft: -12,
     marginTop: 2,
     opacity: 0.9,
@@ -93,35 +99,34 @@ const styles = StyleSheet.create({
     marginLeft: "auto",
     flexDirection: "row",
     alignItems: "center",
-    gap: 10,
+    gap: spacing.xs,
   },
   buttonBase: {
-    paddingHorizontal: 14,
-    paddingVertical: 10,
-    borderRadius: 999,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: radius.pill,
     minWidth: 92,
     alignItems: "center",
     justifyContent: "center",
+    borderWidth: borderWidth.hairline,
   },
   secondaryButton: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#DDE3E8",
+    backgroundColor: colors.inputBackground,
+    borderColor: colors.line,
   },
   primaryButton: {
-    backgroundColor: "#6DC271",
-    borderWidth: 1,
-    borderColor: "#6DC271",
+    backgroundColor: colors.brandGreen,
+    borderColor: colors.deepGreen,
   },
   buttonText: {
+    ...typography.caption,
     fontSize: 14,
-    fontWeight: "700",
   },
   secondaryText: {
-    color: "#1A4D2E",
+    color: colors.deepGreen,
   },
   primaryText: {
-    color: "#FFFFFF",
+    color: colors.inputBackground,
   },
   buttonPressed: {
     opacity: 0.85,

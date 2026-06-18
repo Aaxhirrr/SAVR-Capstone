@@ -17,6 +17,7 @@ import SavrSearchBar from "@/components/swift-ports/savr-search-bar";
 import SavrTopBar from "@/components/swift-ports/savr-top-bar";
 import StatBar from "@/components/swift-ports/stat-bar";
 import StoreChip from "@/components/swift-ports/store-chip";
+import { SavrTheme } from "@/constants/theme";
 
 export default function TestTab() {
   const [email, setEmail] = useState("");
@@ -199,52 +200,53 @@ function Section({
   );
 }
 
+const { colors, typography, spacing, radius, borderWidth, shadows } = SavrTheme;
+
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    backgroundColor: "#F7F6F3",
+    backgroundColor: colors.bg,
   },
   container: {
     flex: 1,
   },
   content: {
-    padding: 16,
-    paddingBottom: 40,
-    gap: 18,
+    padding: spacing.md,
+    paddingBottom: spacing.xxxl,
+    gap: spacing.lg,
   },
   pageTitle: {
-    fontSize: 28,
-    fontWeight: "900",
-    color: "#1D3328",
+    color: colors.textPrimary,
+    ...typography.sectionTitle,
   },
   pageSubtitle: {
-    marginTop: 6,
-    fontSize: 14,
-    color: "#5D6674",
+    marginTop: spacing.xs,
+    color: colors.textSecondary,
+    ...typography.overline,
   },
   section: {
-    backgroundColor: "#FFFFFF",
-    borderWidth: 1,
-    borderColor: "#E4E7EB",
-    borderRadius: 16,
-    padding: 14,
-    gap: 12,
+    backgroundColor: colors.card,
+    borderWidth: borderWidth.hairline,
+    borderColor: colors.cardStroke,
+    borderRadius: radius.lg,
+    padding: spacing.sm,
+    gap: spacing.sm,
+    ...shadows.soft,
   },
   sectionTitle: {
-    fontSize: 16,
-    fontWeight: "800",
-    color: "#1A4D2E",
+    color: colors.deepGreen,
+    ...typography.cardTitle,
   },
   sectionBody: {
-    gap: 12,
+    gap: spacing.sm,
   },
   rowWrap: {
     flexDirection: "row",
     flexWrap: "wrap",
-    gap: 10,
+    gap: spacing.xs,
   },
   grid2: {
     flexDirection: "row",
-    gap: 10,
+    gap: spacing.xs,
   },
 });

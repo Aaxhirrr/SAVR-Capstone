@@ -1,24 +1,18 @@
 import { Ionicons } from "@expo/vector-icons";
 import { Image } from "expo-image";
 import {
-    Linking,
-    Pressable,
-    ScrollView,
-    StyleSheet,
-    Text,
-    View,
+  Linking,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 
-const palette = {
-  background: "#0b1220",
-  panel: "#111b2f",
-  accent: "#e93b56",
-  accentSoft: "#f4c5cf",
-  text: "#f5f7fb",
-  muted: "#b8c2d8",
-  stroke: "#1d2a45",
-};
+import { SavrTheme } from "@/constants/theme";
+
+const { colors, typography, spacing, radius, borderWidth, shadows } = SavrTheme;
 
 const stats = [
   { title: "15+ Canadian Stores", subtitle: "Real prices, real-time" },
@@ -87,11 +81,12 @@ function CTAButton({
   onPress: () => void;
 }) {
   const isPrimary = variant === "primary";
+
   return (
     <Pressable
       onPress={onPress}
       style={[
-        styles.button,
+        styles.buttonBase,
         isPrimary ? styles.buttonPrimary : styles.buttonGhost,
       ]}
     >
@@ -128,7 +123,7 @@ function FeatureCard({
         <Ionicons
           name={icon as keyof typeof Ionicons.glyphMap}
           size={18}
-          color={palette.text}
+          color={colors.textPrimary}
         />
       </View>
       <Text style={styles.cardTitle}>{title}</Text>
@@ -145,17 +140,22 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.hero}>
-          <View style={styles.heroGlow} />
+          <View style={styles.heroGlowMint} />
+          <View style={styles.heroGlowPeach} />
+
           <View style={styles.heroBadge}>
             <Text style={styles.heroBadgeText}>
               🍎 Your AI Grocery Companion
             </Text>
           </View>
+
           <Text style={styles.heroTitle}>Stop overpaying for groceries.</Text>
+
           <Text style={styles.heroSubtitle}>
             Tell Savr what you need and we will find the lowest price at nearby
             stores — saving you real money.
           </Text>
+
           <View style={styles.buttonRow}>
             <CTAButton
               label="Get Started Free"
@@ -167,16 +167,18 @@ export default function HomeScreen() {
               onPress={() => Linking.openURL("https://savr.app/login")}
             />
           </View>
+
           <View style={styles.heroFootnote}>
             <Ionicons
               name="shield-checkmark"
               size={18}
-              color={palette.accentSoft}
+              color={colors.mutedGreen}
             />
             <Text style={styles.heroFootnoteText}>
               No credit card required. Cancel anytime.
             </Text>
           </View>
+
           <View style={styles.heroMock}>
             <Image
               source={{
@@ -205,6 +207,7 @@ export default function HomeScreen() {
             From your kitchen to checkout in three easy steps.
           </Text>
         </View>
+
         <View style={styles.cardsGrid}>
           {steps.map((item) => (
             <FeatureCard
@@ -223,6 +226,7 @@ export default function HomeScreen() {
             Everything you need to shop smarter, save more, and stress less.
           </Text>
         </View>
+
         <View style={styles.cardsGrid}>
           {features.map((item) => (
             <FeatureCard
@@ -240,7 +244,7 @@ export default function HomeScreen() {
             Join Canadians who are already spending less on groceries. It is
             free to try.
           </Text>
-          <View style={styles.buttonRow}>
+          <View style={styles.buttonRowCompact}>
             <CTAButton
               label="Get Started Free"
               onPress={() => Linking.openURL("https://savr.app/signup")}
@@ -260,206 +264,228 @@ export default function HomeScreen() {
 const styles = StyleSheet.create({
   screen: {
     flex: 1,
-    backgroundColor: palette.background,
+    backgroundColor: colors.bg,
   },
   container: {
-    padding: 24,
-    paddingBottom: 48,
+    padding: spacing.xl,
+    paddingBottom: spacing.xxxl,
   },
+
   hero: {
-    backgroundColor: palette.panel,
-    borderRadius: 24,
-    padding: 24,
+    backgroundColor: colors.card,
+    borderRadius: radius.xl,
+    padding: spacing.xl,
     overflow: "hidden",
-    borderWidth: 1,
-    borderColor: palette.stroke,
-    marginBottom: 24,
+    borderWidth: borderWidth.thin,
+    borderColor: colors.cardStroke,
+    marginBottom: spacing.xl,
+    ...shadows.card,
   },
-  heroGlow: {
+  heroGlowMint: {
     position: "absolute",
-    right: -40,
-    top: -60,
+    right: -44,
+    top: -62,
     width: 220,
     height: 220,
-    borderRadius: 120,
-    backgroundColor: "#2a3553",
-    opacity: 0.6,
+    borderRadius: 110,
+    backgroundColor: SavrTheme.background.glow.mint,
+  },
+  heroGlowPeach: {
+    position: "absolute",
+    left: -78,
+    bottom: -86,
+    width: 210,
+    height: 210,
+    borderRadius: 105,
+    backgroundColor: SavrTheme.background.glow.peach,
   },
   heroBadge: {
     alignSelf: "flex-start",
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: "rgba(233, 59, 86, 0.15)",
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "rgba(233, 59, 86, 0.35)",
-    marginBottom: 12,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    backgroundColor: colors.peach,
+    borderRadius: radius.pill,
+    borderWidth: borderWidth.thin,
+    borderColor: colors.orangeBorder,
+    marginBottom: spacing.sm,
   },
   heroBadgeText: {
-    color: palette.accent,
-    fontWeight: "600",
+    color: colors.deepGreen,
+    ...typography.caption,
   },
   heroTitle: {
-    color: palette.text,
-    fontSize: 32,
-    fontWeight: "800",
-    marginBottom: 12,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+    ...typography.section,
   },
   heroSubtitle: {
-    color: palette.muted,
-    fontSize: 16,
+    color: colors.textSecondary,
     lineHeight: 24,
-    marginBottom: 18,
+    marginBottom: spacing.md,
+    ...typography.body,
   },
   buttonRow: {
     flexDirection: "row",
     alignItems: "center",
     justifyContent: "flex-start",
-    marginBottom: 14,
+    marginBottom: spacing.sm,
+    flexWrap: "wrap",
+    gap: spacing.sm,
   },
-  button: {
-    paddingHorizontal: 18,
-    paddingVertical: 12,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: palette.stroke,
-    marginRight: 12,
+  buttonRowCompact: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "flex-start",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+  },
+  buttonBase: {
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
+    borderRadius: radius.md,
+    borderWidth: borderWidth.thin,
   },
   buttonPrimary: {
-    backgroundColor: palette.accent,
-    borderColor: palette.accent,
+    backgroundColor: colors.brandGreen,
+    borderColor: colors.deepGreen,
   },
   buttonGhost: {
-    backgroundColor: "transparent",
+    backgroundColor: colors.softCard,
+    borderColor: colors.line,
   },
   buttonPrimaryText: {
-    color: "#0b1220",
-    fontWeight: "700",
-    fontSize: 15,
+    color: colors.deepGreen,
+    ...typography.bodyBold,
   },
   buttonGhostText: {
-    color: palette.text,
-    fontWeight: "700",
-    fontSize: 15,
+    color: colors.textPrimary,
+    ...typography.bodyBold,
   },
   heroFootnote: {
     flexDirection: "row",
     alignItems: "center",
-    marginBottom: 18,
+    marginBottom: spacing.md,
   },
   heroFootnoteText: {
-    color: palette.accentSoft,
-    marginLeft: 8,
+    color: colors.textSecondary,
+    marginLeft: spacing.xs,
+    ...typography.caption,
   },
   heroMock: {
-    backgroundColor: "#131d32",
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: palette.stroke,
-    padding: 12,
+    backgroundColor: colors.softCard,
+    borderRadius: radius.lg,
+    borderWidth: borderWidth.thin,
+    borderColor: colors.line,
+    padding: spacing.sm,
     alignItems: "center",
   },
   heroImage: {
     width: "100%",
     height: 260,
-    borderRadius: 12,
+    borderRadius: radius.md,
   },
+
   statsRow: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    marginBottom: 24,
+    marginBottom: spacing.xl,
+    gap: spacing.sm,
   },
   pill: {
-    flexBasis: "32%",
-    backgroundColor: palette.panel,
-    padding: 14,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: palette.stroke,
-    marginBottom: 12,
+    flexBasis: "31%",
+    minWidth: 104,
+    backgroundColor: colors.softCard,
+    padding: spacing.sm,
+    borderRadius: radius.lg,
+    borderWidth: borderWidth.thin,
+    borderColor: colors.line,
+    marginBottom: spacing.xs,
   },
   pillTitle: {
-    color: palette.text,
-    fontWeight: "700",
+    color: colors.textPrimary,
     marginBottom: 4,
+    ...typography.bodyBold,
   },
   pillSubtitle: {
-    color: palette.muted,
-    fontSize: 13,
+    color: colors.textSecondary,
+    ...typography.caption,
   },
+
   sectionHeader: {
-    marginBottom: 12,
+    marginBottom: spacing.sm,
   },
   sectionKicker: {
-    color: palette.accent,
-    fontWeight: "700",
+    color: colors.brandOrange,
     marginBottom: 6,
     textTransform: "uppercase",
     letterSpacing: 0.4,
-    fontSize: 12,
+    ...typography.overline,
   },
   sectionTitle: {
-    color: palette.text,
-    fontSize: 24,
-    fontWeight: "800",
+    color: colors.textPrimary,
     marginBottom: 4,
+    ...typography.sectionTitle,
   },
   sectionSubtitle: {
-    color: palette.muted,
+    color: colors.textSecondary,
     lineHeight: 22,
+    ...typography.body,
   },
+
   cardsGrid: {
     flexDirection: "row",
     flexWrap: "wrap",
     justifyContent: "space-between",
-    marginBottom: 24,
+    marginBottom: spacing.xl,
   },
   featureCard: {
     width: "48%",
-    backgroundColor: palette.panel,
-    padding: 16,
-    borderRadius: 16,
-    borderWidth: 1,
-    borderColor: palette.stroke,
-    marginBottom: 14,
+    backgroundColor: colors.card,
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: borderWidth.thin,
+    borderColor: colors.cardStroke,
+    marginBottom: spacing.sm,
+    ...shadows.soft,
   },
   iconBadge: {
     width: 36,
     height: 36,
     borderRadius: 18,
-    backgroundColor: "#1d2742",
+    backgroundColor: colors.brandBlue,
     alignItems: "center",
     justifyContent: "center",
-    marginBottom: 12,
+    marginBottom: spacing.sm,
   },
   cardTitle: {
-    color: palette.text,
-    fontWeight: "700",
-    fontSize: 16,
+    color: colors.textPrimary,
     marginBottom: 6,
+    ...typography.cardTitle,
   },
   cardBody: {
-    color: palette.muted,
-    fontSize: 14,
+    color: colors.textSecondary,
     lineHeight: 20,
+    ...typography.caption,
   },
+
   ctaPanel: {
-    backgroundColor: palette.panel,
-    borderRadius: 20,
-    padding: 20,
-    borderWidth: 1,
-    borderColor: palette.stroke,
+    backgroundColor: colors.ctaCard,
+    borderRadius: radius.xl,
+    padding: spacing.lg,
+    borderWidth: borderWidth.thin,
+    borderColor: colors.orangeBorder,
+    ...shadows.soft,
   },
   ctaTitle: {
-    color: palette.text,
-    fontSize: 22,
-    fontWeight: "800",
-    marginBottom: 8,
+    color: colors.deepGreen,
+    marginBottom: spacing.xs,
+    ...typography.sectionTitle,
   },
   ctaSubtitle: {
-    color: palette.muted,
+    color: colors.textSecondary,
     lineHeight: 22,
-    marginBottom: 16,
+    marginBottom: spacing.md,
+    ...typography.body,
   },
 });

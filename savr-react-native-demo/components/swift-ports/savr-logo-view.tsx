@@ -1,10 +1,14 @@
 import React from "react";
 import { AccessibilityProps, StyleSheet, Text, View } from "react-native";
 
+import { SavrTheme } from "@/constants/theme";
+
 type SavrLogoViewProps = {
   fontSize?: number;
   size?: number;
 } & AccessibilityProps;
+
+const { colors, typography } = SavrTheme;
 
 export default function SavrLogoView({
   fontSize = 54,
@@ -50,13 +54,15 @@ const styles = StyleSheet.create({
     position: "relative",
   },
   logoText: {
-    fontWeight: "900",
-    color: "rgb(110, 199, 115)",
+    color: colors.brandGreen,
+    fontWeight: typography.hero.fontWeight,
+    fontFamily: typography.hero.fontFamily,
     includeFontPadding: false,
+    lineHeight: undefined,
   },
   dot: {
     position: "absolute",
-    backgroundColor: "#FF3B30",
+    backgroundColor: colors.orangeBorder,
     top: 0,
     left: 0,
   },
