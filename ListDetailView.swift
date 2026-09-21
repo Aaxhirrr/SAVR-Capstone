@@ -101,7 +101,7 @@ final class ListDetailChatViewModel: ObservableObject {
 
     func send() {
         let trimmed = draft.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !trimmed.isEmpty, !isWaiting else { return }
+        guard !trimmed.isEmpty, !isWaiting, !isLoading else { return }
         draft = ""
         let userMessage = ChatMessage(role: .user, text: trimmed, timestamp: Date())
         let previousTranscript = messages
@@ -135,8 +135,9 @@ final class ListDetailChatViewModel: ObservableObject {
     ) async throws -> ChatAPIResponse {
         do {
             return try await chatService.sendMessage(
-                text: payload(for: userMessage, transcript: transcript, needsContextBootstrap: sessionId == nil),
-                sessionId: sessionId
+                text: userMessage,
+                sessionId: sessionId,
+                context: sessionId == nil ? ["list_id": listId, "list_context": payload(for: userMessage, transcript: transcript, needsContextBootstrap: true)] : nil
             )
         } catch {
             guard isMissingSession(error) else { throw error }
@@ -145,8 +146,9 @@ final class ListDetailChatViewModel: ObservableObject {
             sessionStore.clearSessionId(for: listId)
 
             return try await chatService.sendMessage(
-                text: payload(for: userMessage, transcript: transcript, needsContextBootstrap: true),
-                sessionId: nil
+                text: userMessage,
+                sessionId: nil,
+                context: ["list_id": listId, "list_context": payload(for: userMessage, transcript: transcript, needsContextBootstrap: true)]
             )
         }
     }

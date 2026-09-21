@@ -6,6 +6,7 @@ struct ChatView: View {
     @StateObject private var viewModel = ChatViewModel()
 
     @State private var showProfile = false
+    @State private var showHistory = false
     @State private var showDietaryPrefs = false
     @State private var showImageSourceSheet = false
 
@@ -21,6 +22,18 @@ struct ChatView: View {
     var body: some View {
         VStack(spacing: 0) {
             topBar
+            if let error = viewModel.errorMessage {
+                Text(error).font(.callout).foregroundStyle(.red).padding(10).accessibilityIdentifier("chat.error")
+            }
+            if let notice = viewModel.sessionNotice { Text(notice).font(.callout).padding(10) }
+            if let list = viewModel.currentList?.list {
+                HStack {
+                    Text(list.name).font(.subheadline).lineLimit(1)
+                    Spacer()
+                    Button("Save list") { Task { await viewModel.finalizeList() } }
+                    Button("Detach") { Task { await viewModel.detachList() } }
+                }.padding(.horizontal).disabled(viewModel.isWaiting)
+            }
 
             ScrollViewReader { proxy in
                 ScrollView(showsIndicators: false) {
@@ -78,6 +91,25 @@ struct ChatView: View {
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .background(chatBackground.ignoresSafeArea())
+        .task { await viewModel.restore() }
+        .sheet(isPresented: $showHistory) {
+            NavigationStack {
+                List(viewModel.sessions) { session in
+                    Button {
+                        Task { await viewModel.selectSession(session.id); showHistory = false }
+                    } label: {
+                        VStack(alignment: .leading) {
+                            Text("Conversation")
+                            Text(String(session.updated_at.prefix(16)).replacingOccurrences(of: "T", with: " ")).font(.caption).foregroundStyle(.secondary)
+                        }
+                    }
+                }
+                .navigationTitle("Chat history")
+                .overlay { if viewModel.sessions.isEmpty { Text("No saved conversations yet.") } }
+                .toolbar { Button("Done") { showHistory = false } }
+                .task { await viewModel.refreshSessions() }
+            }
+        }
         .sheet(isPresented: $showProfile) {
             ProfileView()
                 .environmentObject(appState)
@@ -100,7 +132,7 @@ struct ChatView: View {
                         ProgressView()
                             .tint(.white)
                             .scaleEffect(1.4)
-                        Text("Reading image…")
+                        Text("Analyzing photo with SAVR…")
                             .font(.system(size: 15, weight: .semibold, design: .rounded))
                             .foregroundStyle(.white)
                     }
@@ -121,6 +153,8 @@ struct ChatView: View {
             Spacer()
 
             Menu {
+                Button("New chat") { viewModel.newChat() }.disabled(viewModel.isWaiting)
+                Button("Chat history") { showHistory = true }.disabled(viewModel.isWaiting)
                 Button("Profile") { showProfile = true }
                 Button("Logout") { appState.signOut() }
             } label: {
@@ -138,6 +172,7 @@ struct ChatView: View {
                 }
             }
         }
+        .accessibilityIdentifier("chat.menu")
         .padding(.horizontal, 16)
         .padding(.top, 10)
         .padding(.bottom, 8)

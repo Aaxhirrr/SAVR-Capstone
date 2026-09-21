@@ -26,15 +26,34 @@ struct GroceryList: Decodable, Identifiable, Hashable {
     let sessionId: String?
 
     private enum CodingKeys: String, CodingKey {
-        case id, name, items
-        case createdAt  // backend sends "createdAt" (camelCase)
+        case id, name, items, createdAt
+        case createdAtSnake = "created_at"
         case isActive = "is_active"
         case savingsAmount = "savings_amount"
         case leastExpensiveStoreName = "least_expensive_store_name"
         case leastExpensiveStorePrice = "least_expensive_store_price"
         case mostExpensiveStoreName = "most_expensive_store_name"
         case mostExpensiveStorePrice = "most_expensive_store_price"
-        case sessionId = "session_id"
+        case sessionId = "chat_session_id"
+        case legacySessionId = "session_id"
+    }
+
+}
+
+extension GroceryList {
+    init(from decoder: Decoder) throws {
+        let c = try decoder.container(keyedBy: CodingKeys.self)
+        id = try c.decode(String.self, forKey: .id)
+        name = try c.decode(String.self, forKey: .name)
+        items = try c.decode([GroceryListItem].self, forKey: .items)
+        createdAt = try c.decodeIfPresent(String.self, forKey: .createdAt) ?? c.decode(String.self, forKey: .createdAtSnake)
+        isActive = try c.decodeIfPresent(Bool.self, forKey: .isActive) ?? true
+        savingsAmount = try c.decodeIfPresent(Double.self, forKey: .savingsAmount)
+        leastExpensiveStoreName = try c.decodeIfPresent(String.self, forKey: .leastExpensiveStoreName)
+        leastExpensiveStorePrice = try c.decodeIfPresent(Double.self, forKey: .leastExpensiveStorePrice)
+        mostExpensiveStoreName = try c.decodeIfPresent(String.self, forKey: .mostExpensiveStoreName)
+        mostExpensiveStorePrice = try c.decodeIfPresent(Double.self, forKey: .mostExpensiveStorePrice)
+        sessionId = try c.decodeIfPresent(String.self, forKey: .sessionId) ?? c.decodeIfPresent(String.self, forKey: .legacySessionId)
     }
 }
 
@@ -77,89 +96,13 @@ final class GroceryListService {
         )
     }
 
-    func debugChatSessions() async -> String {
-        guard let session = tokenStore.loadSession() else { return "NO TOKEN" }
-        guard let url = URL(string: "https://savr.app/api/chat/sessions") else { return "BAD URL" }
-        var req = URLRequest(url: url)
-        req.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
-        req.setValue("application/json", forHTTPHeaderField: "Accept")
-        req.timeoutInterval = 10
-        guard let (data, _) = try? await URLSession.shared.data(for: req) else { return "REQUEST FAILED" }
-        return String(data: data, encoding: .utf8) ?? "unreadable"
-    }
-
-    // Fallback: build GroceryList objects from chat session lists
-    func fetchListsFromChatSessions() async -> [GroceryList] {
-        guard let session = tokenStore.loadSession() else { return [] }
-        let headers = [
-            "Authorization": "Bearer \(session.accessToken)",
-            "Accept": "application/json"
-        ]
-
-        // Get all sessions
-        guard let sessions: [[String: Any]] = try? await rawFetch(path: "chat/sessions", headers: headers) else { return [] }
-
-        var result: [GroceryList] = []
-        for s in sessions {
-            guard let sessionId = s["id"] as? String else { continue }
-            // Get the list for this session
-            if let listData: [String: Any] = try? await rawFetch(path: "chat/session/\(sessionId)/list", headers: headers),
-               let name = listData["name"] as? String ?? listData["list_name"] as? String {
-                let rawItems = listData["items"] as? [[String: Any]] ?? []
-                let items = rawItems.compactMap { item -> GroceryListItem? in
-                    guard let n = item["name"] as? String else { return nil }
-                    let qty = (item["quantity"] as? String) ?? (item["quantity"].map { "\($0)" })
-                    return GroceryListItem(
-                        name: n,
-                        category: item["category"] as? String,
-                        meal: item["meal"] as? String,
-                        quantity: qty,
-                        unit: item["unit"] as? String
-                    )
-                }
-                let createdAt = s["created_at"] as? String ?? ""
-                let gl = GroceryList(
-                    id: sessionId,
-                    name: name,
-                    items: items,
-                    createdAt: createdAt,
-                    isActive: true,
-                    savingsAmount: nil,
-                    leastExpensiveStoreName: nil,
-                    leastExpensiveStorePrice: nil,
-                    mostExpensiveStoreName: nil,
-                    mostExpensiveStorePrice: nil,
-                    sessionId: sessionId
-                )
-                result.append(gl)
-            }
-        }
-        return result
-    }
-
-    private func rawFetch<T>(path: String, headers: [String: String]) async throws -> T {
-        guard var url = URL(string: "https://savr.app/api/\(path)") else {
-            throw APIError.invalidURL
-        }
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.timeoutInterval = 10
-        for (k, v) in headers { request.setValue(v, forHTTPHeaderField: k) }
-        let (data, _) = try await URLSession.shared.data(for: request)
-        guard let obj = try JSONSerialization.jsonObject(with: data) as? T else {
-            throw APIError.decodingFailed
-        }
-        return obj
+    func renameList(id: String, name: String) async throws -> GroceryList {
+        guard let session = tokenStore.loadSession() else { throw APIError.notSignedIn }
+        return try await apiClient.send(path: "grocery-lists/\(id)", method: "PUT", headers: ["Authorization": "Bearer \(session.accessToken)", "Content-Type": "application/json"], body: JSONSerialization.data(withJSONObject: ["name": name]))
     }
 
     func deleteList(id: String) async throws {
-        guard let session = tokenStore.loadSession() else { return }
-        // DELETE returns 204 no content — use raw send
-        guard var url = URL(string: "https://savr.app/api/grocery-lists/\(id)") else { return }
-        var request = URLRequest(url: url)
-        request.httpMethod = "DELETE"
-        request.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
-        request.timeoutInterval = 10
-        _ = try? await URLSession.shared.data(for: request)
+        guard let session = tokenStore.loadSession() else { throw APIError.notSignedIn }
+        let _: EmptyAPIResponse = try await apiClient.send(path: "grocery-lists/\(id)", method: "DELETE", headers: ["Authorization": "Bearer \(session.accessToken)"])
     }
 }

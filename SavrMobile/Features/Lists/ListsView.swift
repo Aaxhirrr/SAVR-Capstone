@@ -6,7 +6,8 @@ final class ListsViewModel: ObservableObject {
     @Published var isLoading = false
     @Published var errorMessage: String?
 
-    private let service = GroceryListService()
+    private let service: GroceryListService
+    init(service: GroceryListService = GroceryListService()) { self.service = service }
 
     func load() async {
         isLoading = true
@@ -20,23 +21,20 @@ final class ListsViewModel: ObservableObject {
     }
 
     func delete(id: String) async {
-        try? await service.deleteList(id: id)
-        lists.removeAll { $0.id == id }
+        do {
+            try await service.deleteList(id: id)
+            lists.removeAll { $0.id == id }
+        } catch { errorMessage = error.localizedDescription }
     }
 
-    func rename(id: String, newName: String) {
-        guard let index = lists.firstIndex(where: { $0.id == id }) else { return }
-        let old = lists[index]
-        lists[index] = GroceryList(
-            id: old.id, name: newName, items: old.items, createdAt: old.createdAt,
-            isActive: old.isActive, savingsAmount: old.savingsAmount,
-            leastExpensiveStoreName: old.leastExpensiveStoreName,
-            leastExpensiveStorePrice: old.leastExpensiveStorePrice,
-            mostExpensiveStoreName: old.mostExpensiveStoreName,
-            mostExpensiveStorePrice: old.mostExpensiveStorePrice,
-            sessionId: old.sessionId
-        )
+    func rename(id: String, newName: String) async -> Bool {
+        do {
+            let updated = try await service.renameList(id: id, name: newName)
+            if let index = lists.firstIndex(where: { $0.id == id }) { lists[index] = updated }
+            return true
+        } catch { errorMessage = error.localizedDescription; return false }
     }
+
 }
 
 struct ListsView: View {
@@ -62,6 +60,9 @@ struct ListsView: View {
                     listContent
                 }
             }
+            .alert("Could not update lists", isPresented: Binding(get: { viewModel.errorMessage != nil }, set: { if !$0 { viewModel.errorMessage = nil } })) {
+                Button("OK") { viewModel.errorMessage = nil }
+            } message: { Text(viewModel.errorMessage ?? "") }
             .task { await viewModel.load() }
             .refreshable { await viewModel.load() }
             .navigationDestination(for: GroceryList.self) { list in
@@ -98,9 +99,10 @@ struct ListsView: View {
                     Button("Save") {
                         let trimmed = renameText.trimmingCharacters(in: .whitespacesAndNewlines)
                         if !trimmed.isEmpty {
-                            viewModel.rename(id: list.id, newName: trimmed)
+                            Task {
+                                if await viewModel.rename(id: list.id, newName: trimmed) { listToRename = nil }
+                            }
                         }
-                        listToRename = nil
                     }
                     .disabled(renameText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                 }

@@ -61,12 +61,12 @@ final class ChatService {
             ChatMessage(
                 role: msg.is_user ? .user : .assistant,
                 text: msg.content,
-                timestamp: formatter.date(from: msg.timestamp) ?? Date()
+                timestamp: formatter.date(from: msg.timestamp) ?? ISO8601DateFormatter().date(from: msg.timestamp) ?? Date()
             )
         }
     }
 
-    func sendMessage(text: String, sessionId: String?) async throws -> ChatAPIResponse {
+    func sendMessage(text: String, sessionId: String?, imageData: Data? = nil, context: [String: String]? = nil) async throws -> ChatAPIResponse {
         guard let session = tokenStore.loadSession() else {
             throw APIError.requestFailed(
                 statusCode: 401,
@@ -79,6 +79,11 @@ final class ChatService {
 
         var body: [String: Any] = ["message": text]
         if let sessionId { body["sessionId"] = sessionId }
+        if let context { body["context"] = context }
+        if let imageData {
+            body["imageBase64"] = imageData.base64EncodedString()
+            body["imageMediaType"] = "image/jpeg"
+        }
 
         let data = try JSONSerialization.data(withJSONObject: body)
 
@@ -90,8 +95,41 @@ final class ChatService {
                 "Content-Type": "application/json",
                 "Accept": "application/json"
             ],
-            body: data
+            body: data,
+            timeout: 90
         )
         return response
+    }
+}
+
+struct ChatSessionSummary: Decodable, Identifiable {
+    let id: String
+    let created_at: String
+    let updated_at: String
+}
+struct SessionListResponse: Decodable {
+    struct ListInfo: Decodable { let id: String; let name: String }
+    let list: ListInfo?
+    let items: [GroceryListItem]
+    let itemsCount: Int
+}
+extension ChatService {
+    private func headers() throws -> [String: String] {
+        guard let session = tokenStore.loadSession() else { throw APIError.notSignedIn }
+        return ["Authorization": "Bearer \(session.accessToken)", "Accept": "application/json", "Content-Type": "application/json"]
+    }
+    func fetchSessions() async throws -> [ChatSessionSummary] {
+        try await apiClient.send(path: "chat/sessions", method: "GET", headers: headers())
+    }
+    func currentList(sessionId: String) async throws -> SessionListResponse {
+        try await apiClient.send(path: "chat/session/\(sessionId)/list", method: "GET", headers: headers())
+    }
+    func finalizeList(sessionId: String) async throws -> String {
+        struct Response: Decodable { let listId: String }
+        let result: Response = try await apiClient.send(path: "chat/session/\(sessionId)/finalize", method: "POST", headers: headers(), body: Data("{}".utf8))
+        return result.listId
+    }
+    func detachList(sessionId: String) async throws {
+        let _: EmptyAPIResponse = try await apiClient.send(path: "chat/session/\(sessionId)/current_list", method: "DELETE", headers: headers())
     }
 }

@@ -53,11 +53,12 @@ enum APIError: LocalizedError {
 final class APIClient {
     static let shared = APIClient()
 
-    private let baseURL = URL(string: "https://savr.app/api")
+    private let baseURL: URL?
     private let session: URLSession
 
-    init(session: URLSession = .shared) {
+    init(session: URLSession = .shared, baseURL: URL? = URL(string: "https://savr.app/api")) {
         self.session = session
+        self.baseURL = baseURL
     }
 
     func send<Response: Decodable>(
@@ -65,7 +66,8 @@ final class APIClient {
         method: String,
         headers: [String: String] = [:],
         queryItems: [URLQueryItem] = [],
-        body: Data? = nil
+        body: Data? = nil,
+        timeout: TimeInterval = 30
     ) async throws -> Response {
         guard var url = baseURL?.appendingPathComponent(path) else {
             throw APIError.invalidURL
@@ -83,7 +85,7 @@ final class APIClient {
         var request = URLRequest(url: url)
         request.httpMethod = method
         request.httpBody = body
-        request.timeoutInterval = 60
+        request.timeoutInterval = timeout
 
         for (key, value) in headers {
             request.setValue(value, forHTTPHeaderField: key)
@@ -96,10 +98,13 @@ final class APIClient {
         }
 
         guard (200...299).contains(httpResponse.statusCode) else {
+            if httpResponse.statusCode == 401, headers["Authorization"] != nil {
+                await MainActor.run { NotificationCenter.default.post(name: .savrSessionExpired, object: nil) }
+            }
             let responseText = String(data: data, encoding: .utf8) ?? "<non-utf8 response>"
             #if DEBUG
             print("API error [\(httpResponse.statusCode)] \(request.httpMethod ?? "REQUEST") \(request.url?.absoluteString ?? "")")
-            print("Response body: \(responseText)")
+
             #endif
             throw APIError.requestFailed(
                 statusCode: httpResponse.statusCode,
@@ -110,6 +115,9 @@ final class APIClient {
             )
         }
 
+        if Response.self == EmptyAPIResponse.self {
+            return EmptyAPIResponse() as! Response
+        }
         do {
             return try JSONDecoder().decode(Response.self, from: data)
         } catch {
@@ -121,9 +129,12 @@ final class APIClient {
         guard
             let object = try? JSONSerialization.jsonObject(with: data) as? [String: Any]
         else {
-            return String(data: data, encoding: .utf8)
+            return "The server could not complete the request. Please try again."
         }
 
+        if let details = object["detail"] as? [[String: Any]] {
+            return details.compactMap { $0["msg"] as? String }.joined(separator: "\n")
+        }
         if let detail = object["detail"] as? String {
             return detail
         }
@@ -133,5 +144,21 @@ final class APIClient {
         }
 
         return nil
+    }
+}
+
+struct EmptyAPIResponse: Decodable {}
+
+extension Notification.Name {
+    static let savrSessionExpired = Notification.Name("savr.sessionExpired")
+}
+
+extension APIError {
+    static var notSignedIn: APIError {
+        .requestFailed(statusCode: 401, message: "Please sign in again.", responseBody: nil, requestURL: nil, method: nil)
+    }
+    var isUnauthorized: Bool {
+        if case .requestFailed(401, _, _, _, _) = self { return true }
+        return false
     }
 }

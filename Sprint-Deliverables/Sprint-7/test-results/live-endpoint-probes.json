@@ -1,0 +1,62 @@
+[
+  {
+    "path": "auth/profile",
+    "status": 200,
+    "shape": [
+      "email",
+      "first_name",
+      "last_name",
+      "id",
+      "phone",
+      "is_active",
+      "is_admin",
+      "is_partner",
+      "partner_org",
+      "created_at",
+      "last_login_at",
+      "login_count",
+      "address",
+      "dietaryRestrictions",
+      "brandPreferences",
+      "google_linked",
+      "apple_linked",
+      "auth_provider",
+      "is_email_verified",
+      "ui_locale",
+      "assistant_locale",
+      "locale_source",
+      "ai_data_consent",
+      "ai_data_consent_updated_at"
+    ],
+    "count": null
+  },
+  {
+    "path": "chat/sessions",
+    "status": 200,
+    "shape": "array",
+    "count": 50
+  },
+  {
+    "path": "grocery-lists/all",
+    "status": 200,
+    "shape": "array",
+    "count": 24
+  },
+  {
+    "path": "user/selected_stores",
+    "status": 200,
+    "shape": "array",
+    "count": 3
+  },
+  {
+    "path": "flyers?store_brand=walmart&page_size=2",
+    "status": 200,
+    "shape": [
+      "deals",
+      "total",
+      "page",
+      "page_size"
+    ],
+    "count": null
+  }
+]
