@@ -45,6 +45,14 @@ final class ProfileViewModel: ObservableObject {
     @Published var firstName = ""
     @Published var lastName = ""
     @Published var address = ""
+    @Published var city = ""
+    @Published var province = "ON"
+    @Published var postalCode = ""
+    @Published var deletionPassword = ""
+    private var accountAddress: CanadianAddress? {
+        guard !address.isEmpty || !city.isEmpty || !postalCode.isEmpty else { return nil }
+        return CanadianAddress(street: address, city: city, province: province, postalCode: postalCode, phoneNumber: phone.isEmpty ? nil : phone)
+    }
     @Published var phone = ""
 
     // Dietary
@@ -60,8 +68,11 @@ final class ProfileViewModel: ObservableObject {
     @Published var dislikedCategory = ""
     @Published var dislikedBrandName = ""
 
-    private let authService = AuthService()
-    private let tokenStore  = AuthTokenStore()
+    private let authService: AuthService
+    private let tokenStore: AuthTokenStore
+    init(authService: AuthService = AuthService(), tokenStore: AuthTokenStore = AuthTokenStore()) {
+        self.authService = authService; self.tokenStore = tokenStore
+    }
 
     let commonDietaryOptions: [String] = [
         "Gluten Free", "Dairy Free", "Nut Allergy",
@@ -96,53 +107,18 @@ final class ProfileViewModel: ObservableObject {
             lastName  = p.lastName ?? ""
             phone     = p.phone ?? ""
 
-            // Dietary: backend wins over local cache
-            if !p.dietaryRestrictions.isEmpty {
-                // Separate standard vs custom options
-                let standard = Set(commonDietaryOptions)
-                selectedDietary = Set(p.dietaryRestrictions.filter { standard.contains($0) })
-                customDietaryRestrictions = p.dietaryRestrictions.filter { !standard.contains($0) }
-            } else {
-                selectedDietary = Set(UserDefaults.standard.stringArray(forKey: "savr_dietary_prefs") ?? [])
-                customDietaryRestrictions = UserDefaults.standard.stringArray(forKey: "savr_custom_dietary") ?? []
-            }
-
-            // Brands: backend wins
-            if !p.likedBrands.isEmpty || !p.dislikedBrands.isEmpty {
-                likedBrands    = p.likedBrands.map    { BrandEntry(category: $0.category, brandName: $0.brand) }
-                dislikedBrands = p.dislikedBrands.map { BrandEntry(category: $0.category, brandName: $0.brand) }
-            } else {
-                loadBrandsFromCache()
-            }
-
-            // Address from UserDefaults (we store a single string on device)
-            address = UserDefaults.standard.string(forKey: "savr_address") ?? ""
-        } catch {
-            // Fall back to cached values if network fails
-            selectedDietary = Set(UserDefaults.standard.stringArray(forKey: "savr_dietary_prefs") ?? [])
-            customDietaryRestrictions = UserDefaults.standard.stringArray(forKey: "savr_custom_dietary") ?? []
-            address = UserDefaults.standard.string(forKey: "savr_address") ?? ""
-            phone   = UserDefaults.standard.string(forKey: "savr_phone") ?? ""
-            loadBrandsFromCache()
-        }
+            let standard = Set(commonDietaryOptions)
+            selectedDietary = Set(p.dietaryRestrictions.filter { standard.contains($0) })
+            customDietaryRestrictions = p.dietaryRestrictions.filter { !standard.contains($0) }
+            likedBrands = p.likedBrands.map { BrandEntry(category: $0.category, brandName: $0.brand) }
+            dislikedBrands = p.dislikedBrands.map { BrandEntry(category: $0.category, brandName: $0.brand) }
+            address = p.address?.street ?? ""
+            city = p.address?.city ?? ""
+            province = p.address?.province ?? "ON"
+            postalCode = p.address?.postalCode ?? ""
+            phone = p.address?.phoneNumber ?? p.phone ?? ""
+        } catch { errorMessage = error.localizedDescription }
         isLoading = false
-    }
-
-    private func loadBrandsFromCache() {
-        if let data = UserDefaults.standard.data(forKey: "savr_liked_brands"),
-           let decoded = try? JSONDecoder().decode([[String: String]].self, from: data) {
-            likedBrands = decoded.compactMap {
-                guard let c = $0["category"], let b = $0["brand"] else { return nil }
-                return BrandEntry(category: c, brandName: b)
-            }
-        }
-        if let data = UserDefaults.standard.data(forKey: "savr_disliked_brands"),
-           let decoded = try? JSONDecoder().decode([[String: String]].self, from: data) {
-            dislikedBrands = decoded.compactMap {
-                guard let c = $0["category"], let b = $0["brand"] else { return nil }
-                return BrandEntry(category: c, brandName: b)
-            }
-        }
     }
 
     func changePassword() async {
@@ -168,7 +144,7 @@ final class ProfileViewModel: ObservableObject {
         guard let data = try? JSONSerialization.data(withJSONObject: body) else { isSaving = false; return }
 
         do {
-            let _: [String: String] = try await APIClient.shared.send(
+            let _: EmptyAPIResponse = try await APIClient.shared.send(
                 path: "auth/change-password",
                 method: "POST",
                 headers: [
@@ -191,16 +167,12 @@ final class ProfileViewModel: ObservableObject {
         errorMessage = nil
         successMessage = nil
 
-        // Persist address locally (single string)
-        UserDefaults.standard.set(address, forKey: "savr_address")
-        UserDefaults.standard.set(phone,   forKey: "savr_phone")
-
         do {
             try await authService.updateProfile(
                 firstName: firstName,
                 lastName: lastName,
                 phone: phone,
-                address: address,
+                address: accountAddress,
                 dietaryRestrictions: Array(selectedDietary) + customDietaryRestrictions,
                 likedBrands: likedBrands.map { (category: $0.category, brand: $0.brandName) },
                 dislikedBrands: dislikedBrands.map { (category: $0.category, brand: $0.brandName) }
@@ -217,16 +189,12 @@ final class ProfileViewModel: ObservableObject {
         errorMessage = nil
         successMessage = nil
 
-        // Cache locally
-        UserDefaults.standard.set(Array(selectedDietary), forKey: "savr_dietary_prefs")
-        UserDefaults.standard.set(customDietaryRestrictions, forKey: "savr_custom_dietary")
-
         do {
             try await authService.updateProfile(
                 firstName: firstName,
                 lastName: lastName,
                 phone: phone.isEmpty ? nil : phone,
-                address: address.isEmpty ? nil : address,
+                address: accountAddress,
                 dietaryRestrictions: Array(selectedDietary) + customDietaryRestrictions,
                 likedBrands: likedBrands.map { (category: $0.category, brand: $0.brandName) },
                 dislikedBrands: dislikedBrands.map { (category: $0.category, brand: $0.brandName) }
@@ -278,38 +246,36 @@ final class ProfileViewModel: ObservableObject {
     }
 
     private func saveBrands() async {
-        // Cache locally
-        let likedEncoded = likedBrands.map { ["category": $0.category, "brand": $0.brandName] }
-        let dislikedEncoded = dislikedBrands.map { ["category": $0.category, "brand": $0.brandName] }
-        if let data = try? JSONEncoder().encode(likedEncoded) {
-            UserDefaults.standard.set(data, forKey: "savr_liked_brands")
-        }
-        if let data = try? JSONEncoder().encode(dislikedEncoded) {
-            UserDefaults.standard.set(data, forKey: "savr_disliked_brands")
-        }
-
-        // Sync to backend
-        try? await authService.updateProfile(
+        errorMessage = nil
+        isSaving = true
+        defer { isSaving = false }
+        do {
+        try await authService.updateProfile(
             firstName: firstName,
             lastName: lastName,
             phone: phone.isEmpty ? nil : phone,
-            address: address.isEmpty ? nil : address,
+            address: accountAddress,
             dietaryRestrictions: Array(selectedDietary) + customDietaryRestrictions,
             likedBrands: likedBrands.map { (category: $0.category, brand: $0.brandName) },
             dislikedBrands: dislikedBrands.map { (category: $0.category, brand: $0.brandName) }
         )
+            successMessage = "Brand preferences saved."
+        } catch { errorMessage = error.localizedDescription }
     }
 
-    func deleteAccount() async {
+    func deleteAccount() async -> Bool {
         isSaving = true
         errorMessage = nil
         do {
-            try await authService.deleteAccount()
+            try await authService.deleteAccount(password: deletionPassword)
+            isSaving = false
+            return true
             // authService.deleteAccount() clears the token — AppState will detect signout on next check
         } catch {
             errorMessage = error.localizedDescription
         }
         isSaving = false
+        return false
     }
 }
 
@@ -352,11 +318,11 @@ struct ProfileView: View {
         } message: {
             Text("You'll need to sign in again to use SAVR.")
         }
-        .confirmationDialog("Delete Account", isPresented: $showDeleteConfirm, titleVisibility: .visible) {
+        .alert("Delete Account", isPresented: $showDeleteConfirm) {
+            SecureField("Current password", text: $viewModel.deletionPassword)
             Button("Permanently Delete My Account", role: .destructive) {
                 Task {
-                    await viewModel.deleteAccount()
-                    appState.signOut()
+                    if await viewModel.deleteAccount() { appState.signOut() }
                 }
             }
             Button("Cancel", role: .cancel) {}
@@ -559,12 +525,12 @@ private struct AccountSection: View {
                     HStack(spacing: 10) {
                         VStack(alignment: .leading, spacing: 4) {
                             ProfileFieldLabel("First Name")
-                            TextField("Aashir", text: $viewModel.firstName)
+                            TextField("First name", text: $viewModel.firstName)
                                 .textFieldStyle(ProfileFieldStyle())
                         }
                         VStack(alignment: .leading, spacing: 4) {
                             ProfileFieldLabel("Last Name")
-                            TextField("Javed", text: $viewModel.lastName)
+                            TextField("Last name", text: $viewModel.lastName)
                                 .textFieldStyle(ProfileFieldStyle())
                         }
                     }
@@ -592,6 +558,14 @@ private struct AccountSection: View {
                     TextField("123 Main Street, City, Province", text: $viewModel.address)
                         .textFieldStyle(ProfileFieldStyle())
 
+                    ProfileFieldLabel("City")
+                    TextField("City", text: $viewModel.city).textFieldStyle(ProfileFieldStyle())
+                    ProfileFieldLabel("Province")
+                    Picker("Province", selection: $viewModel.province) {
+                        ForEach(["AB", "BC", "MB", "NB", "NL", "NS", "NT", "NU", "ON", "PE", "QC", "SK", "YT"], id: \.self) { Text($0) }
+                    }
+                    ProfileFieldLabel("Postal code")
+                    TextField("M5V 2T6", text: $viewModel.postalCode).textFieldStyle(ProfileFieldStyle())
                     ProfileFieldLabel("Phone Number")
                     TextField("(123) 456-7890", text: $viewModel.phone)
                         .textFieldStyle(ProfileFieldStyle())
