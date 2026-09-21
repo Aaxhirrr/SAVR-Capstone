@@ -7,3 +7,5 @@ The first XCTest run passed 24 tests covering six core areas with injected HTTP 
 Live probes returned HTTP 200 for profile, sessions, list collection, stores and flyers. The live list collection uses `createdAt`, while the detail schema uses `created_at`; support for both has been added and is pending the next regression run.
 
 Remaining work: full live interaction and recording, camera request/result, list and session persistence, expanded regression run, Android validation and final per-sprint evidence.
+
+Live camera QA passed: imported `grocery-photo-test.jpg`, selected it through Camera > Choose from Library, received a real assistant response identifying milk, eggs and bananas, and observed a backend-linked list. Screenshot 04 and recording 02 capture the flow. The source contains no Vision OCR path. Session restart QA also passed: the same conversation reloaded after terminating and relaunching the app.
