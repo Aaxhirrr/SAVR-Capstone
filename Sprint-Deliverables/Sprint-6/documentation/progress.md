@@ -1,3 +1,7 @@
+# Milestone history
+
+This is a chronological audit trail. The final status is in `../../README.md`; early remaining-work notes below describe the state at that milestone.
+
 # Verified milestones
 
 2026-09-21: The Simulator build launches and signs in using the authorized SAVR test account. The login screen initially exposed Keychain error -34018 in the unsigned build; Simulator-specific signing fixed it. Screenshot `01-live-sign-in.png` shows the signed-in chat screen.

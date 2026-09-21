@@ -26,7 +26,7 @@ Source: supplied Sprint 6 backlog, User Story 1 (11 points). Scope is the four A
 
 | Endpoint | Consumer | Validation |
 |---|---|---|
-| `POST /chat/welcome` | Create a session when a saved list has no usable chat | Live selected-list conversation; welcome contract decoding. |
+| `POST /chat/welcome` | Create a session when a saved list has no usable chat | Screenshot 12: fresh conversation for Flyer picks correctly returns one butter-croissants item. |
 | `GET /chat/sessions` | Chat menu → Chat history | Screenshot 10 and contract test. |
 | `GET /chat/history/{id}` | Session selection and restart restoration | Screenshots 03/11; history test. |
 | `GET /chat/session/{id}/list` | Current list strip | Screenshots 05/11; current-list test. |

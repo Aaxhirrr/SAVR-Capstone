@@ -1,0 +1,38 @@
+{
+  "ios_time": "2026-09-21T14:09:47.331Z",
+  "android_time": "2026-09-21T14:15:18.758Z",
+  "six_flows_passed_on_both": true,
+  "comparisons": [
+    {
+      "endpoint": "GET chat/sessions",
+      "ios": "573171c8",
+      "android": "573171c8",
+      "matches": true
+    },
+    {
+      "endpoint": "GET grocery-lists/all",
+      "ios": "5068cdb1",
+      "android": "5068cdb1",
+      "matches": true
+    },
+    {
+      "endpoint": "GET flyers",
+      "ios": "b06a0b8d",
+      "android": "b06a0b8d",
+      "matches": true
+    },
+    {
+      "endpoint": "GET user/selected_stores",
+      "ios": "d7f6f763",
+      "android": "d7f6f763",
+      "matches": true
+    },
+    {
+      "endpoint": "GET auth/profile",
+      "ios": "fb327e73",
+      "android": "fb327e73",
+      "matches": true
+    }
+  ],
+  "all_match": true
+}
