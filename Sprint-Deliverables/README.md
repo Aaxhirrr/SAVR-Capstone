@@ -4,6 +4,7 @@ This folder contains only the work assigned to Aashir Javed in the supplied back
 
 ## Start here
 
+- [Simple before-and-after explanation: what I changed](WHAT-I-CHANGED.md)
 - [Setup and simulator commands](shared/SETUP.md)
 - [Sprint 6: implementation and bug ledger](Sprint-6/documentation/IMPLEMENTATION-AND-BUGS.md)
 - [Sprint 6: natural-language QA walkthroughs](Sprint-6/documentation/QA-FLOWS.md)
