@@ -88,121 +88,43 @@ final class StoreSelectViewModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var highlightedStore: KnownStore?
 
-    private let tokenStore = AuthTokenStore()
-
+    private let service: StoreService
+    init(service: StoreService = StoreService()) { self.service = service }
     var atLimit: Bool { savedStores.count >= 3 }
 
     func load() async {
         isLoading = true
-        errorMessage = nil
-        guard let session = tokenStore.loadSession() else { isLoading = false; return }
-
-        guard let url = URL(string: "https://savr.app/api/user/selected_stores") else { isLoading = false; return }
-        var req = URLRequest(url: url)
-        req.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
-        req.setValue("application/json", forHTTPHeaderField: "Accept")
-
-        if let (data, _) = try? await URLSession.shared.data(for: req),
-           let arr = try? JSONSerialization.jsonObject(with: data) as? [[String: Any]] {
-            savedStores = arr.compactMap { d in
-                guard let name = d["store_name"] as? String,
-                      let addr = d["address"] as? String,
-                      let postal = d["postal_code"] as? String else { return nil }
-                return UserSavedStore(storeName: name, address: addr, postalCode: postal)
-            }
+        defer { isLoading = false }
+        do {
+            let result = try await service.fetch()
+            savedStores = result
             savedStoreIds = [:]
-            for d in arr {
-                if let name = d["store_name"] as? String,
-                   let id = d["id"] as? Int {
-                    let brand = knownStores.first { name.lowercased().contains($0.brand) }?.brand ?? name.lowercased()
-                    savedStoreIds[brand] = id
-                }
+            for store in result {
+                if let id = store.id { savedStoreIds[canonicalBrandName(store.storeName)] = id }
             }
-        }
-        isLoading = false
+            errorMessage = nil
+        } catch { errorMessage = error.localizedDescription }
     }
-
     func isSelected(_ store: KnownStore) -> Bool {
-        savedStores.contains { $0.storeName.lowercased().contains(store.brand) || $0.storeName.lowercased().contains(store.name.lowercased()) }
+        savedStores.contains { canonicalBrandName($0.storeName) == store.brand }
     }
-
     func toggle(_ store: KnownStore) async {
-        if isSelected(store) {
-            await remove(store)
-        } else {
-            if atLimit {
-                errorMessage = "You can only have 3 stores. Remove one first."
-                return
-            }
-            await add(store)
-        }
-    }
-
-    private func add(_ store: KnownStore) async {
-        guard let session = tokenStore.loadSession() else { return }
+        guard !isSaving, !isLoading else { return }
         isSaving = true
+        defer { isSaving = false }
         errorMessage = nil
-
-        let body: [String: Any] = [
-            "store_name": store.name,
-            "address": store.address,
-            "postal_code": store.postalCode,
-            "latitude": store.latitude,
-            "longitude": store.longitude,
-            "brand": store.brand
-        ]
-
-        guard let data = try? JSONSerialization.data(withJSONObject: body),
-              let url = URL(string: "https://savr.app/api/user/selected_stores") else {
-            isSaving = false; return
-        }
-
-        var req = URLRequest(url: url)
-        req.httpMethod = "POST"
-        req.httpBody = data
-        req.timeoutInterval = 10
-        req.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
-        req.setValue("application/json", forHTTPHeaderField: "Content-Type")
-        req.setValue("application/json", forHTTPHeaderField: "Accept")
-
-        if let (respData, resp) = try? await URLSession.shared.data(for: req),
-           let http = resp as? HTTPURLResponse {
-            if http.statusCode < 300 {
-                await load()
+        do {
+            if isSelected(store) {
+                guard let id = savedStoreIds[store.brand] else { errorMessage = "Please refresh your stores and try again."; return }
+                try await service.remove(id: id)
             } else {
-                let msg = (try? JSONSerialization.jsonObject(with: respData) as? [String: Any])?["detail"] as? String
-                errorMessage = msg ?? "Failed to add \(store.name)"
+                guard !atLimit else { errorMessage = "You can only have 3 stores. Remove one first."; return }
+                try await service.add(store)
             }
-        } else {
-            errorMessage = "Network error. Try again."
-        }
-        isSaving = false
-    }
-
-    private func remove(_ store: KnownStore) async {
-        guard let session = tokenStore.loadSession() else { return }
-        isSaving = true
-        errorMessage = nil
-
-        guard let storeId = savedStoreIds[store.brand] ?? savedStoreIds.first(where: { $0.key.contains(store.name.lowercased()) })?.value else {
             await load()
-            isSaving = false
-            return
-        }
-
-        guard let url = URL(string: "https://savr.app/api/user/selected_stores/\(storeId)") else {
-            isSaving = false; return
-        }
-
-        var req = URLRequest(url: url)
-        req.httpMethod = "DELETE"
-        req.timeoutInterval = 10
-        req.setValue("Bearer \(session.accessToken)", forHTTPHeaderField: "Authorization")
-
-        _ = try? await URLSession.shared.data(for: req)
-        await load()
-        isSaving = false
+        } catch { errorMessage = error.localizedDescription }
     }
+
 }
 
 // MARK: - View
@@ -575,5 +497,27 @@ private struct CompactStoreCard: View {
         .opacity(!isSelected && atLimit ? 0.55 : 1.0)
         .animation(.spring(response: 0.3), value: isHighlighted)
         .animation(.spring(response: 0.3), value: isSelected)
+    }
+}
+
+final class StoreService {
+    private let apiClient: APIClient
+    private let tokenStore: AuthTokenStore
+    init(apiClient: APIClient = .shared, tokenStore: AuthTokenStore = AuthTokenStore()) {
+        self.apiClient = apiClient; self.tokenStore = tokenStore
+    }
+    private func headers() throws -> [String: String] {
+        guard let session = tokenStore.loadSession() else { throw APIError.notSignedIn }
+        return ["Authorization": "Bearer \(session.accessToken)", "Content-Type": "application/json"]
+    }
+    func fetch() async throws -> [UserSavedStore] {
+        try await apiClient.send(path: "user/selected_stores", method: "GET", headers: headers())
+    }
+    func add(_ store: KnownStore) async throws {
+        let body: [String: Any] = ["store_name": store.name, "address": store.address, "postal_code": store.postalCode, "latitude": store.latitude, "longitude": store.longitude, "brand": store.brand]
+        let _: EmptyAPIResponse = try await apiClient.send(path: "user/selected_stores", method: "POST", headers: headers(), body: JSONSerialization.data(withJSONObject: body))
+    }
+    func remove(id: Int) async throws {
+        let _: EmptyAPIResponse = try await apiClient.send(path: "user/selected_stores/\(id)", method: "DELETE", headers: headers())
     }
 }

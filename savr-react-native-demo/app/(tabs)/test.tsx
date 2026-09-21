@@ -1,3 +1,4 @@
+import { Link } from "expo-router";
 import React, { useState } from "react";
 import { Alert, ScrollView, StyleSheet, Text, View } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
@@ -38,6 +39,8 @@ export default function TestTab() {
         <Text style={styles.pageSubtitle}>
           Showcase of recreated Swift UI components in Expo React Native TSX.
         </Text>
+
+        <Link href="/backend-qa" style={{ color: "#116149", fontSize: 18, fontWeight: "700", paddingVertical: 12 }}>Aashir · Sprint 6 &amp; 7 backend checks</Link>
 
         <Section title="Brand">
           <SavrLogoView size={54} />

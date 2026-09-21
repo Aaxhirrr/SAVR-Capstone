@@ -24,8 +24,8 @@ struct HomeLandingView: View {
 
                 HeroSection(
                     query: $query,
-                    onCamera: {},
-                    onSubmit: {}
+                    onCamera: { showSignIn = true },
+                    onSubmit: { showSignIn = true }
                 )
 
                 HowItWorksSection()

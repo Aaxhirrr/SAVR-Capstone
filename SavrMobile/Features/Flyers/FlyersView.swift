@@ -47,11 +47,13 @@ struct FlyerDealsPage: Decodable {
 
 // User's saved store
 struct UserSavedStore: Decodable {
+    var id: Int? = nil
     let storeName: String
     let address: String
     let postalCode: String
 
     private enum CodingKeys: String, CodingKey {
+        case id
         case storeName = "store_name"
         case address
         case postalCode = "postal_code"
@@ -92,19 +94,24 @@ final class FlyerService {
         )
     }
 
-    func addToList(dealIds: [String], listId: String) async throws {
-        guard let session = tokenStore.loadSession() else { return }
-        let body = try JSONSerialization.data(withJSONObject: ["deal_ids": dealIds, "list_id": listId])
-        let _: EmptyResponse = try await apiClient.send(
-            path: "flyers/add-to-list",
-            method: "POST",
-            headers: [
-                "Authorization": "Bearer \(session.accessToken)",
-                "Content-Type": "application/json",
-                "Accept": "application/json"
-            ],
-            body: body
-        )
+    func addToList(itemNames: [String], listId: String?) async throws {
+        guard let session = tokenStore.loadSession() else { throw APIError.notSignedIn }
+        var payload: [String: Any] = ["item_names": itemNames]
+        if let listId { payload["list_id"] = listId }
+        else { payload["new_list_name"] = "Flyer picks" }
+        let _: EmptyAPIResponse = try await apiClient.send(path: "flyers/add-to-list", method: "POST", headers: ["Authorization": "Bearer \(session.accessToken)", "Content-Type": "application/json"], body: JSONSerialization.data(withJSONObject: payload))
+    }
+
+    func fetchAllDeals(storeBrand: String) async throws -> [FlyerDeal] {
+        var result: [FlyerDeal] = []
+        var pageNumber = 1
+        while true {
+            let page = try await fetchDeals(storeBrand: storeBrand, page: pageNumber, pageSize: 100)
+            result.append(contentsOf: page.deals)
+            if page.deals.isEmpty || result.count >= page.total { return result }
+            pageNumber += 1
+            try Task.checkCancellation()
+        }
     }
 
     func fetchSavedStores() async throws -> [UserSavedStore] {
@@ -123,7 +130,7 @@ final class FlyerService {
 }
 
 // Minimal decodable for endpoints that return an empty/simple body
-private struct EmptyResponse: Decodable {}
+
 
 // MARK: - ViewModel
 
@@ -139,8 +146,13 @@ final class FlyersViewModel: ObservableObject {
     @Published var addToListSuccess = false
     @Published var savedStores: [UserSavedStore] = []
 
-    private let flyerService = FlyerService()
-    private let listService = GroceryListService()
+    private let flyerService: FlyerService
+    private let listService: GroceryListService
+    @Published var targetLists: [GroceryList] = []
+    @Published var showListPicker = false
+    init(flyerService: FlyerService = FlyerService(), listService: GroceryListService = GroceryListService()) {
+        self.flyerService = flyerService; self.listService = listService
+    }
 
     var allStoreNames: [String] {
         dealsByStore.keys.sorted()
@@ -159,13 +171,15 @@ final class FlyersViewModel: ObservableObject {
     func load() async {
         isLoading = true
         errorMessage = nil
-        dealsByStore = [:]
 
+        // Keep existing results visible if a refresh fails.
         // Fetch saved stores
         do {
             savedStores = try await flyerService.fetchSavedStores()
         } catch {
-            // Non-fatal — continue
+            errorMessage = error.localizedDescription
+            isLoading = false
+            return
         }
 
         guard !savedStores.isEmpty else {
@@ -176,27 +190,29 @@ final class FlyersViewModel: ObservableObject {
 
         // Fetch flyer deals for each unique chain
         let chains = Array(Set(savedStores.map { canonicalBrandName($0.storeName) }))
-        var fetchedAny = false
-
-        await withTaskGroup(of: (String, [FlyerDeal])?.self) { group in
+        var updatedDeals: [String: [FlyerDeal]] = [:]
+        var failedChains: [String] = []
+        await withTaskGroup(of: (String, [FlyerDeal]?).self) { group in
             for chain in chains {
                 group.addTask {
-                    guard let page = try? await self.flyerService.fetchDeals(storeBrand: chain) else {
-                        return nil
-                    }
-                    return (chain, page.deals)
+                    do { return (chain, try await self.flyerService.fetchAllDeals(storeBrand: chain)) }
+                    catch { return (chain, nil) }
                 }
             }
-            for await result in group {
-                if let (chain, deals) = result, !deals.isEmpty {
-                    let displayName = displayStoreName(chain)
-                    dealsByStore[displayName] = deals
-                    fetchedAny = true
+            for await (chain, deals) in group {
+                let name = displayStoreName(chain)
+                if let deals {
+                    if !deals.isEmpty { updatedDeals[name] = deals }
+                } else {
+                    failedChains.append(name)
+                    updatedDeals[name] = dealsByStore[name]
                 }
             }
         }
-
-        if !fetchedAny {
+        dealsByStore = updatedDeals
+        if !failedChains.isEmpty {
+            errorMessage = "Couldn't refresh flyers for " + failedChains.sorted().joined(separator: ", ") + ". Please try again."
+        } else if dealsByStore.isEmpty {
             errorMessage = "No flyer deals found for your stores right now. Try refreshing later."
         }
 
@@ -216,24 +232,27 @@ final class FlyersViewModel: ObservableObject {
         }
     }
 
-    func addCheckedToList() async {
-        guard !checkedDealIds.isEmpty else { return }
-        isAddingToList = true
+    func prepareAddToList() async {
+        guard !isAddingToList else { return }
         do {
-            // Use first available list, or skip
-            let lists = (try? await listService.fetchAllLists()) ?? []
-            let listId = lists.first?.id ?? ""
-            try await flyerService.addToList(dealIds: Array(checkedDealIds), listId: listId)
+            targetLists = try await listService.fetchAllLists()
+            showListPicker = true
+        } catch { errorMessage = error.localizedDescription }
+    }
+
+    func addCheckedToList(listId: String?) async {
+        guard !checkedDealIds.isEmpty, !isAddingToList else { return }
+        isAddingToList = true
+        errorMessage = nil
+        defer { isAddingToList = false }
+        do {
+            let names = dealsByStore.values.flatMap { $0 }.filter { checkedDealIds.contains($0.id) }.map(\.productName)
+            try await flyerService.addToList(itemNames: names, listId: listId)
             checkedDealIds = []
             addToListSuccess = true
-            // Auto-hide success banner
-            try? await Task.sleep(nanoseconds: 2_000_000_000)
-            addToListSuccess = false
-        } catch {
-            // Non-fatal
-        }
-        isAddingToList = false
+        } catch { errorMessage = error.localizedDescription }
     }
+
 }
 
 // MARK: - View
@@ -252,6 +271,13 @@ struct FlyersView: View {
             } else {
                 emptyState
             }
+        }
+        .confirmationDialog("Choose a grocery list", isPresented: $viewModel.showListPicker, titleVisibility: .visible) {
+            Button("Create new list") { Task { await viewModel.addCheckedToList(listId: nil) } }
+            ForEach(viewModel.targetLists) { list in
+                Button(list.name) { Task { await viewModel.addCheckedToList(listId: list.id) } }
+            }
+            Button("Cancel", role: .cancel) {}
         }
         .task { await viewModel.load() }
         .refreshable { await viewModel.load() }
@@ -307,6 +333,7 @@ struct FlyersView: View {
     private var resultsView: some View {
         VStack(spacing: 0) {
             headerSection
+            if let error = viewModel.errorMessage { Text(error).font(.callout).foregroundStyle(.red).padding(10) }
 
             storeTabs
                 .padding(.top, 4)
@@ -326,7 +353,7 @@ struct FlyersView: View {
                 Spacer()
                 if !viewModel.checkedDealIds.isEmpty {
                     Button {
-                        Task { await viewModel.addCheckedToList() }
+                        Task { await viewModel.prepareAddToList() }
                     } label: {
                         if viewModel.isAddingToList {
                             ProgressView()

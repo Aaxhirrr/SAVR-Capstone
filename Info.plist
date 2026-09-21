@@ -42,11 +42,8 @@
         <string>UIInterfaceOrientationLandscapeLeft</string>
         <string>UIInterfaceOrientationLandscapeRight</string>
     </array>
-    <key>NSAppTransportSecurity</key>
-    <dict>
-        <key>NSAllowsArbitraryLoads</key>
-        <true/>
-    </dict>
+    <key>NSLocationWhenInUseUsageDescription</key>
+    <string>SAVR uses your location to center the store map near you.</string>
     <key>NSCameraUsageDescription</key>
     <string>Savr uses your camera so you can photograph grocery items and receipts for instant list building.</string>
     <key>NSPhotoLibraryUsageDescription</key>

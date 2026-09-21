@@ -30,7 +30,7 @@ struct SignUpView: View {
     }
     
     private var canSubmit: Bool {
-        accepted && passwordsMatch
+        accepted && passwordsMatch && password.count >= 8 && email.contains("@")
     }
 
     var body: some View {
@@ -58,7 +58,7 @@ struct SignUpView: View {
                         }
 
                         Button {
-                            errorMessage = "Sign up is not connected to the backend yet."
+                            errorMessage = "Google sign-up is not available in this build. Please use email."
                         } label: {
                             HStack(spacing: 10) {
                                 Image(systemName: "g.circle.fill")

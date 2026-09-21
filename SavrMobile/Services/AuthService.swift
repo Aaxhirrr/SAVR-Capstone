@@ -79,8 +79,8 @@ final class AuthService {
             "email": email,
             "password": password
         ]
-        if let firstName, !firstName.isEmpty { body["first_name"] = firstName }
-        if let lastName, !lastName.isEmpty { body["last_name"] = lastName }
+        if let firstName { body["first_name"] = firstName }
+        if let lastName { body["last_name"] = lastName }
         if let phone, !phone.isEmpty { body["phone"] = phone }
 
         let hasAddress = [street, city, province, postal].contains(where: { !($0?.isEmpty ?? true) })
@@ -89,7 +89,7 @@ final class AuthService {
             if let street, !street.isEmpty { addr["street"] = street }
             if let city, !city.isEmpty { addr["city"] = city }
             if let province, !province.isEmpty { addr["province"] = province }
-            if let postal, !postal.isEmpty { addr["postal_code"] = postal }
+            if let postal, !postal.isEmpty { addr["postalCode"] = postal }
             body["address"] = addr
         }
 
@@ -113,7 +113,7 @@ final class AuthService {
         firstName: String?,
         lastName: String?,
         phone: String?,
-        address: String?,
+        address: CanadianAddress?,
         dietaryRestrictions: [String],
         likedBrands: [(category: String, brand: String)],
         dislikedBrands: [(category: String, brand: String)]
@@ -123,16 +123,16 @@ final class AuthService {
         }
 
         var body: [String: Any] = [:]
-        if let firstName, !firstName.isEmpty { body["first_name"] = firstName }
-        if let lastName, !lastName.isEmpty { body["last_name"] = lastName }
+        if let firstName { body["first_name"] = firstName }
+        if let lastName { body["last_name"] = lastName }
         if let phone, !phone.isEmpty { body["phone"] = phone }
 
         // Address is stored as a plain string on the mobile side — send as street
-        if let address, !address.isEmpty {
-            body["address"] = ["street": address]
+        if let address {
+            body["address"] = try JSONSerialization.jsonObject(with: JSONEncoder().encode(address))
         }
 
-        body["dietary_restrictions"] = dietaryRestrictions
+        body["dietaryRestrictions"] = dietaryRestrictions
 
         var liked: [String: String] = [:]
         for entry in likedBrands where !entry.brand.isEmpty {
@@ -142,7 +142,7 @@ final class AuthService {
         for entry in dislikedBrands where !entry.brand.isEmpty {
             disliked[entry.category.isEmpty ? entry.brand : entry.category] = entry.brand
         }
-        body["brand_preferences"] = ["liked": liked, "disliked": disliked]
+        body["brandPreferences"] = ["liked": liked, "disliked": disliked]
 
         let data = try JSONSerialization.data(withJSONObject: body)
         let _: UserProfileResponse = try await apiClient.send(
@@ -157,20 +157,25 @@ final class AuthService {
         )
     }
 
-    func deleteAccount() async throws {
+    func deleteAccount(password: String) async throws {
         guard let session = tokenStore.loadSession() else {
             throw APIError.requestFailed(statusCode: 401, message: "Not signed in.", responseBody: nil, requestURL: nil, method: "DELETE")
         }
-        struct DeleteResponse: Decodable { let message: String? }
-        let _: DeleteResponse = try await apiClient.send(
+        let _: EmptyAPIResponse = try await apiClient.send(
             path: "auth/account",
             method: "DELETE",
             headers: [
                 "Authorization": "Bearer \(session.accessToken)",
-                "Accept": "application/json"
-            ]
+                "Accept": "application/json",
+                "Content-Type": "application/json"
+            ],
+            body: try JSONSerialization.data(withJSONObject: ["password": password, "confirmationText": "DELETE"])
         )
         try tokenStore.clear()
+    }
+
+    func requestPasswordReset(email: String) async throws {
+        let _: EmptyAPIResponse = try await apiClient.send(path: "auth/forgot-password", method: "POST", headers: ["Content-Type": "application/json"], body: JSONSerialization.data(withJSONObject: ["email": email.trimmingCharacters(in: .whitespacesAndNewlines)]))
     }
 
     func logout() throws {
