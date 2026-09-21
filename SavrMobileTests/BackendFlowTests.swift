@@ -227,13 +227,13 @@ final class BackendFlowTests: XCTestCase {
         let vm = ListsViewModel(service: GroceryListService(apiClient: client, tokenStore: tokens))
         stub("[\(listJSON)]"); await vm.load()
         StubProtocol.handle = { _ in throw URLError(.notConnectedToInternet) }
-        await vm.load(); XCTAssertEqual(vm.lists.count, 1); XCTAssertNotNil(vm.errorMessage)
+        await vm.load(); XCTAssertEqual(vm.lists.count, 1); XCTAssertTrue(vm.errorMessage?.contains("internet connection") == true)
     }
     func testTimeoutDoesNotHangOrEraseStoreSelection() async {
         let vm = StoreSelectViewModel(service: StoreService(apiClient: client, tokenStore: tokens))
         stub(#"[{"id":7,"store_name":"Walmart","address":"Test","postal_code":"M5V 2T6"}]"#); await vm.load()
         StubProtocol.handle = { _ in throw URLError(.timedOut) }
-        await vm.load(); XCTAssertEqual(vm.savedStores.count, 1); XCTAssertFalse(vm.isLoading); XCTAssertNotNil(vm.errorMessage)
+        await vm.load(); XCTAssertEqual(vm.savedStores.count, 1); XCTAssertFalse(vm.isLoading); XCTAssertTrue(vm.errorMessage?.contains("timed out") == true)
     }
     func testExpiredSessionNeverBootstrapsSignedIn() async {
         stub(#"{"detail":"Expired"}"#, status: 401)

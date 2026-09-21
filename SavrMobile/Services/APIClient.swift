@@ -11,6 +11,8 @@ enum APIError: LocalizedError {
         method: String?
     )
     case decodingFailed
+    case networkUnavailable
+    case timedOut
 
     var errorDescription: String? {
         switch self {
@@ -23,7 +25,11 @@ enum APIError: LocalizedError {
         case let .requestFailed(statusCode, _, _, _, _):
             return "Request failed with status code \(statusCode)."
         case .decodingFailed:
-            return "The server response could not be decoded."
+            return "The server returned an unreadable response. Please try again."
+        case .networkUnavailable:
+            return "You're offline. Check your internet connection and try again."
+        case .timedOut:
+            return "The request timed out. Please try again."
         }
     }
 
@@ -46,6 +52,8 @@ enum APIError: LocalizedError {
             return lines.joined(separator: "\n")
         case .decodingFailed:
             return "Decoding failed"
+        case .networkUnavailable, .timedOut:
+            return errorDescription ?? "Network error"
         }
     }
 }
@@ -98,15 +106,28 @@ final class APIClient {
         if let failure = environment["SAVR_QA_FAILURE"],
            path.hasPrefix(environment["SAVR_QA_FAILURE_PATH"] ?? "chat/") {
             switch failure {
-            case "offline": throw URLError(.notConnectedToInternet)
-            case "timeout": throw URLError(.timedOut)
+            case "offline": throw APIError.networkUnavailable
+            case "timeout": throw APIError.timedOut
             case "malformed": throw APIError.decodingFailed
             default: break
             }
         }
         #endif
 
-        let (data, response) = try await session.data(for: request)
+        let data: Data
+        let response: URLResponse
+        do {
+            (data, response) = try await session.data(for: request)
+        } catch let error as URLError {
+            switch error.code {
+            case .notConnectedToInternet, .networkConnectionLost, .cannotFindHost, .cannotConnectToHost:
+                throw APIError.networkUnavailable
+            case .timedOut:
+                throw APIError.timedOut
+            default:
+                throw error
+            }
+        }
 
         guard let httpResponse = response as? HTTPURLResponse else {
             throw APIError.invalidResponse
