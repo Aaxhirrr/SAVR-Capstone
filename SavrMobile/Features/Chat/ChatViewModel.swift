@@ -61,7 +61,9 @@ final class ChatViewModel: ObservableObject {
         isWaiting = true
         defer { isWaiting = false }
         do {
-            _ = try await chatService.finalizeList(sessionId: sessionId)
+            let listId = try await chatService.finalizeList(sessionId: sessionId)
+            // Keep a server-side link so list detail can restore this conversation.
+            try await GroceryListService().linkSession(listId: listId, sessionId: sessionId)
             sessionNotice = "List saved. Open My Lists to view it."
             await refreshCurrentList()
         } catch { errorMessage = error.localizedDescription }

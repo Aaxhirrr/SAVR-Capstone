@@ -91,6 +91,21 @@ final class APIClient {
             request.setValue(value, forHTTPHeaderField: key)
         }
 
+        #if DEBUG && targetEnvironment(simulator)
+        // Opt-in deterministic failure scenarios for the Sprint 7 Simulator QA flows.
+        // Absent these launch environment variables, all requests use the live service.
+        let environment = ProcessInfo.processInfo.environment
+        if let failure = environment["SAVR_QA_FAILURE"],
+           path.hasPrefix(environment["SAVR_QA_FAILURE_PATH"] ?? "chat/") {
+            switch failure {
+            case "offline": throw URLError(.notConnectedToInternet)
+            case "timeout": throw URLError(.timedOut)
+            case "malformed": throw APIError.decodingFailed
+            default: break
+            }
+        }
+        #endif
+
         let (data, response) = try await session.data(for: request)
 
         guard let httpResponse = response as? HTTPURLResponse else {

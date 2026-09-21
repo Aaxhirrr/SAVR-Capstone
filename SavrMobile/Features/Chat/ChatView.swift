@@ -357,7 +357,7 @@ struct ChatView: View {
             HStack {
                 foodPatternGrid.opacity(0.18)
                 Spacer()
-                foodPatternGrid.opacity(0.12)
+                foodPatternGrid.opacity(0.12).accessibilityHidden(true)
             }
         }
     }

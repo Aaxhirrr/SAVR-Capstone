@@ -96,6 +96,11 @@ final class GroceryListService {
         )
     }
 
+    func linkSession(listId: String, sessionId: String) async throws {
+        guard let session = tokenStore.loadSession() else { throw APIError.notSignedIn }
+        let _: GroceryList = try await apiClient.send(path: "grocery-lists/\(listId)", method: "PUT", headers: ["Authorization": "Bearer \(session.accessToken)", "Content-Type": "application/json"], body: JSONSerialization.data(withJSONObject: ["chat_session_id": sessionId]))
+    }
+
     func renameList(id: String, name: String) async throws -> GroceryList {
         guard let session = tokenStore.loadSession() else { throw APIError.notSignedIn }
         return try await apiClient.send(path: "grocery-lists/\(id)", method: "PUT", headers: ["Authorization": "Bearer \(session.accessToken)", "Content-Type": "application/json"], body: JSONSerialization.data(withJSONObject: ["name": name]))

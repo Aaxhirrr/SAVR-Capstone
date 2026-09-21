@@ -178,7 +178,9 @@ private struct GroceryListCard: View {
     private var dateLabel: String {
         let formatter = ISO8601DateFormatter()
         formatter.formatOptions = [.withInternetDateTime, .withFractionalSeconds]
-        if let date = formatter.date(from: list.createdAt) {
+        let raw = list.createdAt
+        let normalized = raw.hasSuffix("Z") || raw.contains("+") ? raw : raw + "Z"
+        if let date = formatter.date(from: normalized) ?? ISO8601DateFormatter().date(from: normalized) {
             let df = DateFormatter()
             df.dateStyle = .medium
             df.timeStyle = .none

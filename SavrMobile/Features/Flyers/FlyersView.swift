@@ -171,8 +171,8 @@ final class FlyersViewModel: ObservableObject {
     func load() async {
         isLoading = true
         errorMessage = nil
-        dealsByStore = [:]
 
+        // Keep existing results visible if a refresh fails.
         // Fetch saved stores
         do {
             savedStores = try await flyerService.fetchSavedStores()
@@ -190,27 +190,29 @@ final class FlyersViewModel: ObservableObject {
 
         // Fetch flyer deals for each unique chain
         let chains = Array(Set(savedStores.map { canonicalBrandName($0.storeName) }))
-        var fetchedAny = false
-
-        await withTaskGroup(of: (String, [FlyerDeal])?.self) { group in
+        var updatedDeals: [String: [FlyerDeal]] = [:]
+        var failedChains: [String] = []
+        await withTaskGroup(of: (String, [FlyerDeal]?).self) { group in
             for chain in chains {
                 group.addTask {
-                    guard let deals = try? await self.flyerService.fetchAllDeals(storeBrand: chain) else {
-                        return nil
-                    }
-                    return (chain, deals)
+                    do { return (chain, try await self.flyerService.fetchAllDeals(storeBrand: chain)) }
+                    catch { return (chain, nil) }
                 }
             }
-            for await result in group {
-                if let (chain, deals) = result, !deals.isEmpty {
-                    let displayName = displayStoreName(chain)
-                    dealsByStore[displayName] = deals
-                    fetchedAny = true
+            for await (chain, deals) in group {
+                let name = displayStoreName(chain)
+                if let deals {
+                    if !deals.isEmpty { updatedDeals[name] = deals }
+                } else {
+                    failedChains.append(name)
+                    updatedDeals[name] = dealsByStore[name]
                 }
             }
         }
-
-        if !fetchedAny {
+        dealsByStore = updatedDeals
+        if !failedChains.isEmpty {
+            errorMessage = "Couldn't refresh flyers for " + failedChains.sorted().joined(separator: ", ") + ". Please try again."
+        } else if dealsByStore.isEmpty {
             errorMessage = "No flyer deals found for your stores right now. Try refreshing later."
         }
 

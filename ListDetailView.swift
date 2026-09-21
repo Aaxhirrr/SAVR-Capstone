@@ -104,7 +104,6 @@ final class ListDetailChatViewModel: ObservableObject {
         guard !trimmed.isEmpty, !isWaiting, !isLoading else { return }
         draft = ""
         let userMessage = ChatMessage(role: .user, text: trimmed, timestamp: Date())
-        let previousTranscript = messages
         messages.append(userMessage)
         sessionStore.save(messages: messages, for: listId)
         isWaiting = true
@@ -112,16 +111,14 @@ final class ListDetailChatViewModel: ObservableObject {
 
         Task {
             do {
-                let response = try await sendMessage(
-                    userMessage: trimmed,
-                    transcript: previousTranscript
-                )
+                let response = try await sendMessage(userMessage: trimmed)
                 sessionId = response.sessionId
                 sessionStore.save(sessionId: response.sessionId, for: listId)
                 messages.append(.init(role: .assistant, text: response.botResponse, timestamp: Date()))
                 sessionStore.save(messages: messages, for: listId)
             } catch {
                 errorMessage = error.localizedDescription
+                if draft.isEmpty { draft = trimmed }
                 messages.append(.init(role: .assistant, text: "Sorry, something went wrong. Please try again.", timestamp: Date()))
                 sessionStore.save(messages: messages, for: listId)
             }
@@ -129,62 +126,26 @@ final class ListDetailChatViewModel: ObservableObject {
         }
     }
 
-    private func sendMessage(
-        userMessage: String,
-        transcript: [ChatMessage]
-    ) async throws -> ChatAPIResponse {
+    private func sendMessage(userMessage: String) async throws -> ChatAPIResponse {
+        // Attach the actual selected list before asking the assistant about it.
+        // A context blob alone does not establish the backend's current list.
+        if sessionId == nil {
+            sessionId = try await chatService.createSession()
+        }
+        guard let active = sessionId else { throw APIError.invalidResponse }
+        // The live assistant can otherwise reuse a different list from its history,
+        // even when the session link is correct. Identify the selected list explicitly.
+        let scopedMessage = "For my saved grocery list \"\(listContext.name)\" (list ID \(listId)): \(userMessage)"
         do {
-            return try await chatService.sendMessage(
-                text: userMessage,
-                sessionId: sessionId,
-                context: sessionId == nil ? ["list_id": listId, "list_context": payload(for: userMessage, transcript: transcript, needsContextBootstrap: true)] : nil
-            )
+            try await GroceryListService().linkSession(listId: listId, sessionId: active)
+            return try await chatService.sendMessage(text: scopedMessage, sessionId: active)
         } catch {
             guard isMissingSession(error) else { throw error }
-
-            sessionId = nil
-            sessionStore.clearSessionId(for: listId)
-
-            return try await chatService.sendMessage(
-                text: userMessage,
-                sessionId: nil,
-                context: ["list_id": listId, "list_context": payload(for: userMessage, transcript: transcript, needsContextBootstrap: true)]
-            )
+            let fresh = try await chatService.createSession()
+            try await GroceryListService().linkSession(listId: listId, sessionId: fresh)
+            sessionId = fresh
+            return try await chatService.sendMessage(text: scopedMessage, sessionId: fresh)
         }
-    }
-
-    private func payload(
-        for userMessage: String,
-        transcript: [ChatMessage],
-        needsContextBootstrap: Bool
-    ) -> String {
-        guard needsContextBootstrap else { return userMessage }
-
-        let itemPreview = listContext.items.prefix(12).map { item in
-            let quantity = item.quantity?.isEmpty == false ? " (\(item.quantity!))" : ""
-            let category = item.category?.isEmpty == false ? " - \(item.category!)" : ""
-            return "- \(item.name)\(quantity)\(category)"
-        }.joined(separator: "\n")
-
-        let recentTranscript = transcript.suffix(8).map { message in
-            let speaker = message.role == .user ? "User" : "Assistant"
-            return "\(speaker): \(message.text)"
-        }.joined(separator: "\n")
-
-        return """
-        Continue this SAVR grocery list conversation as the same thread.
-        List name: \(listContext.name)
-        Current list items:
-        \(itemPreview.isEmpty ? "- No items saved yet" : itemPreview)
-
-        Recent conversation context:
-        \(recentTranscript.isEmpty ? "No previous transcript is available." : recentTranscript)
-
-        The user's new message is:
-        \(userMessage)
-
-        Respond naturally as if continuing the existing list chat. Use the prior list context without restating all of it unless helpful.
-        """
     }
 
     private func isMissingSession(_ error: Error) -> Bool {
@@ -435,7 +396,7 @@ struct ListDetailView: View {
             // Messages
             ScrollViewReader { proxy in
                 ScrollView {
-                    LazyVStack(spacing: 12) {
+                    VStack(spacing: 12) {
                         if chatViewModel.isLoading {
                             ProgressView()
                                 .padding(.top, 40)
@@ -454,14 +415,15 @@ struct ListDetailView: View {
                                 typingIndicator
                             }
                         }
+                        Color.clear.frame(height: 1).id("list-chat-bottom")
                     }
                     .padding(.horizontal, 16)
                     .padding(.vertical, 14)
                 }
                 .onChange(of: chatViewModel.messages.count) { _ in
-                    if let last = chatViewModel.messages.last {
-                        withAnimation { proxy.scrollTo(last.id, anchor: .bottom) }
-                    }
+                    // A fixed target avoids a lazy-layout feedback loop while the
+                    // multiline composer changes height on iOS 26.
+                    proxy.scrollTo("list-chat-bottom", anchor: .bottom)
                 }
             }
 

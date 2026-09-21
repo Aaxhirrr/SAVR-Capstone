@@ -118,6 +118,11 @@ extension ChatService {
         guard let session = tokenStore.loadSession() else { throw APIError.notSignedIn }
         return ["Authorization": "Bearer \(session.accessToken)", "Accept": "application/json", "Content-Type": "application/json"]
     }
+    func createSession() async throws -> String {
+        struct Welcome: Decodable { let session_id: String }
+        let response: Welcome = try await apiClient.send(path: "chat/welcome", method: "POST", headers: headers())
+        return response.session_id
+    }
     func fetchSessions() async throws -> [ChatSessionSummary] {
         try await apiClient.send(path: "chat/sessions", method: "GET", headers: headers())
     }

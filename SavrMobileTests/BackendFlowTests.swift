@@ -98,6 +98,15 @@ final class BackendFlowTests: XCTestCase {
         let lists = try await GroceryListService(apiClient: client, tokenStore: tokens).fetchAllLists()
         XCTAssertEqual(lists.first?.createdAt, "2026-09-21T12:00:00Z")
     }
+    func testSelectedListIsLinkedToTheActualBackendSession() async throws {
+        StubProtocol.handle = { request in
+            XCTAssertEqual(request.httpMethod, "PUT")
+            XCTAssertTrue(request.url!.path.hasSuffix("grocery-lists/list-1"))
+            XCTAssertEqual(self.body(request)["chat_session_id"] as? String, "session-1")
+            return (200, Data(self.listJSON.utf8))
+        }
+        try await GroceryListService(apiClient: client, tokenStore: tokens).linkSession(listId: "list-1", sessionId: "session-1")
+    }
     func testRenamePersistsBeforeChangingVisibleRow() async throws {
         let vm = ListsViewModel(service: GroceryListService(apiClient: client, tokenStore: tokens))
         stub("[\(listJSON)]"); await vm.load()
@@ -141,6 +150,19 @@ final class BackendFlowTests: XCTestCase {
         }
         let deals = try await FlyerService(apiClient: client, tokenStore: tokens).fetchAllDeals(storeBrand: "walmart")
         XCTAssertEqual(deals.count, 2); XCTAssertEqual(calls, 2)
+    }
+    func testFlyerNetworkFailureIsNotReportedAsAnEmptyCatalog() async throws {
+        let vm = FlyersViewModel(flyerService: FlyerService(apiClient: client, tokenStore: tokens), listService: GroceryListService(apiClient: client, tokenStore: tokens))
+        StubProtocol.handle = { request in
+            if request.url!.path.hasSuffix("selected_stores") {
+                return (200, Data(#"[{"id":7,"store_name":"Walmart","address":"Test","postal_code":"M5V 2T6"}]"#.utf8))
+            }
+            throw URLError(.timedOut)
+        }
+        await vm.load()
+        XCTAssertFalse(vm.isLoading)
+        XCTAssertTrue(vm.errorMessage?.contains("Couldn't refresh flyers") == true)
+        XCTAssertFalse(vm.errorMessage?.contains("No flyer deals") == true)
     }
     func testStoreBrandsDoNotCollide() async throws {
         let vm = StoreSelectViewModel(service: StoreService(apiClient: client, tokenStore: tokens))
