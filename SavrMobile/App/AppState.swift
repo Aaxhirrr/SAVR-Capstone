@@ -28,13 +28,21 @@ final class AppState: ObservableObject {
 
     init(authService: AuthService = AuthService()) {
         self.authService = authService
+        NotificationCenter.default.addObserver(forName: .savrSessionExpired, object: nil, queue: .main) { [weak self] _ in
+            Task { @MainActor in self?.signOut() }
+        }
     }
 
     func bootstrap() async {
         if let session = authService.restoreSession() {
             userID = session.userID
-            profile = try? await authService.fetchProfile()
-            sessionState = .signedIn
+            do {
+                profile = try await authService.fetchProfile()
+                sessionState = .signedIn
+            } catch {
+                if (error as? APIError)?.isUnauthorized == true { signOut() }
+                else { sessionState = .signedIn } // Keep the session during temporary network loss.
+            }
         } else {
             userID = nil
             profile = nil
