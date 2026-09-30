@@ -1,0 +1,5 @@
+{
+  "platforms": ["apple", "android"],
+  "apple": { "modules": ["SavrOcrModule"] },
+  "android": { "modules": ["expo.modules.savrocr.SavrOcrModule"] }
+}
