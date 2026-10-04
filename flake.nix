@@ -19,9 +19,10 @@
       };
 
       androidComposition = pkgs.androidenv.composeAndroidPackages {
-        platformVersions = [ "35" ];
+        platformVersions = [ "36" ];
 
-        buildToolsVersions = [ "35.0.0" ];
+        # Expo targets 36; Android library plugins also request build-tools 35.
+        buildToolsVersions = [ "35.0.0" "36.0.0" ];
 
         includeEmulator = true;
 
@@ -29,6 +30,8 @@
         abiVersions = [ "x86_64" ];
 
         includeNDK = true;
+        ndkVersions = [ "27.1.12297006" ];
+        cmakeVersions = [ "3.30.5" ];
       };
 
       androidSdk = androidComposition.androidsdk;
@@ -75,4 +78,3 @@
       };
     };
 }
-

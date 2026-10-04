@@ -1,0 +1,157 @@
+SAVR MOBILE: SWIFTUI TO EXPO MIGRATION GUIDE
+Based on the repository inspected September 21, 2026.
+
+1. START FROM THE EXISTING EXPO APP
+
+Use SavrExpo/SAVR as the proposed destination: it already contains TypeScript,
+Expo Router, and an Expo SDK 57 starter. This is a UI and application-logic
+rewrite into React Native; SwiftUI screens cannot be copied into TSX directly.
+Keep the existing SAVR backend and reproduce the Swift app's behavior first.
+
+Useful references:
+- SavrMobile/: app state, design system, components, features, and services.
+- Root-level ProfileView.swift and ListDetailView.swift: active screens listed
+  in the Xcode project; do not overlook them when inventorying features.
+- savr-react-native-demo/components/swift-ports/: reusable component examples.
+- SavrMobile/SAVR-REPO_OFFICIAL/ASU-Expo-main/: older Expo services/screens.
+  Its HTTP API address and AsyncStorage token handling differ from Swift.
+  Review individual implementations; do not copy its SDK 54 package versions
+  or assume its backend contracts match the current Swift client.
+
+During implementation, read SavrExpo/SAVR/AGENTS.md and run from that directory:
+  npm ci
+  npx expo install expo-secure-store @react-native-async-storage/async-storage
+  npx expo install expo-image-picker expo-location react-native-maps
+  npx expo install expo-linear-gradient
+  npx expo-doctor
+  npx expo start
+Use Expo-compatible dependency versions. These are future migration steps;
+creating this guide does not install packages or change either application.
+Reference: https://docs.expo.dev/workflow/using-libraries/
+
+2. PORT STRUCTURE, STATE, AND DESIGN
+
+Keep src/app for routes; add src/features, src/services, src/models,
+src/state, and shared components/theme files for implementation.
+
+Swift source/concept                  Expo equivalent
+SavrMobileApp + AppState               Root provider with session bootstrap
+RootView + HomeLandingView            Public landing route
+SignInView / SignUpView                Public authentication routes
+AppShellView                          Authenticated tabs: Lists, Chat,
+                                      Flyers, Stores; open Chat initially
+ListDetailView / ProfileView           Stack routes outside the tab bar
+@State / @Binding                     useState / values and callbacks
+ObservableObject + @Published         Feature hooks with state or reducers
+@EnvironmentObject                    React context for shared session state
+VStack / HStack / ZStack               View with flex or layered positioning
+List / TextField / Button             FlatList / TextInput / Pressable
+.sheet / .alert                       Router modal or Modal / Alert
+
+Preserve loading, signed-out, and signed-in session states. Wait for storage
+hydration before redirecting; protect authenticated routes and handle Android
+back navigation. Keep the public landing flow available.
+Reference: https://docs.expo.dev/router/introduction/
+
+Translate DesignSystem colors, typography, spacing, and buttons into shared
+tokens and styles. Port reusable cards/fields before composing screens. Export
+the actual logo and store images from asset catalogs into assets; deduplicate
+the multiple catalogs. Provide icons on both platforms, safe-area padding,
+keyboard avoidance, accessible labels, and readable enlarged text.
+
+3. REBUILD THE SERVICE LAYER BEFORE WIRING SCREENS
+
+Replace APIClient.swift with one typed fetch wrapper. Set
+EXPO_PUBLIC_API_URL=https://savr.app/api and access it through
+process.env.EXPO_PUBLIC_API_URL. This value is public; never place tokens or
+server secrets in EXPO_PUBLIC variables. Centralize bearer authentication,
+query encoding, timeouts/cancellation, status checking, and detail/message
+errors. Support empty 204 responses without attempting JSON decoding.
+Reference: https://docs.expo.dev/guides/environment-variables/
+
+Preserve these contracts observed in the Swift source (paths below /api):
+- POST auth/login: multipart username/password; use FormData and let fetch
+  supply its multipart boundary. Read access_token and user_id.
+- POST auth/signup: JSON email/password, optional first_name, last_name,
+  phone, and nested address with postal_code.
+- GET/PUT auth/profile; POST auth/change-password; DELETE auth/account.
+  Preserve dietary_restrictions and category-to-brand liked/disliked maps.
+- POST chat/message: {message, sessionId?}; accept both camelCase and
+  snake_case session/bot-response fields. GET chat/history/{sessionId}.
+- GET grocery-lists/all; GET/DELETE grocery-lists/{id}. Preserve optional
+  session_id, savings fields, string quantities, and camelCase createdAt.
+- GET flyers: store_brand, search, page, page_size; POST flyers/add-to-list:
+  {deal_ids, list_id}.
+- GET/POST user/selected_stores; DELETE user/selected_stores/{id}.
+
+Extract flyer/store/profile networking currently embedded in views into
+services. Normalize response shapes at that boundary, including nullable
+fields and dates; TypeScript types alone do not validate received JSON.
+Verify contracts against a test account/backend before relying on them.
+
+4. PRESERVE SESSIONS AND LIST CHAT
+
+Replace AuthTokenStore's Keychain access with expo-secure-store on mobile.
+Store the token and user identifier securely, restore them before bootstrap,
+validate the profile, and clear session state on logout or unauthorized
+responses. Keep network failures distinct from an invalid login.
+Reference: https://docs.expo.dev/versions/latest/sdk/securestore/
+
+Use AsyncStorage for non-secret preferences and cached list conversations;
+scope keys by user and list ID. Port ListChatSessionStore and the 404 recovery
+in ListDetailView: discard a missing session ID, retry once as a new session
+with list context/recent messages, then persist the replacement ID. Refresh
+lists after chat or flyer mutations and clear account-specific caches when
+appropriate. AsyncStorage is unencrypted.
+Reference: https://docs.expo.dev/versions/latest/sdk/async-storage/
+
+Existing Swift Keychain/UserDefaults data will not automatically appear in
+Expo storage. Plan an initial sign-in and server reload; preserving local-only
+history across an installed-app upgrade needs an explicit native migration.
+
+5. HANDLE THE NATIVE FEATURES EARLY
+
+- Camera/photos: replace UIImagePickerController with expo-image-picker.
+  Configure permission messages and handle denial, cancellation, and missing
+  camera hardware. The picker returns an image; it does not perform OCR.
+  Reference: https://docs.expo.dev/versions/latest/sdk/imagepicker/
+- OCR: ChatViewModel uses Apple's Vision to extract text locally and sends
+  that text to chat. Choose and validate a compatible native OCR module with
+  iOS and Android implementations, or build a native bridge. Backend OCR
+  would require new backend support and change the current image data flow.
+- Stores: replace MapKit rendering with react-native-maps and CoreLocation
+  with expo-location. Preserve the three-store limit and saved-store IDs.
+  The Swift screen uses representative hardcoded chain locations, not a live
+  nearby-store search service. Configure map-provider keys where required
+  and retain a usable store list when location access is denied.
+  Reference: https://docs.expo.dev/versions/latest/sdk/map-view/
+
+Use a development build for custom native OCR; Expo Go cannot load arbitrary
+native modules. Rebuild after native dependency/configuration changes. Move
+camera/location permission configuration into app.json/config plugins.
+Reference: https://docs.expo.dev/develop/development-builds/introduction/
+
+6. IMPLEMENT AND VERIFY IN SMALL MILESTONES
+
+Order: theme/navigation -> API/auth -> chat and lists/list detail -> flyers
+and saved stores -> profile/preferences -> camera/OCR -> final visual polish.
+Prototype OCR and maps early so native compatibility does not block completion.
+
+Keep known limitations explicit: HomeViewModel uses MockPriceService, the
+homepage camera is a placeholder, Google auth buttons are unwired, and list
+renaming currently changes only in-memory state. Making these production
+features requires separate work beyond reproducing existing behavior.
+
+For each milestone run TypeScript checking (npx tsc --noEmit), configured lint,
+and focused tests for API mapping, session restoration, and 404 chat recovery.
+Check on iOS and Android: signup/login/relaunch/logout; list detail and deletion;
+chat continuity; flyer search/add-to-list; selecting/removing three stores;
+profile/password changes; camera OCR; denied permissions; offline/server
+errors; keyboard/back navigation. Validate deletion responses before removing
+items from UI, rather than carrying over Swift's silent failure handling.
+
+Before release, configure bundle/package identifiers, icons, splash screen,
+permission text, and signing; create and test production builds through EAS
+Build or native tooling. Local iOS builds require macOS/Xcode; Linux development
+can use Android and cloud iOS builds. If web is in scope, explicitly design
+browser authentication/storage and map/OCR fallbacks as separate platform work.
