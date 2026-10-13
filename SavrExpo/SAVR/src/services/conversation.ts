@@ -17,7 +17,7 @@ export function listPrompt(
     .slice(-8)
     .map((m) => `${m.role === 'user' ? 'User' : 'Assistant'}: ${m.text}`)
     .join('\n');
-  return `Continue this SAVR grocery list conversation as the same thread.\nList name: ${list.name}\nCurrent list items:\n${items || '- No items saved yet'}\n\nRecent conversation context:\n${transcript || 'No previous transcript is available.'}\n\nThe user's new message is:\n${text}\n\nRespond naturally as if continuing the existing list chat. Use the prior list context without restating all of it unless helpful.`;
+  return `Continue this SAVR grocery list conversation as the same thread.\nList name: ${list.name}\nList ID: ${list.id}\nCurrent list items:\n${items || '- No items saved yet'}\n\nRecent conversation context:\n${transcript || 'No previous transcript is available.'}\n\nThe user's new message is:\n${text}\n\nRespond naturally as if continuing the existing list chat. Use the prior list context without restating all of it unless helpful.`;
 }
 export async function sendConversation(
   send: (
@@ -31,10 +31,7 @@ export async function sendConversation(
   const contextual = () =>
     list ? listPrompt(list, text, conversation.messages) : text;
   try {
-    return await send(
-      conversation.sessionId ? text : contextual(),
-      conversation.sessionId,
-    );
+    return await send(contextual(), conversation.sessionId);
   } catch (error) {
     if (
       !(error instanceof ApiError) ||

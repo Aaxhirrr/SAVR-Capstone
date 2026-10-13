@@ -30,10 +30,28 @@ export default function ListsScreen() {
   const [target, setTarget] = useState<GroceryList | null>(null);
   const [renaming, setRenaming] = useState<GroceryList | null>(null);
   const [name, setName] = useState('');
-  const [aliases, setAliases] = useState<Record<string, string>>({});
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const pending = useRef(false);
+  const rename = async () => {
+    if (!renaming || pending.current || !name.trim()) return;
+    pending.current = true;
+    setBusy(true);
+    setError('');
+    try {
+      const saved = await service.renameList(renaming.id, name);
+      resource.setData(
+        (old) =>
+          old?.map((list) => (list.id === saved.id ? saved : list)) ?? [],
+      );
+      setRenaming(null);
+    } catch (e) {
+      setError(errorMessage(e));
+    } finally {
+      pending.current = false;
+      setBusy(false);
+    }
+  };
   const remove = async () => {
     if (!target || pending.current) return;
     pending.current = true;
@@ -108,9 +126,7 @@ export default function ListsScreen() {
             >
               <View style={s.row}>
                 <Icon name="receipt-outline" />
-                <Text style={[s.cardTitle, s.flex]}>
-                  {aliases[item.id] || item.name}
-                </Text>
+                <Text style={[s.cardTitle, s.flex]}>{item.name}</Text>
                 <Icon name="chevron-forward" />
               </View>
               <Text style={s.subtitle}>
@@ -130,7 +146,8 @@ export default function ListsScreen() {
                   secondary
                   onPress={() => {
                     setRenaming(item);
-                    setName(aliases[item.id] || item.name);
+                    setName(item.name);
+                    setError('');
                   }}
                 />
               </View>
@@ -155,27 +172,29 @@ export default function ListsScreen() {
         visible={!!renaming}
         transparent
         animationType="fade"
-        onRequestClose={() => setRenaming(null)}
+        onRequestClose={() => {
+          if (!busy) setRenaming(null);
+        }}
       >
         <View style={s.scrim}>
           <View style={s.dialog}>
-            <Field label="List name" value={name} onChangeText={setName} />
-            <Text style={s.subtitle}>
-              This display name lasts until you close the app. The saved list
-              name stays the same.
-            </Text>
+            <Field
+              label="List name"
+              value={name}
+              onChangeText={setName}
+              editable={!busy}
+            />
+            <Notice message={error} error />
             <Button
               title="Rename"
               disabled={!name.trim()}
-              onPress={() => {
-                if (renaming)
-                  setAliases((old) => ({ ...old, [renaming.id]: name.trim() }));
-                setRenaming(null);
-              }}
+              loading={busy}
+              onPress={() => void rename()}
             />
             <Button
               title="Cancel"
               secondary
+              disabled={busy}
               onPress={() => setRenaming(null)}
             />
           </View>

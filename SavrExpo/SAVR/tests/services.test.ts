@@ -74,7 +74,12 @@ test('signup sends nested address and optional fields using the Swift contract',
         email: 'pat@example.test',
         password: 'password',
         first_name: 'Pat',
-        address: { street: '12 Main', postal_code: 'A1A 1A1' },
+        address: {
+          street: '12 Main',
+          city: 'Toronto',
+          province: 'ON',
+          postalCode: 'A1A 1A1',
+        },
       });
       return json({ access_token: 'token', user_id: 'u' });
     },
@@ -86,8 +91,8 @@ test('signup sends nested address and optional fields using the Swift contract',
     lastName: '',
     phone: '',
     street: '12 Main',
-    city: '',
-    province: '',
+    city: 'Toronto',
+    province: 'ON',
     postal: 'A1A 1A1',
   });
 });
@@ -236,7 +241,7 @@ test('list chat retries a missing session once with list and transcript context'
     list,
   );
   assert.equal(requests.length, 2);
-  assert.equal(requests[0].text, 'Any substitutes?');
+  assert.match(requests[0].text, /List ID: list\/1/);
   assert.equal(requests[1].id, undefined);
   assert.match(requests[1].text, /Weekly shop/);
   assert.match(requests[1].text, /Apples \(2 lbs\)/);

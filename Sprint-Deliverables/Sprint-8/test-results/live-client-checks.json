@@ -1,0 +1,38 @@
+{
+  "execution": "Node using actual Expo service classes; not native UI evidence",
+  "recordedAt": "2026-10-13T20:11:12.167Z",
+  "results": [
+    {
+      "flow": "lists",
+      "status": "PASS"
+    },
+    {
+      "flow": "list-detail",
+      "status": "PASS"
+    },
+    {
+      "flow": "stores",
+      "status": "PASS"
+    },
+    {
+      "flow": "flyers",
+      "status": "PASS"
+    },
+    {
+      "flow": "profile",
+      "status": "PASS"
+    },
+    {
+      "flow": "rename-persistence",
+      "status": "PASS"
+    },
+    {
+      "flow": "profile-save-roundtrip",
+      "status": "PASS"
+    },
+    {
+      "flow": "flyer-addition-readback",
+      "status": "PASS"
+    }
+  ]
+}
