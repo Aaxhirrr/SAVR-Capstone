@@ -7,8 +7,8 @@ async function mockBackend(page: Page) {
     email: 'pat@example.test',
     phone: '',
     address: { street: '' },
-    dietary_restrictions: [] as string[],
-    brand_preferences: { liked: {}, disliked: {} },
+    dietaryRestrictions: [] as string[],
+    brandPreferences: { liked: {}, disliked: {} },
   };
   let lists = [
     {
@@ -59,13 +59,18 @@ async function mockBackend(page: Page) {
         user_id: 'test-user',
       });
     if (path === 'auth/profile') {
-      if (method === 'PUT') profile = { ...profile, ...request.postDataJSON() };
+      if (method === 'PUT')
+        profile = { ...profile, ...request.postDataJSON() };
       return reply(profile);
     }
     if (path === 'auth/change-password') return reply({ message: 'Updated' });
     if (path === 'auth/account') return reply({}, 204);
     if (path === 'grocery-lists/all') return reply(lists);
     if (path === 'grocery-lists/list-1') {
+      if (method === 'PUT') {
+        lists[0] = { ...lists[0], ...request.postDataJSON() };
+        return reply(lists[0]);
+      }
       if (method === 'DELETE') {
         if (++deletes === 1)
           return reply({ detail: 'Deletion failed. Try again.' }, 500);
@@ -128,7 +133,9 @@ async function signIn(page: Page) {
     .fill('pat@example.test');
   await page.getByLabel('Password', { exact: true }).fill('password123');
   await page.getByRole('button', { name: 'Sign in', exact: true }).click();
-  await expect(page.getByText('What are we shopping for today?')).toBeVisible();
+  await expect(
+    page.getByText('What are we shopping for today?'),
+  ).toBeVisible();
 }
 
 test('landing and protected navigation work at phone width', async ({
@@ -142,12 +149,43 @@ test('landing and protected navigation work at phone width', async ({
   await expect(
     page.getByRole('button', { name: 'Start saving with SAVR' }),
   ).toBeVisible();
-  await page.screenshot({ path: 'test-results/savr-home.png', fullPage: true });
+  await page.screenshot({
+    path: 'test-results/savr-home.png',
+    fullPage: true,
+  });
   await page.goto('/profile');
   await expect(
     page.getByRole('button', { name: 'Start saving with SAVR' }),
   ).toBeVisible();
   expect(errors).toEqual([]);
+});
+
+test('Sprint 8 rename survives server refresh and detail navigation', async ({ page }) => {
+  await mockBackend(page);
+  await signIn(page);
+  await page.getByText('My Lists', { exact: true }).click();
+  await page.getByRole('button', { name: 'Rename', exact: true }).click();
+  await page.getByRole('textbox', { name: 'List name', exact: true }).fill('Sprint 8 renamed');
+  await page.getByRole('button', { name: 'Rename', exact: true }).last().click();
+  await page.getByRole('button', { name: 'Refresh lists' }).click();
+  await page.getByRole('button', { name: 'Open Sprint 8 renamed' }).click();
+  await expect(page.getByRole('heading', { name: 'Sprint 8 renamed', exact: true })).toBeVisible();
+});
+
+test('Sprint 8 failed chat preserves the draft and retries successfully', async ({ page }) => {
+  await mockBackend(page);
+  await signIn(page);
+  await page.route('https://savr.test/api/chat/message', route => route.fulfill({
+    status: 503, contentType: 'application/json', body: JSON.stringify({ detail: 'Temporarily unavailable. Please retry.' }),
+  }));
+  const composer = page.getByRole('textbox', { name: 'Message SAVR' });
+  await composer.fill('Keep my grocery draft');
+  await page.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(page.getByText('Temporarily unavailable. Please retry.')).toBeVisible();
+  await expect(composer).toHaveValue('Keep my grocery draft');
+  await page.unroute('https://savr.test/api/chat/message');
+  await page.getByRole('button', { name: 'Send', exact: true }).click();
+  await expect(page.getByText('Try pears for your next grocery trip.').filter({ visible: true })).toBeVisible();
 });
 
 test('chat, list context recovery, and failed deletion retain correct state', async ({
@@ -164,13 +202,17 @@ test('chat, list context recovery, and failed deletion retain correct state', as
       .getByText('Try pears for your next grocery trip.')
       .filter({ visible: true }),
   ).toBeVisible();
-  expect(backend.chatBodies[0]).toEqual({ message: 'Help me plan groceries.' });
+  expect(backend.chatBodies[0]).toEqual({
+    message: 'Help me plan groceries.',
+  });
   await page.getByText('My Lists', { exact: true }).click();
   await page.getByRole('button', { name: 'Open Weekly groceries' }).click();
   await expect(page.getByRole('checkbox', { name: 'Apples' })).toBeVisible();
   await page.getByRole('checkbox', { name: 'Apples' }).click();
   await expect(page.getByRole('checkbox', { name: 'Apples' })).toBeChecked();
-  await page.getByRole('button', { name: 'Conversation', exact: true }).click();
+  await page
+    .getByRole('button', { name: 'Conversation', exact: true })
+    .click();
   await page
     .getByRole('textbox', { name: 'Message SAVR' })
     .fill('Any substitutes?');
@@ -182,7 +224,10 @@ test('chat, list context recovery, and failed deletion retain correct state', as
   ).toBeVisible();
   expect(backend.chatBodies[1].message).toContain('Weekly groceries');
   expect(backend.chatBodies[1].sessionId).toBeUndefined();
-  await page.screenshot({ path: 'test-results/savr-chat.png', fullPage: true });
+  await page.screenshot({
+    path: 'test-results/savr-chat.png',
+    fullPage: true,
+  });
   await page.goBack();
   await page.getByRole('button', { name: 'Delete Weekly groceries' }).click();
   await page.getByRole('button', { name: 'Confirm', exact: true }).click();
@@ -217,7 +262,7 @@ test('flyers add selected deals to an explicit list and stores enforce the limit
     page.getByText('Deals added to your grocery list.'),
   ).toBeVisible();
   expect(backend.flyerBodies).toEqual([
-    { deal_ids: ['deal-1'], list_id: 'list-1' },
+    { item_names: ['Fresh apples'], list_id: 'list-1' },
   ]);
   await page.getByText('Stores', { exact: true }).click();
   await page
@@ -252,14 +297,14 @@ test('profile saves preferences and sign-out removes access to protected screens
   await expect(
     page.getByText('Your preferences have been saved.'),
   ).toBeVisible();
-  expect(backend.getProfile().dietary_restrictions).toEqual(['Vegetarian']);
+  expect(backend.getProfile().dietaryRestrictions).toEqual(['Vegetarian']);
   await page.getByRole('button', { name: 'Security', exact: true }).click();
   await page.getByRole('button', { name: 'Sign out', exact: true }).click();
   await page.getByRole('button', { name: 'Confirm', exact: true }).click();
   await expect(
     page.getByRole('button', { name: 'Start saving with SAVR' }),
   ).toBeVisible();
-  await expect(page.getByRole('button', { name: 'Open profile' })).toHaveCount(
-    0,
-  );
+  await expect(
+    page.getByRole('button', { name: 'Open profile' }),
+  ).toHaveCount(0);
 });

@@ -41,7 +41,9 @@ export default function FlyersScreen() {
       ),
     ),
   ];
-  const brand = brands.includes(chosenBrand) ? chosenBrand : (brands[0] ?? '');
+  const brand = brands.includes(chosenBrand)
+    ? chosenBrand
+    : (brands[0] ?? '');
   const deals = useResource(
     useCallback(
       async (signal: AbortSignal): Promise<DealsPage> =>
@@ -53,17 +55,20 @@ export default function FlyersScreen() {
   );
   const [selection, setSelection] = useState<{
     brand: string;
-    ids: Set<string>;
-  }>({ brand: '', ids: new Set() });
-  const checked = selection.brand === brand ? selection.ids : new Set<string>();
+    names: Map<string, string>;
+  }>({ brand: '', names: new Map() });
+  const checked =
+    selection.brand === brand ? selection.names : new Map<string, string>();
   const setChecked = (
-    update: Set<string> | ((old: Set<string>) => Set<string>),
+    update:
+      | Map<string, string>
+      | ((old: Map<string, string>) => Map<string, string>),
   ) =>
     setSelection((old) => ({
       brand,
-      ids:
+      names:
         typeof update === 'function'
-          ? update(old.brand === brand ? old.ids : new Set())
+          ? update(old.brand === brand ? old.names : new Map())
           : update,
     }));
   const [picking, setPicking] = useState(false);
@@ -72,11 +77,11 @@ export default function FlyersScreen() {
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const pending = useRef(false);
-  const toggle = (id: string) =>
+  const toggle = (id: string, name: string) =>
     setChecked((old) => {
-      const next = new Set(old);
+      const next = new Map(old);
       if (next.has(id)) next.delete(id);
-      else next.add(id);
+      else next.set(id, name);
       return next;
     });
   const add = async () => {
@@ -86,8 +91,8 @@ export default function FlyersScreen() {
     setError('');
     setSuccess('');
     try {
-      await service.addDeals([...checked], listId);
-      setChecked(new Set());
+      await service.addDeals([...checked.values()], listId);
+      setChecked(new Map());
       setPicking(false);
       setSuccess('Deals added to your grocery list.');
     } catch (e) {
@@ -142,7 +147,7 @@ export default function FlyersScreen() {
                   onPress={() => {
                     setBrand(value);
                     setPage(1);
-                    setChecked(new Set());
+                    setChecked(new Map());
                   }}
                 />
               ))}
@@ -158,7 +163,7 @@ export default function FlyersScreen() {
                   onSubmitEditing={() => {
                     setSearch(input.trim());
                     setPage(1);
-                    setChecked(new Set());
+                    setChecked(new Map());
                   }}
                 />
                 <Button
@@ -167,7 +172,7 @@ export default function FlyersScreen() {
                   onPress={() => {
                     setSearch(input.trim());
                     setPage(1);
-                    setChecked(new Set());
+                    setChecked(new Map());
                   }}
                 />
               </>
@@ -248,7 +253,7 @@ export default function FlyersScreen() {
             <Button
               title={checked.has(item.id) ? 'Selected ✓' : 'Select deal'}
               secondary={!checked.has(item.id)}
-              onPress={() => toggle(item.id)}
+              onPress={() => toggle(item.id, item.name)}
             />
           </Card>
         )}

@@ -1,0 +1,113 @@
+
+> savr@1.0.0 test:e2e
+> playwright test
+
+[WebServer] (node:10119) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+[WebServer] (node:10154) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+[WebServer] (Use `node --trace-warnings ...` to show where the warning was created)
+
+Running 6 tests using 1 worker
+
+(node:10380) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:10380) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  1 tests/e2e/migration.spec.ts:141:5 › landing and protected navigation work at phone width (1.1m)
+(node:10677) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:10677) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✘  2 tests/e2e/migration.spec.ts:163:5 › Sprint 8 rename survives server refresh and detail navigation (20.6s)
+(node:10787) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+(node:10787) Warning: The 'NO_COLOR' env is ignored due to the 'FORCE_COLOR' env being set.
+(Use `node --trace-warnings ...` to show where the warning was created)
+  ✓  3 tests/e2e/migration.spec.ts:175:5 › Sprint 8 failed chat preserves the draft and retries successfully (9.0s)
+  ✓  4 tests/e2e/migration.spec.ts:191:5 › chat, list context recovery, and failed deletion retain correct state (15.0s)
+  ✓  5 tests/e2e/migration.spec.ts:245:5 › flyers add selected deals to an explicit list and stores enforce the limit (17.2s)
+  ✓  6 tests/e2e/migration.spec.ts:288:5 › profile saves preferences and sign-out removes access to protected screens (13.3s)
+
+
+  1) tests/e2e/migration.spec.ts:141:5 › landing and protected navigation work at phone width ──────
+
+    Test timeout of 60000ms exceeded.
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator:  getByRole('button', { name: 'Start saving with SAVR' })
+    Expected: visible
+    Received: undefined
+
+    Call log:
+      - Expect "toBeVisible" getByRole('button', { name: 'Start saving with SAVR' }) with timeout 5000ms
+      - waiting for getByRole('button', { name: 'Start saving with SAVR' })
+      - Protocol error (Runtime.callFunctionOn): Internal server error, session closed.
+
+
+      149 |   await expect(
+      150 |     page.getByRole('button', { name: 'Start saving with SAVR' }),
+    > 151 |   ).toBeVisible();
+          |     ^
+      152 |   await page.screenshot({
+      153 |     path: 'test-results/savr-home.png',
+      154 |     fullPage: true,
+        at /Users/anola133/Documents/SAVR-Capstone/SavrExpo/SAVR/tests/e2e/migration.spec.ts:151:5
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/migration-landing-and-prot-94513-igation-work-at-phone-width/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/migration-landing-and-prot-94513-igation-work-at-phone-width/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/migration-landing-and-prot-94513-igation-work-at-phone-width/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/migration-landing-and-prot-94513-igation-work-at-phone-width/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2) tests/e2e/migration.spec.ts:163:5 › Sprint 8 rename survives server refresh and detail navigation 
+
+    Error: expect(locator).toBeVisible() failed
+
+    Locator:  getByText('Sprint 8 renamed', { exact: true }).first()
+    Expected: visible
+    Received: hidden
+    Timeout:  5000ms
+
+    Call log:
+      - Expect "toBeVisible" getByText('Sprint 8 renamed', { exact: true }).first() with timeout 5000ms
+      - waiting for getByText('Sprint 8 renamed', { exact: true }).first()
+        13 × locator resolved to <div dir="auto" class="css-text-146c3p1 r-color-p7m4oj r-fontSize-adyw6z r-fontWeight-b88u0q r-flex-13awgt0">Sprint 8 renamed</div>
+           - unexpected value "hidden"
+
+
+      170 |   await page.getByRole('button', { name: 'Refresh lists' }).click();
+      171 |   await page.getByRole('button', { name: 'Open Sprint 8 renamed' }).click();
+    > 172 |   await expect(page.getByText('Sprint 8 renamed', { exact: true }).first()).toBeVisible();
+          |                                                                             ^
+      173 | });
+      174 |
+      175 | test('Sprint 8 failed chat preserves the draft and retries successfully', async ({ page }) => {
+        at /Users/anola133/Documents/SAVR-Capstone/SavrExpo/SAVR/tests/e2e/migration.spec.ts:172:77
+
+    attachment #1: screenshot (image/png) ──────────────────────────────────────────────────────────
+    test-results/migration-Sprint-8-rename--15d45-fresh-and-detail-navigation/test-failed-1.png
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+    Error Context: test-results/migration-Sprint-8-rename--15d45-fresh-and-detail-navigation/error-context.md
+
+    attachment #3: trace (application/zip) ─────────────────────────────────────────────────────────
+    test-results/migration-Sprint-8-rename--15d45-fresh-and-detail-navigation/trace.zip
+    Usage:
+
+        npx playwright show-trace test-results/migration-Sprint-8-rename--15d45-fresh-and-detail-navigation/trace.zip
+
+    ────────────────────────────────────────────────────────────────────────────────────────────────
+
+  2 failed
+    tests/e2e/migration.spec.ts:141:5 › landing and protected navigation work at phone width ───────
+    tests/e2e/migration.spec.ts:163:5 › Sprint 8 rename survives server refresh and detail navigation 
+  4 passed (5.0m)

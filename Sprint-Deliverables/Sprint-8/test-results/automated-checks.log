@@ -1,0 +1,176 @@
+
+> savr@1.0.0 check
+> npm run typecheck && npm run lint && npm test
+
+
+> savr@1.0.0 typecheck
+> tsc --noEmit
+
+
+> savr@1.0.0 lint
+> expo lint
+
+
+> savr@1.0.0 test
+> node --experimental-strip-types --test tests/*.test.ts
+
+TAP version 13
+# (node:13713) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:13713) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/anola133/Documents/SAVR-Capstone/SavrExpo/SAVR/tests/services.test.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/anola133/Documents/SAVR-Capstone/SavrExpo/SAVR/package.json.
+# Subtest: login uses multipart credentials without overriding the generated boundary
+ok 1 - login uses multipart credentials without overriding the generated boundary
+  ---
+  duration_ms: 21.10375
+  ...
+# Subtest: signup sends nested address and optional fields using the Swift contract
+ok 2 - signup sends nested address and optional fields using the Swift contract
+  ---
+  duration_ms: 0.621625
+  ...
+# Subtest: authenticated calls preserve /api, encode IDs, and accept DELETE 204
+ok 3 - authenticated calls preserve /api, encode IDs, and accept DELETE 204
+  ---
+  duration_ms: 0.386709
+  ...
+# Subtest: failed DELETE is surfaced instead of silently removing a list
+ok 4 - failed DELETE is surfaced instead of silently removing a list
+  ---
+  duration_ms: 0.645833
+  ...
+# Subtest: query encoding and flyer normalization preserve pagination and prices
+ok 5 - query encoding and flyer normalization preserve pagination and prices
+  ---
+  duration_ms: 0.842708
+  ...
+# Subtest: 401 expires authenticated sessions, but login errors and 403 do not
+ok 6 - 401 expires authenticated sessions, but login errors and 403 do not
+  ---
+  duration_ms: 1.076959
+  ...
+# Subtest: malformed responses are rejected and server validation errors are readable
+ok 7 - malformed responses are rejected and server validation errors are readable
+  ---
+  duration_ms: 1.05975
+  ...
+# Subtest: Swift response aliases, nullable savings, dictionary brands, and numeric store IDs map correctly
+ok 8 - Swift response aliases, nullable savings, dictionary brands, and numeric store IDs map correctly
+  ---
+  duration_ms: 0.462833
+  ...
+# Subtest: list chat retries a missing session once with list and transcript context
+ok 9 - list chat retries a missing session once with list and transcript context
+  ---
+  duration_ms: 0.982042
+  ...
+# Subtest: chat does not retry generic failures or loop on a new-session 404
+ok 10 - chat does not retry generic failures or loop on a new-session 404
+  ---
+  duration_ms: 1.038083
+  ...
+# Subtest: session bootstrap restores a valid account and only clears rejected credentials
+ok 11 - session bootstrap restores a valid account and only clears rejected credentials
+  ---
+  duration_ms: 0.724292
+  ...
+# Subtest: flyer additions require a real target list
+ok 12 - flyer additions require a real target list
+  ---
+  duration_ms: 0.293791
+  ...
+# (node:13714) ExperimentalWarning: Type Stripping is an experimental feature and might change at any time
+# (Use `node --trace-warnings ...` to show where the warning was created)
+# (node:13714) [MODULE_TYPELESS_PACKAGE_JSON] Warning: Module type of file:///Users/anola133/Documents/SAVR-Capstone/SavrExpo/SAVR/tests/sprint8.test.ts is not specified and it doesn't parse as CommonJS.
+# Reparsing as ES module because module syntax was detected. This incurs a performance overhead.
+# To eliminate this warning, add "type": "module" to /Users/anola133/Documents/SAVR-Capstone/SavrExpo/SAVR/package.json.
+# Subtest: S8 profile reads published camelCase fields and preserves complete address
+ok 13 - S8 profile reads published camelCase fields and preserves complete address
+  ---
+  duration_ms: 2.932458
+  ...
+# Subtest: S8 empty current preferences override legacy cached-looking fields
+ok 14 - S8 empty current preferences override legacy cached-looking fields
+  ---
+  duration_ms: 0.167708
+  ...
+# Subtest: S8 saving profile sends published keys and returns authoritative response
+ok 15 - S8 saving profile sends published keys and returns authoritative response
+  ---
+  duration_ms: 20.472833
+  ...
+# Subtest: S8 incomplete address rejected before making a request
+ok 16 - S8 incomplete address rejected before making a request
+  ---
+  duration_ms: 0.838625
+  ...
+# Subtest: S8 no address sends null and cleared preferences are sent explicitly
+ok 17 - S8 no address sends null and cleared preferences are sent explicitly
+  ---
+  duration_ms: 0.516125
+  ...
+# Subtest: S8 list retains the backend chat_session_id
+ok 18 - S8 list retains the backend chat_session_id
+  ---
+  duration_ms: 0.226167
+  ...
+# Subtest: S8 rename persists via PUT and uses the server result
+ok 19 - S8 rename persists via PUT and uses the server result
+  ---
+  duration_ms: 0.500125
+  ...
+# Subtest: S8 failed rename is not reported as success
+ok 20 - S8 failed rename is not reported as success
+  ---
+  duration_ms: 0.360084
+  ...
+# Subtest: S8 flyer additions use item names even when selection spans pages
+ok 21 - S8 flyer additions use item names even when selection spans pages
+  ---
+  duration_ms: 0.9855
+  ...
+# Subtest: S8 account deletion supplies explicit API confirmation without a live deletion
+ok 22 - S8 account deletion supplies explicit API confirmation without a live deletion
+  ---
+  duration_ms: 0.703417
+  ...
+# Subtest: S8 list context accompanies messages even when a session already exists
+ok 23 - S8 list context accompanies messages even when a session already exists
+  ---
+  duration_ms: 0.44425
+  ...
+# Subtest: S8 offline request produces an actionable connection error
+ok 24 - S8 offline request produces an actionable connection error
+  ---
+  duration_ms: 0.186292
+  ...
+# Subtest: S8 timeout aborts the transport and settles with a retry message
+ok 25 - S8 timeout aborts the transport and settles with a retry message
+  ---
+  duration_ms: 10.864958
+  ...
+# Subtest: S8 external cancellation is distinguished from timeout
+ok 26 - S8 external cancellation is distinguished from timeout
+  ---
+  duration_ms: 0.86
+  ...
+# Subtest: S8 HTML success and malformed list shapes fail safely
+ok 27 - S8 HTML success and malformed list shapes fail safely
+  ---
+  duration_ms: 0.8215
+  ...
+# Subtest: S8 rejected profile save keeps the caller draft available for retry
+ok 28 - S8 rejected profile save keeps the caller draft available for retry
+  ---
+  duration_ms: 0.839125
+  ...
+1..28
+# tests 28
+# suites 0
+# pass 28
+# fail 0
+# cancelled 0
+# skipped 0
+# todo 0
+# duration_ms 207.294625
