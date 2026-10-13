@@ -1,0 +1,20 @@
+plugins {
+  id 'com.android.library'
+  id 'expo-module-gradle-plugin'
+}
+
+group = 'expo.modules.savrocr'
+version = '1.0.0'
+
+android {
+  namespace 'expo.modules.savrocr'
+  defaultConfig {
+    versionCode 1
+    versionName '1.0.0'
+  }
+}
+
+dependencies {
+  // Bundle the Latin text model so scanning does not need a model download.
+  implementation 'com.google.mlkit:text-recognition:16.0.1'
+}

@@ -1,0 +1,6 @@
+{
+  "name": "savr-ocr",
+  "version": "1.0.0",
+  "private": true,
+  "description": "On-device recipe and grocery list text recognition for SAVR"
+}
