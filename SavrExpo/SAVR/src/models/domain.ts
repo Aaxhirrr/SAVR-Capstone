@@ -5,6 +5,10 @@ export type Profile = {
   email: string;
   phone: string;
   address: string;
+  city?: string;
+  province?: string;
+  postalCode?: string;
+  addressPhone?: string;
   dietary: string[];
   likedBrands: Record<string, string>;
   dislikedBrands: Record<string, string>;
@@ -113,11 +117,18 @@ const dictionary = (value: unknown): Record<string, string> =>
 
 export function parseSession(value: unknown): Session {
   const v = object(value);
-  return { accessToken: required(v.access_token), userId: required(v.user_id) };
+  return {
+    accessToken: required(v.access_token),
+    userId: required(v.user_id),
+  };
 }
 export function parseProfile(value: unknown): Profile {
   const v = object(value);
-  const brands = v.brand_preferences ? object(v.brand_preferences) : {};
+  const brandsValue = v.brandPreferences ?? v.brand_preferences;
+  const brands = brandsValue ? object(brandsValue) : {};
+  const dietary = v.dietaryRestrictions ?? v.dietary_restrictions;
+  const addressFields =
+    v.address && typeof v.address === 'object' ? object(v.address) : {};
   const address =
     typeof v.address === 'string'
       ? v.address
@@ -130,8 +141,12 @@ export function parseProfile(value: unknown): Profile {
     email: string(v.email ?? v.username),
     phone: string(v.phone),
     address,
-    dietary: Array.isArray(v.dietary_restrictions)
-      ? v.dietary_restrictions.filter((x): x is string => typeof x === 'string')
+    city: string(addressFields.city),
+    province: string(addressFields.province),
+    postalCode: string(addressFields.postalCode ?? addressFields.postal_code),
+    addressPhone: string(addressFields.phoneNumber),
+    dietary: Array.isArray(dietary)
+      ? dietary.filter((x): x is string => typeof x === 'string')
       : [],
     likedBrands: dictionary(brands.liked),
     dislikedBrands: dictionary(brands.disliked),
@@ -144,7 +159,7 @@ export function parseList(value: unknown): GroceryList {
     name: required(v.name),
     createdAt: string(v.createdAt ?? v.created_at),
     isActive: v.is_active === true,
-    sessionId: string(v.session_id) || undefined,
+    sessionId: string(v.chat_session_id ?? v.session_id) || undefined,
     savings: number(v.savings_amount),
     cheapestStore: string(v.least_expensive_store_name) || undefined,
     cheapestPrice: number(v.least_expensive_store_price),
