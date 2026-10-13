@@ -170,6 +170,7 @@ test('Sprint 8 rename survives server refresh and detail navigation', async ({ p
   await page.getByRole('button', { name: 'Refresh lists' }).click();
   await page.getByRole('button', { name: 'Open Sprint 8 renamed' }).click();
   await expect(page.getByRole('heading', { name: 'Sprint 8 renamed', exact: true })).toBeVisible();
+  await page.screenshot({ path: 'test-results/savr-rename.png', fullPage: true });
 });
 
 test('Sprint 8 failed chat preserves the draft and retries successfully', async ({ page }) => {
@@ -183,9 +184,11 @@ test('Sprint 8 failed chat preserves the draft and retries successfully', async 
   await page.getByRole('button', { name: 'Send', exact: true }).click();
   await expect(page.getByText('Temporarily unavailable. Please retry.')).toBeVisible();
   await expect(composer).toHaveValue('Keep my grocery draft');
+  await page.screenshot({ path: 'test-results/savr-chat-error.png', fullPage: true });
   await page.unroute('https://savr.test/api/chat/message');
   await page.getByRole('button', { name: 'Send', exact: true }).click();
   await expect(page.getByText('Try pears for your next grocery trip.').filter({ visible: true })).toBeVisible();
+  await page.screenshot({ path: 'test-results/savr-chat-retry.png', fullPage: true });
 });
 
 test('chat, list context recovery, and failed deletion retain correct state', async ({
@@ -264,6 +267,7 @@ test('flyers add selected deals to an explicit list and stores enforce the limit
   expect(backend.flyerBodies).toEqual([
     { item_names: ['Fresh apples'], list_id: 'list-1' },
   ]);
+  await page.screenshot({ path: 'test-results/savr-flyer-added.png', fullPage: true });
   await page.getByText('Stores', { exact: true }).click();
   await page
     .getByRole('button', { name: 'Save store', exact: true })
@@ -278,6 +282,7 @@ test('flyers add selected deals to an explicit list and stores enforce the limit
   await expect(
     page.getByRole('button', { name: 'Save store', exact: true }).first(),
   ).toBeDisabled();
+  await page.screenshot({ path: 'test-results/savr-store-limit.png', fullPage: true });
   await page
     .getByRole('button', { name: 'Remove', exact: true })
     .first()
@@ -298,6 +303,7 @@ test('profile saves preferences and sign-out removes access to protected screens
     page.getByText('Your preferences have been saved.'),
   ).toBeVisible();
   expect(backend.getProfile().dietaryRestrictions).toEqual(['Vegetarian']);
+  await page.screenshot({ path: 'test-results/savr-profile-saved.png', fullPage: true });
   await page.getByRole('button', { name: 'Security', exact: true }).click();
   await page.getByRole('button', { name: 'Sign out', exact: true }).click();
   await page.getByRole('button', { name: 'Confirm', exact: true }).click();
@@ -307,4 +313,5 @@ test('profile saves preferences and sign-out removes access to protected screens
   await expect(
     page.getByRole('button', { name: 'Open profile' }),
   ).toHaveCount(0);
+  await page.screenshot({ path: 'test-results/savr-signed-out.png', fullPage: true });
 });
