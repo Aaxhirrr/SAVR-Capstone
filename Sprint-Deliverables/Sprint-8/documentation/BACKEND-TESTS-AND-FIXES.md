@@ -1,62 +1,59 @@
-# What I tested and fixed — Aashir, Sprint 8
+# Aashir’s Sprint 8 — backend tests and fixes
 
-I checked how the Expo app talks to the SAVR backend. I found a few places where the app was sending the wrong information, losing information from the server, or showing a change that had not actually been saved.
+I checked how the Expo app talks to SAVR, fixed the issues below, and saved the test results. These are changes to the mobile app’s backend connection. The server itself was not changed.
 
-These fixes are in the mobile app. I did not change the backend server itself. I added 16 focused tests and reran the 12 existing service tests. **All 28 passed.** I also ran **8 checks against the live API** and **6 browser test flows**, which passed.
+## What was broken and what I fixed
 
-## What was wrong, and what I changed
+**These screenshots are browser test evidence, not iOS evidence.** They use a simulated backend. The actual iOS captures show a startup blocker; no completed iOS flow is marked passed.
 
-### 1. Adding flyer items to a list
+| Area | What was wrong before | What I changed | Test proof | Browser screenshot link |
+|---|---|---|---|---|
+| Adding flyer items | The app sent deal IDs, but the server needed product names. | It now sends selected product names and the right list. Names stay with selections across pages. | Request test, browser confirmation and live item readback passed. Native page-to-page selection still needs checking. | [Flyer addition confirmed](../screenshots/browser/06-flyer-added.png) |
+| Saving preferences | The app used the wrong field names and could show its own draft as saved. | It now sends the right fields and uses what the server returned. Empty preferences stay empty. | Value tests and browser Vegetarian save passed. Live save preserved existing preferences. Native restart check remains open. | [Vegetarian preference saved](../screenshots/browser/08-profile-saved.png) |
+| Saving addresses | Profile saves only sent the street. Signup used the wrong postal-code field. | I kept the full address and added checks for missing details. Phone editing is disabled because the API does not support it. | Complete, incomplete and empty-address tests; signup request test; live profile save passed. [Test code](../../../SavrExpo/SAVR/tests/sprint8.test.ts) | No dedicated screenshot captured. Verified by test output. |
+| Renaming a list | The new name only appeared on screen and was not saved. | Rename now saves to the server. A failed request keeps the draft and shows the error. | Success/failure tests, browser refresh and live saved-name readback passed. | [Saved list name after refresh](../screenshots/browser/03-list-renamed.png) |
+| Chat for a selected list | The app missed the linked session and left out list details in existing conversations. | I kept the linked session and included the list’s name, ID and items with the message. | Existing/missing-session tests and browser list-chat check passed. | [List conversation](../screenshots/browser/02-list-chat.png) |
+| Account deletion request | The request was missing the required confirmation. | I added that confirmation after the existing confirmation dialog. | Simulated request test passed. **No real account was deleted.** [Test code](../../../SavrExpo/SAVR/tests/sprint8.test.ts) | No live deletion screenshot; request tested with a simulated response. |
 
-**Before:** The app sent deal IDs, but the backend expected product names. That meant the request did not match what the server needed.
+## Results and actual success codes
 
-**What I changed:** The app now sends the names of the selected products and the list they should go into. It keeps the names with the selections when the user changes pages.
+| Check | Result | What the proof means | Saved proof |
+|---|---|---|---|
+| TypeScript, lint and service tests | **28 tests passed; command exit code 0** | The code checks and all 28 controlled service tests completed successfully. | [Full output](../test-results/automated-checks.log) · [Recorded exit code and run time](../test-results/proof-run.json) |
+| Browser flows | **6 passed; command exit code 0** | The six existing screen flows passed with a simulated backend. Screenshots were taken after their checks passed. | [Full output](../test-results/browser-final.log) · [Recorded exit code and run time](../test-results/proof-run.json) |
+| Live login and initial reads | **HTTP 200** | The real server successfully answered login, profile, lists, stores and flyer requests. | [Actual HTTP results](../test-results/live-api-preflight.json) |
+| Live checks through the app’s service code | **8 passed** | Real API reads plus saved-name, profile and added-item checks passed. This report records PASS/FAIL, not individual HTTP codes. | [Actual live results](../test-results/live-client-checks.json) |
+| Native iOS and Android walkthroughs | **Blocked** | Startup/runtime problems prevented complete native flows. These are not counted as passes. | [Platform results](REGRESSION-RESULTS.md) · [iOS crash details](../test-results/ios-runtime-crash.json) |
 
-**How I checked it:** I checked the request in an automated test, tested the list picker in the browser, and added a new item to a disposable list through the live API. I then loaded that list again and confirmed the item was there. Moving selections between pages still needs a full native walkthrough.
+An exit code of **0** means the test command finished successfully. **HTTP 200** means a server request succeeded. They are different kinds of proof.
 
-### 2. Saving dietary and brand preferences
+## Actual output from the latest run
 
-**Before:** The app used field names that did not match the current API. It could also show its own edited copy as “saved,” even if the server had returned something different.
+Copied from the linked logs, with no result wording changed:
 
-**What I changed:** I corrected the field names and made the app use the profile returned by the server after saving. Clearing preferences now stays cleared instead of falling back to older values.
+```text
+# tests 28
+# pass 28
+# fail 0
+# cancelled 0
+# skipped 0
+```
 
-**How I checked it:** Tests checked the outgoing information, the server's returned values, and empty preferences. The browser test saved Vegetarian. The live check saved the account's existing preferences and confirmed they came back unchanged; it did not prove a changed preference survives a native app restart.
+```text
+  ✓  1 tests/e2e/migration.spec.ts:141:5 › landing and protected navigation work at phone width (5.7s)
+  ✓  2 tests/e2e/migration.spec.ts:163:5 › Sprint 8 rename survives server refresh and detail navigation (17.0s)
+  ✓  3 tests/e2e/migration.spec.ts:176:5 › Sprint 8 failed chat preserves the draft and retries successfully (5.6s)
+  ✓  4 tests/e2e/migration.spec.ts:194:5 › chat, list context recovery, and failed deletion retain correct state (5.8s)
+  ✓  5 tests/e2e/migration.spec.ts:248:5 › flyers add selected deals to an explicit list and stores enforce the limit (5.6s)
+  ✓  6 tests/e2e/migration.spec.ts:293:5 › profile saves preferences and sign-out removes access to protected screens (3.2s)
+  6 passed (50.3s)
+```
 
-### 3. Address details causing profile-save problems
+The recorded exit code for each command is `0` in [proof-run.json](../test-results/proof-run.json).
 
-**Before:** Profile saves only sent the street, even though the API needs the city, province and postal code too. Signup also used the wrong name for the postal-code field.
+## All 28 service tests
 
-**What I changed:** The app keeps the full address and sends it correctly. It asks for missing address details before submitting an incomplete address. I also made the phone field read-only because the current profile-update API does not support changing it.
-
-**How I checked it:** I tested complete, incomplete and empty addresses, checked the signup request, and ran a live profile-save request.
-
-### 4. List names not really being saved
-
-**Before:** Renaming a list only changed the name on that screen. It did not save the new name to the backend.
-
-**What I changed:** Rename now sends the change to the server. The screen updates after it succeeds. If it fails, the user keeps their draft and sees the error.
-
-**How I checked it:** Tests covered successful and failed requests. The browser test renamed a list, refreshed it and opened its details. The live check renamed only the disposable QA list and loaded it again to confirm the saved name.
-
-### 5. Chat losing the selected list's context
-
-**Before:** The app missed the API's list-chat session field. It also left out the selected list's details when sending a message in an existing conversation.
-
-**What I changed:** The app now reads the linked chat session and includes the list's name, ID and items when sending a list-chat message.
-
-**How I checked it:** Tests checked both an existing session and recovery from a missing session. The browser flow checked that the list context was included. I have not marked live native conversation behavior as passed.
-
-### 6. Account deletion missing its confirmation
-
-**Before:** The request did not include the explicit confirmation required by the API.
-
-**What I changed:** It now includes that confirmation after the app's existing confirmation dialog.
-
-**How I checked it:** I used a simulated server response to inspect the request. **No real account was deleted.**
-
-## All 28 service tests, in plain English
-
-These tests give the app controlled server responses. That lets me check failures safely and repeat them without breaking the live service.
+I added **16 tests** and kept or updated **12 existing tests** from the Expo port. These use controlled server responses so failures can be repeated safely.
 
 | Test | What I checked | Result |
 |---|---|---|
@@ -89,42 +86,56 @@ These tests give the app controlled server responses. That lets me check failure
 | New 15 | An HTML response or an unexpected list format fails clearly. | Pass |
 | New 16 | A rejected profile save leaves the user's draft available to retry. | Pass |
 
-The existing tests came with the Expo port. I kept them, updated the affected cases, and added the 16 Sprint 8 tests. I am not claiming all 28 were newly written for this sprint.
 
-## What I checked against the real backend
+## Eight checks against the real backend
 
-The supplied test account logged in successfully. I then used the app's actual service code for these eight checks:
+| # | What I did | What I checked afterward | Result |
+|---|---|---|---|
+| 1 | Loaded grocery lists. | The service could read the returned lists. | Pass |
+| 2 | Opened the disposable QA list. | Its details and items could be read. | Pass |
+| 3 | Loaded saved stores. | The service could read the returned stores. | Pass |
+| 4 | Loaded flyers. | The service could read the returned flyer data. | Pass |
+| 5 | Loaded the profile. | The service could read the returned profile. | Pass |
+| 6 | Renamed the QA list. | Loading it again returned the saved name. | Pass |
+| 7 | Saved the existing profile without changing its preferences. | The returned dietary preferences still matched. | Pass |
+| 8 | Added a new item through the flyer endpoint. | Loading the QA list again showed that item. | Pass |
 
-1. Load grocery lists.
-2. Open the disposable QA list and read its items.
-3. Load saved stores.
-4. Load flyer data.
-5. Load the profile.
-6. Rename the QA list and confirm the new name by loading it again.
-7. Save the existing profile and confirm its dietary preferences still match.
-8. Add a new item through the flyer endpoint and confirm it appears in the QA list.
+These checks ran in Node using the app’s actual service code. They did not run through the simulator screens. List changes were limited to a disposable QA list.
 
-**All eight passed.** These ran directly against the API using Node, not through the iPhone or Android screens. The profile check preserved the existing preferences. List changes were limited to the disposable Sprint 8 QA list.
+## Six browser flows — screenshot links (not iOS)
 
-## What the browser tests checked
+| Flow | What passed | Screenshot proof |
+|---|---|---|
+| Landing and signed-out protection | Public page loads; a signed-out user cannot open Profile. | [Landing](../screenshots/browser/01-landing.png) |
+| List rename | The new name remains after refreshing and opening the list. | [Saved name](../screenshots/browser/03-list-renamed.png) |
+| Chat error and retry | A simulated server error keeps the draft; retry then succeeds. | [Error and retained draft](../screenshots/browser/04-chat-error.png) · [Successful retry](../screenshots/browser/05-chat-retry.png) |
+| List chat and deletion failure | List context is included; a failed delete keeps the list available. | [List conversation](../screenshots/browser/02-list-chat.png); deletion assertions are in the test code. |
+| Flyers and store limit | A deal is sent to the chosen list; the fourth store cannot be added. | [Deal added](../screenshots/browser/06-flyer-added.png) · [Three-store limit](../screenshots/browser/07-store-limit.png) |
+| Preferences and sign-out | Vegetarian saves; signing out removes access to the account screens. | [Saved preference](../screenshots/browser/08-profile-saved.png) · [Signed out](../screenshots/browser/09-signed-out.png) |
 
-All six passed in the final run: signed-out page protection; rename and refresh; keeping a chat draft after an error and retrying; list-chat recovery and failed deletion; flyer additions and the store limit; and saving preferences followed by sign-out.
-
-These used a simulated backend. They support the screen behavior, but they do not replace simulator testing.
+The captured profile/sign-out screens also show a development warning about an unexpected text node. The six automated assertions passed, but this warning is an unresolved visual finding; the browser screenshots are not a claim of clean visual QA.
 
 ## What still needs checking
 
-The sponsor-confirmed updated API has not been provided. These results cover the public API available on October 13, 2026. Peter and the sponsor still need to confirm the intended changes; I have documented the cases to rerun once that happens.
+| Item | What is still missing | Proof or next step |
+|---|---|---|
+| Browser rendering warning | The profile/sign-out captures show an unexpected-text-node development warning. | Aashir: trace the raw text rendered inside a View, fix it and repeat the affected browser and native checks. [Screenshot](../screenshots/browser/08-profile-saved.png) |
+| Sponsor’s updated API | Only the available public API was tested. The separately proposed contract/access is still pending. | Peter and the sponsor need to confirm it; then rerun the prepared cases. [Details](API-CONTRACT-AND-BLOCKERS.md) |
+| iOS visual QA | Expo Go hit a native-rendering crash/startup problem. | [iOS project loading — blocked](../screenshots/ios/00-startup-investigation.png) · [Crash report](../test-results/ios-runtime-crash.json) |
+| Android visual QA | SAVR reached the landing screen, but the emulator became unresponsive. | [Android landing only — full flow blocked](../screenshots/android/01-landing.png) |
+| Native persistence and pagination | Changed preferences after restart, list-chat behavior and flyer selections across pages still need complete native walkthroughs. | Follow [the reproduction guide](QA-FLOWS.md) once the runtimes are working. |
+| Photo text scanning | Expo Go does not include the local scanner module. | Test it in a development build. |
 
-Full native visual QA is also still open. iOS hit an Expo Go native-rendering crash/startup problem. Android reached the landing screen, but the emulator became unresponsive. I saved the available evidence and recorded the blocked flows instead of calling them passes. Native OCR needs a development build as well.
+## How to repeat it
 
-## Where to find the proof or repeat the tests
+| What to repeat | Command or file |
+|---|---|
+| All service tests, TypeScript and lint | From `SavrExpo/SAVR`, run `npm run check`. |
+| Six browser flows and screenshots | Run `npm run test:e2e` with Playwright Chromium installed. The [reproduction guide](QA-FLOWS.md) includes the installed-Chrome alternative. |
+| New service test code | [sprint8.test.ts](../../../SavrExpo/SAVR/tests/sprint8.test.ts) |
+| Existing service test code | [services.test.ts](../../../SavrExpo/SAVR/tests/services.test.ts) |
+| Browser assertions and screenshot capture | [migration.spec.ts](../../../SavrExpo/SAVR/tests/e2e/migration.spec.ts) |
+| Live API checks | [verify-live.mts](../scripts/verify-live.mts), using a test token and disposable QA list. Keep credentials out of the report. |
+| Native walkthroughs | [QA-FLOWS.md](QA-FLOWS.md) |
 
-- [28-test result and code checks](../test-results/automated-checks.log)
-- [Eight live results](../test-results/live-client-checks.json)
-- [Six browser results](../test-results/browser-final.log)
-- [Step-by-step reproduction guide](QA-FLOWS.md)
-- [Platform results and remaining blockers](REGRESSION-RESULTS.md)
-- Test code: `SavrExpo/SAVR/tests/sprint8.test.ts` and `tests/services.test.ts`.
-
-From `SavrExpo/SAVR`, run `npm run check` to repeat the service tests, TypeScript check and lint. Run `npm run test:e2e` for the browser flows after installing Playwright's Chromium, or use the Chrome command in the reproduction guide. The live-check script is under `Sprint-8/scripts/verify-live.mts` and needs a test token and a disposable QA list; keep both out of the report.
+Results recorded October 13, 2026. Screenshots and logs are saved alongside this report under Sprint 8.

@@ -14,3 +14,7 @@ Scope: Aashir's regression and stability work on Peter's Expo port. Imported bas
 The automated suite also covers offline transport, timeout, cancellation, malformed responses, validation errors, session expiry, and failed mutations. These are controlled tests and must not be described as live network outages.
 
 Native verification remains open. iOS has a captured Expo Go Fabric assertion; Android has emulator responsiveness failures. Their exact causes are unconfirmed. Both are recorded with severity, owner and next steps in REGRESSION-RESULTS.md; neither is claimed as fixed. SDK 57 patch packages were aligned using Expo’s installer, and the final service/browser checks passed after alignment.
+
+## Additional visual finding from evidence capture
+
+S8-07 — Medium, owner Aashir, unresolved: the browser profile and sign-out screenshots show an “Unexpected text node” development warning. The service assertions and six browser journeys still passed. Next step: locate the raw string rendered outside a Text component, correct it, and rerun those flows and the native checks. See `screenshots/browser/08-profile-saved.png` and `09-signed-out.png`; no clean visual PASS is claimed for these captures.
