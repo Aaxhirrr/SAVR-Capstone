@@ -1,0 +1,16 @@
+{
+  "test-results/automated-checks.log": "52eaab6ff4c0e4766e2f961f51b8be9eb598917ef0ac53a61c474bfae3cac3ab",
+  "test-results/browser-final.log": "58611f55b8a874ca130f727b04ea1302b5fc592a68ebeb46338d0dfbc3d9cc89",
+  "test-results/proof-run.json": "6f1dca2a4664259908f53af29095dd5a8a8417847674636c5edbcb57bccf8083",
+  "test-results/live-client-checks.json": "1fa2848c68b50f3c75348317604682ebd3b3e743e9661b651598887e738dad9e",
+  "test-results/live-api-preflight.json": "e1289c882373b9edbcaf861b402e22776c65c936c9bc5b7533a080a1815c6656",
+  "screenshots/browser/07-store-limit.png": "e61342d05a66acc49bd6de70795d529931765b3085cdda15b3063becbfc02a06",
+  "screenshots/browser/01-landing.png": "7817f44e39130f26334be22f062a2837b37ee94732b63801cb184c43a100d22a",
+  "screenshots/browser/04-chat-error.png": "68746224f2d237cb5d6e6b975650f8850fea92b0c1e339be3a258652a4cd4d0f",
+  "screenshots/browser/03-list-renamed.png": "7d3fdbac7b75039c53c76667c8b291fb0dbda1df24f4fd7b440e97f19c536c6e",
+  "screenshots/browser/08-profile-saved.png": "995de10a7be8f79eeb6f88819f85a8f635604451fbd7c907664d1cfe5d11a339",
+  "screenshots/browser/06-flyer-added.png": "4f3465fd66ae593ea68458bea650173e89585b64bc67a632986c40451939e684",
+  "screenshots/browser/05-chat-retry.png": "1d23f1470c185a411be62ab9886cc7289cfb8c935beed57bc34b3e499932634c",
+  "screenshots/browser/09-signed-out.png": "515b56a85204871035aff9fad6d1b87e90cb1bfcb764211315695900261120ec",
+  "screenshots/browser/02-list-chat.png": "9a0d5e11061229b43c77c9e2bb81c677a97ff2ec9f637f3b1de5aa0931ea8b8e"
+}
