@@ -1,0 +1,1463 @@
+{
+  "source": "https://savr.app/api/openapi.json",
+  "observedOn": "2026-10-13",
+  "sponsorConfirmed": false,
+  "info": {
+    "title": "Savr API",
+    "description": "API for Savr grocery shopping application",
+    "version": "1.0.0"
+  },
+  "paths": {
+    "/auth/login": {
+      "post": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Login",
+        "description": "Authenticate a user and return an access token.",
+        "operationId": "login_auth_login_post",
+        "requestBody": {
+          "content": {
+            "application/x-www-form-urlencoded": {
+              "schema": {
+                "$ref": "#/components/schemas/Body_login_auth_login_post"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Token"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/auth/profile": {
+      "get": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Get Profile",
+        "description": "Get the current user's profile.",
+        "operationId": "get_profile_auth_profile_get",
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      },
+      "put": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Update Profile",
+        "description": "Update the current user's profile information.",
+        "operationId": "update_profile_auth_profile_put",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserUpdate"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/auth/account": {
+      "delete": {
+        "tags": [
+          "Authentication"
+        ],
+        "summary": "Delete Account",
+        "description": "Permanently delete the current user's account and all associated data.\nRequires explicit confirmation text \"DELETE\" (the JWT session is the auth).",
+        "operationId": "delete_account_auth_account_delete",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/AccountDeleteRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/chat/message": {
+      "post": {
+        "tags": [
+          "Chat"
+        ],
+        "summary": "Send Message",
+        "description": "Send a message to the chat assistant and get a response.",
+        "operationId": "send_message_chat_message_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/ChatRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/ChatResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/chat/history/{session_id}": {
+      "get": {
+        "tags": [
+          "Chat"
+        ],
+        "summary": "Get Chat History",
+        "description": "Get the chat history for a session.\n\nArgs:\n    session_id: Chat session ID\n    db: Database session\n    current_user: Current authenticated user\n    \nReturns:\n    List of chat messages",
+        "operationId": "get_chat_history_chat_history__session_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "session_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "Session Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/backend__database__schemas__ChatMessageResponse"
+                  },
+                  "title": "Response Get Chat History Chat History  Session Id  Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/grocery-lists/all": {
+      "get": {
+        "tags": [
+          "Grocery Lists"
+        ],
+        "summary": "Get User Grocery Lists",
+        "description": "Get all grocery lists for the authenticated user.",
+        "operationId": "get_user_grocery_lists_grocery_lists_all_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "skip",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 0,
+              "title": "Skip"
+            }
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 100,
+              "title": "Limit"
+            }
+          },
+          {
+            "name": "active_only",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "boolean",
+              "default": true,
+              "title": "Active Only"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/GroceryListResponse"
+                  },
+                  "title": "Response Get User Grocery Lists Grocery Lists All Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/grocery-lists/{list_id}": {
+      "get": {
+        "tags": [
+          "Grocery Lists"
+        ],
+        "summary": "Get Grocery List",
+        "description": "Get a specific grocery list by ID.\nEnsures the list belongs to the authenticated user.",
+        "operationId": "get_grocery_list_grocery_lists__list_id__get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "list_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "List Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroceryListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "put": {
+        "tags": [
+          "Grocery Lists"
+        ],
+        "summary": "Update Grocery List",
+        "description": "Update a grocery list.\nEnsures the list belongs to the authenticated user.",
+        "operationId": "update_grocery_list_grocery_lists__list_id__put",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "list_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "List Id"
+            }
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/GroceryListUpdate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/GroceryListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Grocery Lists"
+        ],
+        "summary": "Delete Grocery List",
+        "description": "Delete (soft delete) a grocery list.\nEnsures the list belongs to the authenticated user.",
+        "operationId": "delete_grocery_list_grocery_lists__list_id__delete",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "list_id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "title": "List Id"
+            }
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Successful Response"
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/flyers": {
+      "get": {
+        "tags": [
+          "Flyers"
+        ],
+        "summary": "Get Flyers",
+        "description": "Browse current flyer deals for a store brand, scoped to the user's zone.",
+        "operationId": "get_flyers_flyers_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "store_brand",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "description": "Store brand key, e.g. 'nofrills', 'metro'",
+              "title": "Store Brand"
+            },
+            "description": "Store brand key, e.g. 'nofrills', 'metro'"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "description": "Text search on product name and brand",
+              "title": "Search"
+            },
+            "description": "Text search on product name and brand"
+          },
+          {
+            "name": "sort_by",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Sort field: price, product_name, valid_to",
+              "default": "product_name",
+              "title": "Sort By"
+            },
+            "description": "Sort field: price, product_name, valid_to"
+          },
+          {
+            "name": "sort_dir",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "description": "Sort direction: asc or desc",
+              "default": "asc",
+              "title": "Sort Dir"
+            },
+            "description": "Sort direction: asc or desc"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1,
+              "title": "Page"
+            }
+          },
+          {
+            "name": "page_size",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "maximum": 100,
+              "minimum": 1,
+              "default": 50,
+              "title": "Page Size"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlyerDealPageResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/flyers/add-to-list": {
+      "post": {
+        "tags": [
+          "Flyers"
+        ],
+        "summary": "Add Flyer Items To List",
+        "description": "Select flyer items and create a new list or append to an existing one.",
+        "operationId": "add_flyer_items_to_list_flyers_add_to_list_post",
+        "requestBody": {
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/FlyerAddToListRequest"
+              }
+            }
+          },
+          "required": true
+        },
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FlyerAddToListResponse"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        },
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ]
+      }
+    },
+    "/user/selected_stores": {
+      "get": {
+        "tags": [
+          "User Selected Stores"
+        ],
+        "summary": "Get Selected Stores",
+        "description": "Get the user's selected stores. With ``list_id`` this returns that grocery\nlist's own stores (seeded from the account default on first access);\nwithout it, the account-default selection.",
+        "operationId": "get_selected_stores_user_selected_stores_get",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "list_id",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "anyOf": [
+                {
+                  "type": "string"
+                },
+                {
+                  "type": "null"
+                }
+              ],
+              "title": "List Id"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/UserSelectedStore"
+                  },
+                  "title": "Response Get Selected Stores User Selected Stores Get"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "User Selected Stores"
+        ],
+        "summary": "Add Selected Store",
+        "description": "Add a new store to the user's selected list. The store cap\n(``MAX_COMPARE_STORES``) is enforced per scope: per grocery list when\n``grocery_list_id`` is set, otherwise on the account-default selection.",
+        "operationId": "add_selected_store_user_selected_stores_post",
+        "security": [
+          {
+            "OAuth2PasswordBearer": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "$ref": "#/components/schemas/UserSelectedStoreCreate"
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Successful Response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserSelectedStore"
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Validation Error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/HTTPValidationError"
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "schemas": {
+    "UserUpdate": {
+      "properties": {
+        "email": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "email"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Email"
+        },
+        "first_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "First Name"
+        },
+        "last_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Last Name"
+        },
+        "address": {
+          "anyOf": [
+            {
+              "$ref": "#/components/schemas/CanadianAddress"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dietaryRestrictions": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Dietaryrestrictions"
+        },
+        "brandPreferences": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Brandpreferences"
+        }
+      },
+      "type": "object",
+      "title": "UserUpdate"
+    },
+    "UserResponse": {
+      "properties": {
+        "email": {
+          "type": "string",
+          "format": "email",
+          "title": "Email"
+        },
+        "first_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "First Name"
+        },
+        "last_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Last Name"
+        },
+        "id": {
+          "type": "string",
+          "title": "Id"
+        },
+        "phone": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Phone"
+        },
+        "is_active": {
+          "type": "boolean",
+          "title": "Is Active"
+        },
+        "is_admin": {
+          "type": "boolean",
+          "title": "Is Admin",
+          "default": false
+        },
+        "is_partner": {
+          "type": "boolean",
+          "title": "Is Partner",
+          "default": false
+        },
+        "partner_org": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Partner Org"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Created At"
+        },
+        "last_login_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Last Login At"
+        },
+        "login_count": {
+          "anyOf": [
+            {
+              "type": "integer"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Login Count",
+          "default": 0
+        },
+        "address": {
+          "anyOf": [
+            {
+              "$ref": "#/components/schemas/CanadianAddress"
+            },
+            {
+              "type": "null"
+            }
+          ]
+        },
+        "dietaryRestrictions": {
+          "anyOf": [
+            {
+              "items": {
+                "type": "string"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Dietaryrestrictions"
+        },
+        "brandPreferences": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Brandpreferences"
+        },
+        "google_linked": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Google Linked",
+          "default": false
+        },
+        "apple_linked": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Apple Linked",
+          "default": false
+        },
+        "auth_provider": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Auth Provider",
+          "default": "email"
+        },
+        "is_email_verified": {
+          "type": "boolean",
+          "title": "Is Email Verified",
+          "default": true
+        },
+        "ui_locale": {
+          "type": "string",
+          "title": "Ui Locale",
+          "default": "en"
+        },
+        "assistant_locale": {
+          "type": "string",
+          "title": "Assistant Locale",
+          "default": "en"
+        },
+        "locale_source": {
+          "type": "string",
+          "title": "Locale Source",
+          "default": "default"
+        },
+        "ai_data_consent": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Ai Data Consent"
+        },
+        "ai_data_consent_updated_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Ai Data Consent Updated At"
+        }
+      },
+      "type": "object",
+      "required": [
+        "email",
+        "id",
+        "is_active",
+        "created_at"
+      ],
+      "title": "UserResponse"
+    },
+    "CanadianAddress": {
+      "properties": {
+        "street": {
+          "type": "string",
+          "title": "Street"
+        },
+        "city": {
+          "type": "string",
+          "title": "City"
+        },
+        "province": {
+          "type": "string",
+          "title": "Province"
+        },
+        "postalCode": {
+          "type": "string",
+          "title": "Postalcode"
+        },
+        "phoneNumber": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Phonenumber"
+        }
+      },
+      "type": "object",
+      "required": [
+        "street",
+        "city",
+        "province",
+        "postalCode"
+      ],
+      "title": "CanadianAddress"
+    },
+    "FlyerAddToListRequest": {
+      "properties": {
+        "item_names": {
+          "items": {
+            "type": "string"
+          },
+          "type": "array",
+          "title": "Item Names"
+        },
+        "list_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "List Id"
+        },
+        "new_list_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "New List Name"
+        }
+      },
+      "type": "object",
+      "required": [
+        "item_names"
+      ],
+      "title": "FlyerAddToListRequest"
+    },
+    "AccountDeleteRequest": {
+      "properties": {
+        "password": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Password",
+          "description": "User's current password for verification (not required for Google-only accounts)"
+        },
+        "confirmationText": {
+          "type": "string",
+          "title": "Confirmationtext",
+          "description": "Must be exactly 'DELETE'"
+        }
+      },
+      "type": "object",
+      "required": [
+        "confirmationText"
+      ],
+      "title": "AccountDeleteRequest",
+      "description": "Schema for account deletion request with optional password verification."
+    },
+    "ChatRequest": {
+      "properties": {
+        "message": {
+          "type": "string",
+          "title": "Message"
+        },
+        "sessionId": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Sessionid"
+        },
+        "context": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Context"
+        },
+        "imageBase64": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Imagebase64"
+        },
+        "imageMediaType": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Imagemediatype"
+        },
+        "images": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/components/schemas/ChatImageItem"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Images"
+        }
+      },
+      "type": "object",
+      "required": [
+        "message"
+      ],
+      "title": "ChatRequest"
+    },
+    "ChatResponse": {
+      "properties": {
+        "sessionId": {
+          "type": "string",
+          "title": "Sessionid"
+        },
+        "botResponse": {
+          "type": "string",
+          "title": "Botresponse"
+        },
+        "conversationHistory": {
+          "items": {
+            "$ref": "#/components/schemas/ChatMessage"
+          },
+          "type": "array",
+          "title": "Conversationhistory"
+        },
+        "groceryList": {
+          "anyOf": [
+            {
+              "additionalProperties": true,
+              "type": "object"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Grocerylist"
+        },
+        "conversationState": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Conversationstate"
+        }
+      },
+      "type": "object",
+      "required": [
+        "sessionId",
+        "botResponse",
+        "conversationHistory"
+      ],
+      "title": "ChatResponse"
+    },
+    "GroceryListResponse": {
+      "properties": {
+        "name": {
+          "type": "string",
+          "title": "Name"
+        },
+        "items": {
+          "items": {
+            "$ref": "#/components/schemas/GroceryListItemBase"
+          },
+          "type": "array",
+          "title": "Items"
+        },
+        "id": {
+          "type": "string",
+          "title": "Id"
+        },
+        "user_id": {
+          "type": "string",
+          "title": "User Id"
+        },
+        "created_at": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Created At"
+        },
+        "updated_at": {
+          "type": "string",
+          "format": "date-time",
+          "title": "Updated At"
+        },
+        "is_active": {
+          "type": "boolean",
+          "title": "Is Active"
+        },
+        "chat_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Chat Session Id"
+        },
+        "savings_amount": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Savings Amount"
+        },
+        "savings_percent": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Savings Percent"
+        },
+        "most_expensive_store_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Most Expensive Store Name"
+        },
+        "most_expensive_store_price": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Most Expensive Store Price"
+        },
+        "least_expensive_store_name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Least Expensive Store Name"
+        },
+        "least_expensive_store_price": {
+          "anyOf": [
+            {
+              "type": "number"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Least Expensive Store Price"
+        },
+        "price_comparison_updated_at": {
+          "anyOf": [
+            {
+              "type": "string",
+              "format": "date-time"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Price Comparison Updated At"
+        }
+      },
+      "type": "object",
+      "required": [
+        "name",
+        "items",
+        "id",
+        "user_id",
+        "created_at",
+        "updated_at",
+        "is_active"
+      ],
+      "title": "GroceryListResponse"
+    },
+    "GroceryListUpdate": {
+      "properties": {
+        "name": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Name"
+        },
+        "items": {
+          "anyOf": [
+            {
+              "items": {
+                "$ref": "#/components/schemas/GroceryListItemBase"
+              },
+              "type": "array"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Items"
+        },
+        "is_active": {
+          "anyOf": [
+            {
+              "type": "boolean"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Is Active"
+        },
+        "chat_session_id": {
+          "anyOf": [
+            {
+              "type": "string"
+            },
+            {
+              "type": "null"
+            }
+          ],
+          "title": "Chat Session Id"
+        }
+      },
+      "type": "object",
+      "title": "GroceryListUpdate"
+    }
+  }
+}
