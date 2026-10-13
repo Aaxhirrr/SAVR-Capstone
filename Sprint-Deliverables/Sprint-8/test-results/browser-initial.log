@@ -68,7 +68,7 @@ Running 6 tests using 1 worker
 
     ────────────────────────────────────────────────────────────────────────────────────────────────
 
-  2) tests/e2e/migration.spec.ts:163:5 › Sprint 8 rename survives server refresh and detail navigation 
+  2) tests/e2e/migration.spec.ts:163:5 › Sprint 8 rename survives server refresh and detail navigation
 
     Error: expect(locator).toBeVisible() failed
 
@@ -109,5 +109,5 @@ Running 6 tests using 1 worker
 
   2 failed
     tests/e2e/migration.spec.ts:141:5 › landing and protected navigation work at phone width ───────
-    tests/e2e/migration.spec.ts:163:5 › Sprint 8 rename survives server refresh and detail navigation 
+    tests/e2e/migration.spec.ts:163:5 › Sprint 8 rename survives server refresh and detail navigation
   4 passed (5.0m)
