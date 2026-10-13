@@ -1,0 +1,32 @@
+{
+  "captureTime": "2026-10-13 12:56:46.3321 -0700",
+  "procName": "Expo Go",
+  "exception": {
+    "codes": "0x0000000000000001, 0x000000019772c2ec",
+    "rawCodes": [
+      1,
+      6835847916
+    ],
+    "type": "EXC_BREAKPOINT",
+    "signal": "SIGTRAP"
+  },
+  "termination": {
+    "flags": 0,
+    "code": 5,
+    "namespace": "SIGNAL",
+    "indicator": "Trace/BPT trap: 5",
+    "byProc": "exc handler",
+    "byPid": 7767
+  },
+  "frames": [
+    "_assertionFailure(_:_:file:line:flags:)",
+    "closure #1 in static ExpoFabricView.injectInitializer(appContext:moduleName:viewName:toViewClass:)",
+    "thunk for @escaping @callee_guaranteed () -> (@out Any)",
+    "-[RCTComponentViewFactory createComponentViewWithComponentHandle:]",
+    "-[RCTComponentViewRegistry _dequeueComponentViewWithComponentHandle:]",
+    "-[RCTComponentViewRegistry dequeueComponentViewWithComponentHandle:tag:]",
+    "std::__1::__function::__func<-[RCTMountingManager performTransaction:]::$_2, void (facebook::react::MountingTransaction const&, facebook::react::SurfaceTelemetry const&)>::operator()(facebook::react::MountingTransaction const&, facebook::react::SurfaceTelemetry const&)",
+    "facebook::react::TelemetryController::pullTransaction(std::__1::function<void (facebook::react::MountingTransaction const&, facebook::react::SurfaceTelemetry const&)> const&, std::__1::function<void (facebook::react::MountingTransaction const&, facebook::react::SurfaceTelemetry const&)> const&, std::__1::function<void (facebook::react::MountingTransaction const&, facebook::react::SurfaceTelemetry const&)> const&) const"
+  ],
+  "interpretation": "Expo Go native Fabric assertion observed during iOS startup. Exact root cause unconfirmed; not an app-flow PASS."
+}

@@ -11,6 +11,7 @@ export type RequestOptions = {
   body?: unknown;
   query?: Record<string, string | number>;
   signal?: AbortSignal;
+  timeoutMs?: number;
 };
 export class ApiClient {
   private readonly baseUrl: string;
@@ -29,7 +30,10 @@ export class ApiClient {
     // Calling window.fetch as a class method changes its receiver on the web.
     this.fetcher = (input, init) => fetcher(input, init);
   }
-  async request(path: string, options: RequestOptions = {}): Promise<unknown> {
+  async request(
+    path: string,
+    options: RequestOptions = {},
+  ): Promise<unknown> {
     const url = new URL(`${this.baseUrl}/${path.replace(/^\/+/, '')}`);
     for (const [key, value] of Object.entries(options.query ?? {}))
       url.searchParams.set(key, String(value));
@@ -37,7 +41,7 @@ export class ApiClient {
     const cancel = () => controller.abort();
     options.signal?.addEventListener('abort', cancel, { once: true });
     if (options.signal?.aborted) cancel();
-    const timeout = setTimeout(cancel, 60_000);
+    const timeout = setTimeout(cancel, options.timeoutMs ?? 60_000);
     const headers: Record<string, string> = { Accept: 'application/json' };
     if (this.token) headers.Authorization = `Bearer ${this.token}`;
     const form = options.body instanceof FormData;

@@ -17,7 +17,7 @@ import {
   s,
 } from '@/components/savr/ui';
 import { errorMessage } from '@/services/api';
-import { readCache, writeCache } from '@/storage/cache';
+import { writeCache } from '@/storage/cache';
 import type { Profile } from '@/models/domain';
 
 const dietaryOptions = [
@@ -58,17 +58,7 @@ export default function ProfileScreen() {
   const { service, session, profile, setProfile, signOut } = useSession();
   const userId = session?.userId ?? '';
   const resource = useResource(
-    useCallback(
-      async (_signal: AbortSignal) => {
-        const remote = await service.profile();
-        // Swift's profile response can omit address; keep the last confirmed local value.
-        const cached = await readCache<Profile>(userId, 'profile').catch(
-          () => null,
-        );
-        return { ...remote, address: remote.address || cached?.address || '' };
-      },
-      [service, userId],
-    ),
+    useCallback((signal: AbortSignal) => service.profile(signal), [service]),
   );
   const [draft, setDraft] = useState<Profile | null>(null);
   const form = draft ?? resource.data ?? profile ?? emptyProfile;
@@ -79,15 +69,24 @@ export default function ProfileScreen() {
   const [currentPassword, setCurrentPassword] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [confirmation, setConfirmation] = useState<'logout' | 'delete' | null>(
-    null,
-  );
+  const [confirmation, setConfirmation] = useState<
+    'logout' | 'delete' | null
+  >(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
   const pending = useRef(false);
   const set =
-    (key: 'firstName' | 'lastName' | 'phone' | 'address') => (value: string) =>
+    (
+      key:
+        | 'firstName'
+        | 'lastName'
+        | 'address'
+        | 'city'
+        | 'province'
+        | 'postalCode',
+    ) =>
+    (value: string) =>
       setForm((old) => ({ ...old, [key]: value }));
   const act = async (action: () => Promise<void>, message = '') => {
     if (pending.current) return;
@@ -108,11 +107,11 @@ export default function ProfileScreen() {
   };
   const save = () =>
     act(async () => {
-      await service.saveProfile(form);
-      setProfile(form);
-      resource.setData(form);
+      const saved = await service.saveProfile(form);
+      setProfile(saved);
+      resource.setData(saved);
       setDraft(null);
-      await writeCache(userId, 'profile', form).catch(() => {
+      await writeCache(userId, 'profile', saved).catch(() => {
         throw new Error(
           'Your profile was saved, but its offline copy could not be updated.',
         );
@@ -147,7 +146,9 @@ export default function ProfileScreen() {
     <Screen>
       <Heading
         title="Made for you"
-        subtitle={form.email || 'Manage your account and grocery preferences.'}
+        subtitle={
+          form.email || 'Manage your account and grocery preferences.'
+        }
       />
       <View style={s.wrap}>
         {(['Account', 'Dietary', 'Brands', 'Security'] as const).map((t) => (
@@ -191,15 +192,36 @@ export default function ProfileScreen() {
               <Field
                 label="Phone"
                 value={form.phone}
-                onChangeText={set('phone')}
                 keyboardType="phone-pad"
-                editable={!busy}
+                editable={false}
               />
+              <Text style={s.subtitle}>
+                Phone changes are not supported by the current service.
+              </Text>
               <Field
                 label="Address"
                 value={form.address}
                 onChangeText={set('address')}
                 autoComplete="street-address"
+                editable={!busy}
+              />
+              <Field
+                label="City"
+                value={form.city ?? ''}
+                onChangeText={set('city')}
+                editable={!busy}
+              />
+              <Field
+                label="Province"
+                value={form.province ?? ''}
+                onChangeText={set('province')}
+                editable={!busy}
+              />
+              <Field
+                label="Postal code"
+                value={form.postalCode ?? ''}
+                onChangeText={set('postalCode')}
+                autoCapitalize="characters"
                 editable={!busy}
               />
             </Card>

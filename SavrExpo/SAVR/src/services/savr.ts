@@ -40,31 +40,61 @@ export class SavrService {
         street: input.street,
         city: input.city,
         province: input.province,
-        postal_code: input.postal,
+        postalCode: input.postal,
       })
         .filter(([, value]) => value.trim())
         .map(([key, value]) => [key, value.trim()]),
     );
-    if (Object.keys(address).length) body.address = address;
+    if (Object.keys(address).length) {
+      if (
+        !input.street.trim() ||
+        !input.city.trim() ||
+        !input.province.trim() ||
+        !input.postal.trim()
+      )
+        throw new Error(
+          'Enter street, city, province and postal code, or leave the address empty.',
+        );
+      body.address = address;
+    }
     return parseSession(
       await this.api.request('auth/signup', { method: 'POST', body }),
     );
   }
-  async profile() {
-    return parseProfile(await this.api.request('auth/profile'));
+  async profile(signal?: AbortSignal) {
+    return parseProfile(await this.api.request('auth/profile', { signal }));
   }
   async saveProfile(p: Profile) {
-    await this.api.request('auth/profile', {
-      method: 'PUT',
-      body: {
-        first_name: p.firstName,
-        last_name: p.lastName,
-        phone: p.phone,
-        address: { street: p.address },
-        dietary_restrictions: p.dietary,
-        brand_preferences: { liked: p.likedBrands, disliked: p.dislikedBrands },
-      },
-    });
+    if (
+      p.address.trim() &&
+      (!p.city?.trim() || !p.province?.trim() || !p.postalCode?.trim())
+    )
+      throw new Error(
+        'Enter city, province and postal code with your street address.',
+      );
+    return parseProfile(
+      await this.api.request('auth/profile', {
+        method: 'PUT',
+        body: {
+          first_name: p.firstName,
+          last_name: p.lastName,
+          address: p.address.trim()
+            ? {
+                street: p.address.trim(),
+                city: p.city?.trim(),
+                province: p.province?.trim(),
+                postalCode: p.postalCode?.trim(),
+                phoneNumber: p.addressPhone || null,
+              }
+            : null,
+          dietaryRestrictions: p.dietary,
+          brandPreferences: {
+            liked: p.likedBrands,
+            disliked: p.dislikedBrands,
+          },
+        },
+      }),
+    );
   }
   async changePassword(current: string, password: string) {
     await this.api.request('auth/change-password', {
@@ -73,7 +103,10 @@ export class SavrService {
     });
   }
   async deleteAccount() {
-    await this.api.request('auth/account', { method: 'DELETE' });
+    await this.api.request('auth/account', {
+      method: 'DELETE',
+      body: { confirmationText: 'DELETE' },
+    });
   }
   async lists(signal?: AbortSignal) {
     return array(await this.api.request('grocery-lists/all', { signal })).map(
@@ -91,6 +124,15 @@ export class SavrService {
     await this.api.request(`grocery-lists/${encodeURIComponent(id)}`, {
       method: 'DELETE',
     });
+  }
+  async renameList(id: string, name: string) {
+    if (!name.trim()) throw new Error('Enter a list name.');
+    return parseList(
+      await this.api.request(`grocery-lists/${encodeURIComponent(id)}`, {
+        method: 'PUT',
+        body: { name: name.trim() },
+      }),
+    );
   }
   async sendMessage(message: string, sessionId?: string) {
     return parseChat(
@@ -113,12 +155,16 @@ export class SavrService {
       }),
     );
   }
-  async addDeals(dealIds: string[], listId: string) {
-    if (!listId || !dealIds.length)
+  async addDeals(itemNames: string[], listId: string) {
+    if (
+      !listId ||
+      !itemNames.length ||
+      itemNames.some((name) => !name.trim())
+    )
       throw new Error('Choose a grocery list and at least one deal.');
     await this.api.request('flyers/add-to-list', {
       method: 'POST',
-      body: { deal_ids: dealIds, list_id: listId },
+      body: { item_names: itemNames, list_id: listId },
     });
   }
   async stores(signal?: AbortSignal) {

@@ -83,8 +83,8 @@ would require a separate one-time native data migration.
   brand dictionaries, password changes, and confirmed account deletion.
 
 The homepage's old mock price query and unwired Google buttons are not exposed
-as working features. List renaming retains the Swift app's temporary display-name
-behavior and labels that limitation. Shopping checkmarks are local screen state.
+as working features. List renaming is saved through the API and survives reloads.
+Shopping checkmarks are local screen state.
 The backend remains responsible for authorization and authoritative list/pricing
 calculations.
 
@@ -140,3 +140,11 @@ Implementation references: [Expo SDK 57](https://docs.expo.dev/versions/v57.0.0/
 [protected routes](https://docs.expo.dev/router/advanced/protected/),
 [local modules](https://docs.expo.dev/modules/get-started/), and
 [ML Kit text recognition](https://developers.google.com/ml-kit/vision/text-recognition/v2/android).
+
+## Aashir’s Sprint 8 regression work
+
+The [Sprint 8 delivery](../../Sprint-Deliverables/Sprint-8/README.md) separates
+automated service/browser checks, live API checks, and actual native visual QA.
+It includes the defect ledger, platform results, screenshots and reproduction steps.
+The public API schema was observed on October 13, 2026; sponsor approval of a
+separately proposed API remains a tracked dependency.
