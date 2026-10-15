@@ -1,0 +1,54 @@
+{
+  "expo": {
+    "name": "SAVR",
+    "slug": "SAVR",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/brand/icon.png",
+    "scheme": "savr",
+    "userInterfaceStyle": "light",
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.savr.mobile",
+      "icon": "./assets/brand/icon.png"
+    },
+    "android": {
+      "package": "com.savr.mobile",
+      "predictiveBackGestureEnabled": true
+    },
+    "web": {
+      "output": "static",
+      "favicon": "./assets/brand/icon.png"
+    },
+    "plugins": [
+      "expo-router",
+      [
+        "expo-splash-screen",
+        {
+          "backgroundColor": "#F9F7F3",
+          "image": "./assets/brand/logo.png",
+          "imageWidth": 180
+        }
+      ],
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "cameraPermission": "Allow SAVR to photograph recipes and grocery lists.",
+          "photosPermission": "Allow SAVR to read a photo you choose for your grocery list.",
+          "microphonePermission": false
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "Allow SAVR to show your location near grocery stores."
+        }
+      ]
+    ],
+    "experiments": {
+      "typedRoutes": true,
+      "reactCompiler": true
+    }
+  }
+}

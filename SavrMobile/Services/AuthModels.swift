@@ -21,6 +21,7 @@ struct UserProfileResponse: Decodable {
     let email: String?
     let username: String?
     let phone: String?
+    let address: CanadianAddress?
     let dietaryRestrictions: [String]?
     let brandPreferences: BrandPreferencesResponse?
 
@@ -29,10 +30,10 @@ struct UserProfileResponse: Decodable {
         case lastName = "last_name"
         case email
         case username
-        case phone
+        case phone, address
         // backend returns both camelCase and snake_case — pick one
-        case dietaryRestrictions = "dietary_restrictions"
-        case brandPreferences = "brand_preferences"
+        case dietaryRestrictions
+        case brandPreferences
     }
 }
 
@@ -49,6 +50,7 @@ struct UserProfile {
     let username: String?
     let phone: String?
     let dietaryRestrictions: [String]
+    let address: CanadianAddress?
     let likedBrands: [(category: String, brand: String)]
     let dislikedBrands: [(category: String, brand: String)]
 
@@ -58,6 +60,7 @@ struct UserProfile {
         email = response.email?.trimmingCharacters(in: .whitespacesAndNewlines)
         username = response.username?.trimmingCharacters(in: .whitespacesAndNewlines)
         phone = response.phone?.trimmingCharacters(in: .whitespacesAndNewlines)
+        address = response.address
         dietaryRestrictions = response.dietaryRestrictions ?? []
         likedBrands = (response.brandPreferences?.liked ?? [:]).map { ($0.key, $0.value) }
         dislikedBrands = (response.brandPreferences?.disliked ?? [:]).map { ($0.key, $0.value) }
@@ -91,4 +94,12 @@ struct UserProfile {
 
         return displayName.components(separatedBy: " ").first ?? "there"
     }
+}
+
+struct CanadianAddress: Codable {
+    var street: String
+    var city: String
+    var province: String
+    var postalCode: String
+    var phoneNumber: String?
 }

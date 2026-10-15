@@ -1,0 +1,53 @@
+{
+  "platform": "android",
+  "timestamp": "2026-09-21T14:15:18.758Z",
+  "results": [
+    {
+      "flow": "Authentication",
+      "endpoint": "POST auth/login",
+      "status": 200,
+      "passed": true,
+      "detail": "Authenticated; token stays in memory"
+    },
+    {
+      "flow": "Chat sessions",
+      "endpoint": "GET chat/sessions",
+      "status": 200,
+      "passed": true,
+      "detail": "53 sessions",
+      "fingerprint": "573171c8"
+    },
+    {
+      "flow": "Grocery lists",
+      "endpoint": "GET grocery-lists/all",
+      "status": 200,
+      "passed": true,
+      "detail": "27 lists",
+      "fingerprint": "5068cdb1"
+    },
+    {
+      "flow": "Flyers",
+      "endpoint": "GET flyers",
+      "status": 200,
+      "passed": true,
+      "detail": "100 deals on page 1",
+      "fingerprint": "b06a0b8d"
+    },
+    {
+      "flow": "Stores",
+      "endpoint": "GET user/selected_stores",
+      "status": 200,
+      "passed": true,
+      "detail": "3 selected stores",
+      "fingerprint": "d7f6f763"
+    },
+    {
+      "flow": "Profile",
+      "endpoint": "GET auth/profile",
+      "status": 200,
+      "passed": true,
+      "detail": "Profile and preference contract loaded",
+      "fingerprint": "fb327e73"
+    }
+  ]
+}

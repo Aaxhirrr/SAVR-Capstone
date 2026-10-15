@@ -2,11 +2,13 @@ import Foundation
 import Security
 
 final class AuthTokenStore {
-    private let service = "com.savr.mobile.auth"
+    private let service: String
+    init(service: String = "com.savr.mobile.auth") { self.service = service }
     private let tokenAccount = "access_token"
     private let userIDKey = "savr_user_id"
 
     func save(accessToken: String, userID: String) throws {
+        if loadUserID() != userID { clearUserCaches() }
         try saveToken(accessToken)
         UserDefaults.standard.set(userID, forKey: userIDKey)
     }
@@ -19,7 +21,15 @@ final class AuthTokenStore {
         return AuthSession(accessToken: accessToken, userID: userID)
     }
 
+    func clearUserCaches() {
+        for key in UserDefaults.standard.dictionaryRepresentation().keys
+        where key.hasPrefix("savr_") || key.hasPrefix("savr.") {
+            UserDefaults.standard.removeObject(forKey: key)
+        }
+    }
+
     func clear() throws {
+        defer { clearUserCaches() }
         let query: [String: Any] = [
             kSecClass as String: kSecClassGenericPassword,
             kSecAttrService as String: service,

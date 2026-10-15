@@ -7,6 +7,8 @@ struct SignInView: View {
     let onSuccess: (() -> Void)?
 
     @State private var email = ""
+    @State private var showSignUp = false
+    @State private var resetNotice: String?
     @State private var password = ""
     @State private var isSubmitting = false
     @State private var errorMessage: String?
@@ -53,7 +55,7 @@ struct SignInView: View {
                             Text("Email address")
                                 .font(.system(size: 13, weight: .semibold, design: .rounded))
                                 .foregroundStyle(Color(red: 0.20, green: 0.28, blue: 0.22))
-                            TextField("you@example.com", text: $email)
+                            TextField(text: $email, prompt: Text(verbatim: "you@example.com")) { Text("Email address") }
                                 .keyboardType(.emailAddress)
                                 .textInputAutocapitalization(.never)
                                 .autocorrectionDisabled()
@@ -85,7 +87,12 @@ struct SignInView: View {
                                 )
                             HStack {
                                 Spacer()
-                                Button("Forgot password?") { }
+                                Button("Forgot password?") {
+                                    Task {
+                                        do { try await AuthService().requestPasswordReset(email: email); resetNotice = "If this email is registered, a reset link will arrive shortly." }
+                                        catch { errorMessage = error.localizedDescription }
+                                    }
+                                }.disabled(email.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty)
                                     .font(.system(size: 13, weight: .medium, design: .rounded))
                                     .foregroundStyle(Color(red: 0.12, green: 0.62, blue: 0.28))
                             }
@@ -154,7 +161,7 @@ struct SignInView: View {
                         HStack(spacing: 4) {
                             Text("Don't have an account?")
                                 .foregroundStyle(Color(red: 0.40, green: 0.46, blue: 0.42))
-                            Button("Sign up") { }
+                            Button("Sign up") { showSignUp = true }
                                 .foregroundStyle(Color(red: 0.12, green: 0.62, blue: 0.28))
                         }
                         .font(.system(size: 14, weight: .medium, design: .rounded))
@@ -171,6 +178,8 @@ struct SignInView: View {
                 }
             }
         }
+        .sheet(isPresented: $showSignUp) { SignUpView() }
+        .alert("Password reset", isPresented: Binding(get: { resetNotice != nil }, set: { if !$0 { resetNotice = nil } })) { Button("OK") { resetNotice = nil } } message: { Text(resetNotice ?? "") }
     }
 
     private func handleSignIn() async {
