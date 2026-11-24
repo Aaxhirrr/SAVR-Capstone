@@ -2,346 +2,180 @@
   <img src="SavrMobile/savr-logo.svg" alt="SAVR Logo" width="240" />
 </p>
 
-<h1 align="center">SAVR Capstone</h1>
+<h1 align="center">SAVR Mobile</h1>
 
 <p align="center">
-  AI-assisted grocery planning for mobile, designed to mirror the SAVR web experience.
+  AI-assisted grocery planning for iPhone and Android, built on the SAVR API.<br/>
+  ASU CSE Capstone handoff repository for SAVR.
 </p>
 
-<p align="center">
-  SwiftUI iOS app • Backend-integrated core flows • Final capstone handoff repository
-</p>
+## Handoff Checklist
 
-SAVR is an AI-assisted grocery shopping mobile experience focused on helping users build lists, compare options, browse flyer deals, and manage store preferences in a polished iOS app that mirrors the SAVR web product.
+- [x] **Project summary:** what SAVR is and how it is meant to be used ([jump](#project-summary))
+- [x] **Installation and technical documentation:** prerequisites, exact versions, setup, configuration, and how to run, test, and build ([jump](#installation-and-technical-documentation))
+- [x] **User guide:** main user flows, inputs and outputs, and a demo order ([jump](#user-guide))
+- [x] **Support contacts** for ongoing questions ([jump](#support))
+- [x] **Ownership:** repository, Expo/EAS project, signing credentials, store listings, Figma, and Taiga handed to SAVR
 
-This repository now serves as the final capstone handoff for the current mobile build. It contains the SwiftUI iOS application, supporting design system code, backend service integrations, and legacy reference material used during the transformation from earlier concepts into the current product direction.
+---
 
-## What This Project Is
+## Project Summary
 
-From a non-technical perspective, SAVR is a grocery planning companion:
-- users can create an account and sign in
-- chat with SAVR to plan shopping
-- generate and revisit grocery lists
-- browse flyers from saved stores
-- manage store selections
-- update their profile, dietary restrictions, and brand preferences
-
-From a technical perspective, this repository contains:
-- a SwiftUI iOS app
-- authentication and profile integration against the SAVR backend
-- chat integration against the SAVR backend
-- grocery list retrieval and detail views
-- flyer retrieval and add-to-list support
-- store selection persistence against the backend
-- a design system used to keep the mobile UI visually aligned with the SAVR web UI
-
-## Final Status Summary
-
-Current state of the app:
-- the main signed-in app shell is implemented
-- the visual design is substantially aligned with the SAVR web experience
-- core flows are connected to the backend for auth, chat, lists, flyers, profile, and saved stores
-- list detail UI includes a receipt-style presentation inspired by the web UI
-- chat formatting and camera entry interactions have been improved for readability and usability
-- per-list chat sessions now persist locally and recover cleanly when older backend-linked chat sessions are stale
-- the SAVR logo and app icon have been updated to use the corrected brand mark instead of the earlier mocked text treatment
-
-Important honesty note:
-- the homepage query flow is still backed by `MockPriceService`
-- the homepage camera action is still a placeholder
-- Google sign-in / sign-up buttons are present in UI but are not connected
-
-So this repository represents a strong and functional mobile capstone deliverable, but not a fully complete production release.
-
-## Team
-
-- **Aashir Javed**: backend-focused and systems-oriented development, mobile integration, auth, API work, and product implementation
-- **Peter Forbes**: full-stack development support, API integration, and mobile application development
-- **Alexander Wei**: UX/UI direction, visual polish, and design contribution
-
-## Repository Layout
-
-Primary areas of the repo:
-
-- `SavrMobile/`
-  - main iOS application source
-- `SavrMobile/SavrMobile/`
-  - app entry points, design system, features, models, and services
-- `SavrMobile/SavrMobile/App/`
-  - app-wide session and bootstrap state
-- `SavrMobile/SavrMobile/Features/`
-  - landing, auth, and newer organized feature modules
-- `SavrMobile/`
-  - also contains some top-level SwiftUI screens used by the current app shell
-- `SavrMobile/SavrMobile/Services/`
-  - backend-facing service layer
-- `savr-react-native-demo/`
-  - older/secondary demo material not used as the main iOS app entry point
-
-Most important app files:
-- [SavrMobileApp.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/SavrMobile/SavrMobileApp.swift)
-- [RootView.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/SavrMobile/RootView.swift)
-- [AppShellView.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/AppShellView.swift)
-- [AppState.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/SavrMobile/App/AppState.swift)
-- [APIClient.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/SavrMobile/Services/APIClient.swift)
-
-## Product Flow
-
-This is the intended user journey through the app:
-
-1. The user lands on the marketing-style home page.
-2. They can sign in or create an account.
-3. After authentication, they enter the main tab-based app shell.
-4. In Chat, they interact with SAVR to plan shopping.
-5. In Lists, they revisit generated grocery lists and open a specific list.
-6. Inside a specific list, they can switch between the receipt-style list and its associated chat history.
-7. In Flyers, they browse store deals and add selected items to a grocery list.
-8. In Stores, they choose up to three preferred stores on the map-based selection screen.
-9. In Profile, they manage account details, dietary restrictions, and brand preferences.
-10. The camera entry point in Chat supports capturing or selecting an image to help drive chat/list creation.
-
-## Main Features
-
-### 1. Landing / Home
-
-The home page introduces SAVR as an AI-powered Canadian grocery shopping companion. It includes:
-- hero section
-- visual phone previews
-- store coverage messaging
-- sign-in and get-started entry points
-
-Key file:
-- [HomeLandingView.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/SavrMobile/Features/Home/HomeLandingView.swift)
-
-Current limitation:
-- the home query submission path still calls a mock price comparison service
-
-### 2. Authentication
-
-The app supports:
-- email/password sign in
-- email/password sign up
-- session bootstrap on app launch
-- profile fetch after authentication
-
-Key files:
-- [SignInView.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/SavrMobile/Features/Auth/SignInView.swift)
-- [SignUpView.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/SignUpView.swift)
-- [AuthService.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/SavrMobile/Services/AuthService.swift)
-- [AuthTokenStore.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/SavrMobile/Services/AuthTokenStore.swift)
-
-Current limitation:
-- Google auth buttons are present as UI only
-
-### 3. Chat
-
-The chat page is the core SAVR interaction surface. It supports:
-- live conversation with the SAVR backend
-- persisted session-based messaging
-- assistant message formatting improvements
-- image capture / image library entry point
-- compact camera-source popover anchored to the composer action
-
-Important implementation note:
-- the main chat experience supports readable structured assistant formatting for headings, bullet lists, and paragraphs
-
-Key files:
-- [ChatView.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/SavrMobile/Features/Chat/ChatView.swift)
-- [ChatViewModel.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/ChatViewModel.swift)
-- [ChatService.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/SavrMobile/Services/ChatService.swift)
-
-### 4. Lists
-
-The lists area supports:
-- retrieving a user’s grocery lists from the backend
-- deleting lists
-- renaming lists locally in UI
-- opening a detailed list screen
-
-Inside each specific list:
-- there is a `List` tab
-- there is a `Chat` tab
-- the list view is presented in a receipt-style layout inspired by the SAVR web product
-- the detail screen refreshes the list from the backend instead of relying only on navigation-passed state
-- each list chat now keeps its own locally persisted transcript and last known good session binding
-- if a stale backend chat session returns `404`, the app recovers by rehydrating context from the current list and recent transcript so the user can keep going in that list thread
-
-Key files:
-- [ListsView.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/ListsView.swift)
-- [ListDetailView.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/ListDetailView.swift)
-- [GroceryListService.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/SavrMobile/Services/GroceryListService.swift)
-
-### 5. Flyers
-
-The flyers area supports:
-- fetching flyer deals for saved stores
-- deal search
-- selecting flyer items
-- adding selected flyer deals to a grocery list
-
-Key file:
-- [FlyersView.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/FlyersView.swift)
-
-Recent polish:
-- flyer prices are normalized for cleaner dollar formatting when backend values vary in shape
-
-### 6. Stores
-
-The stores screen supports:
-- map-based store browsing
-- location-aware centering
-- saving up to three stores
-- syncing saved stores with the backend
-
-Key file:
-- [StoreSelectView.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/StoreSelectView.swift)
-
-### 7. Profile
-
-The profile area supports:
-- profile fetch
-- profile update
-- password change
-- dietary preference management
-- liked/disliked brand preference management
-- account deletion
-- sign out
-
-Key file:
-- [ProfileView.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/ProfileView.swift)
-
-## Backend Connectivity
-
-Base API configuration:
-- [APIClient.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/SavrMobile/Services/APIClient.swift)
-- base URL: `https://savr.app/api`
-
-Connected backend service areas:
-- `auth/*`
-- `chat/*`
-- `grocery-lists/*`
-- `flyers/*`
-- `user/selected_stores`
-- profile update / delete flows
-
-Backend-connected services:
-- [AuthService.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/SavrMobile/Services/AuthService.swift)
-- [ChatService.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/SavrMobile/Services/ChatService.swift)
-- [GroceryListService.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/SavrMobile/Services/GroceryListService.swift)
-- `FlyerService` inside [FlyersView.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/FlyersView.swift)
-
-Still mocked or partial:
-- homepage price comparison uses [MockPriceService.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/SavrMobile/Services/MockPriceService.swift)
-- homepage camera CTA is not fully implemented
-- Google auth flows are not implemented
-
-## UI / Design System
-
-The project includes a lightweight design system to keep the app visually consistent.
-
-Key files:
-- [SavrColors.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/SavrMobile/DesignSystem/SavrColors.swift)
-- [SavrTheme.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/SavrMobile/DesignSystem/SavrTheme.swift)
-- [SavrTypography.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/SavrMobile/DesignSystem/SavrTypography.swift)
-- [SavrButtonStyles.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/SavrMobile/DesignSystem/SavrButtonStyles.swift)
-- [SavrLogoView.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/SavrLogoView.swift)
-
-Visual direction:
-- warm cream backgrounds
-- SAVR green as the primary accent
-- rounded, friendly, high-contrast SwiftUI components
-- layouts and list detail styling adapted from the SAVR web experience
-
-Brand asset updates:
-- the in-app SAVR wordmark now uses the corrected logo treatment
-- the launcher app icon keeps the existing green background while using the corrected SAVR wordmark and red dot
-
-## Running the App
-
-### Requirements
-
-- macOS
-- Xcode
-- an iOS Simulator or physical iPhone
-
-### Open in Xcode
-
-1. Clone this repository.
-2. Open the Xcode project for the iOS app.
-3. Use the `SavrMobile` scheme.
-4. Choose an iOS simulator.
-5. Run the project.
-
-If opening manually, start with the app project/workspace that contains:
-- `SavrMobileApp.swift`
-- `RootView.swift`
-
-### App Entry
-
-The runtime flow begins in:
-- [SavrMobileApp.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/SavrMobile/SavrMobileApp.swift)
-
-Which creates:
-- `AppState`
-- `RootView`
-
-And after sign-in, users move into:
-- [AppShellView.swift](/Users/anola133/Documents/SAVR-Capstone/SavrMobile/AppShellView.swift)
-
-## How to Demo the App
-
-Recommended demo order:
-
-1. Open the landing page and explain SAVR’s value proposition.
-2. Walk through sign up or sign in.
-3. Enter the main app shell.
-4. Demo Chat and show formatted assistant responses.
-5. Demo Lists and open a specific list.
-6. Show the receipt-style list view and the list-specific chat tab.
-7. Demo Flyers and selecting deals.
-8. Demo Stores and saved store selection.
-9. Demo Profile editing, dietary preferences, and brand settings.
-10. Show the chat camera entry point.
-
-## Known Limitations
-
-Current known issues or incomplete areas:
-- homepage price comparison is still mock-backed
-- homepage camera CTA is placeholder behavior
-- Google auth is UI-only
-- some project history includes older parallel files and legacy/demo material
-- local git metadata in one development checkout became noisy during late-stage work, but GitHub contains the current pushed state
-
-## GitHub / Source of Truth
-
-For final project review, treat GitHub as the source of truth for committed deliverables.
+SAVR is an AI grocery planning companion for shoppers in Canada. A shopper chats with SAVR to plan meals and shopping, keeps grocery lists, finds flyer deals at up to three preferred stores, compares what a full basket costs at each store, and checks items off while shopping.
 
 This repository contains:
-- the final capstone iOS implementation state
-- the backend-connected SwiftUI screens described above
-- the visual alignment work bringing the mobile UI closer to the SAVR web product
 
-## Why This Matters
+| Folder | What it is |
+|---|---|
+| [`SavrExpo/SAVR/`](SavrExpo/SAVR/) | **Main app.** One TypeScript codebase (Expo SDK 57, React Native 0.86) that runs on iOS and Android and talks to the existing SAVR API. |
+| [`SavrMobile/`](SavrMobile/), `SavrMobile.xcodeproj` | Native SwiftUI iOS app, kept as a working reference. |
+| [`SavrMobileTests/`](SavrMobileTests/) | XCTest suite for the native app's backend flows (27 tests). |
+| [`Sprint-Deliverables/`](Sprint-Deliverables/) | QA evidence by sprint: implementation notes, bug ledgers, screenshots, recordings, test logs, and setup scripts. |
+| [`savr-react-native-demo/`](savr-react-native-demo/) | Early Expo demo from Sprints 2 to 3. Reference only. |
+| [`flake.nix`](flake.nix) | Reproducible dev shell with pinned Node, Java, and Android SDK. |
+| [`migration_guide.txt`](migration_guide.txt) | SwiftUI to Expo component mapping. |
 
-This capstone was not just a static redesign. The outcome is a functional mobile application shell with real backend connectivity across the most important user journeys:
-- account access
-- conversational planning
-- persistent list review
-- flyer browsing
-- saved store management
-- profile personalization
+The Sprint 10 shopping experience improvements (shopping mode, ingredient review, chat change receipt with Undo, fair store comparison, flyer selection tray, and resume shopping) were delivered in SAVR's own iOS codebase (`savr-asu`), with a QA walkthrough in `docs/qa/ios-ux-2026-11-10/`.
 
-That combination of technical integration and product-level UI polish is the core value of this repository.
+## Installation and Technical Documentation
 
-## Future Work
+### Prerequisites
 
-Natural next steps if this project continues:
-- replace `MockPriceService` with a live backend price comparison flow for the homepage
-- connect homepage camera capture to OCR/list generation
-- implement Google authentication
-- continue consolidating duplicate or legacy file paths into one fully normalized project structure
-- expand testing coverage
+| Tool | Version | Notes |
+|---|---|---|
+| macOS + Xcode | Xcode 26.3, iOS 26.2 simulator | iOS builds and the SwiftUI app |
+| Node.js / npm | Node 24 | Provided by `nix develop` |
+| Java (OpenJDK) | 17 | Provided by `nix develop` |
+| Android SDK | Platform 36, build-tools 35.0.0 and 36.0.0 | Provided by `nix develop` |
+| Android NDK / CMake | 27.1.12297006 / 3.30.5 | Provided by `nix develop` |
+| EAS CLI | >= 18.0.0 | `npx eas-cli@latest` |
+| Nix (optional) | flakes enabled | One-command setup of everything above except Xcode |
+
+### Run the cross-platform app (iOS and Android)
+
+```sh
+git clone https://github.com/Aaxhirrr/SAVR-Capstone.git
+cd SAVR-Capstone
+nix develop                     # optional: pinned toolchain
+cd SavrExpo/SAVR
+npm ci                          # installs the exact locked versions
+cp .env.example .env.local
+npx expo start                  # i = iOS simulator, a = Android emulator
+```
+
+Other commands: `npm run ios`, `npm run android`, `npm run web` (browser preview).
+
+Photo text scanning and maps need a development build instead of Expo Go:
+
+```sh
+npx eas-cli@latest build --platform ios --profile development
+npx eas-cli@latest build --platform android --profile development
+npx expo start --dev-client
+```
+
+Release builds and store submission:
+
+```sh
+npx eas-cli@latest build --platform all --profile production
+npx eas-cli@latest submit --platform ios
+npx eas-cli@latest submit --platform android
+```
+
+### Run the native SwiftUI app (iOS)
+
+1. Open `SavrMobile.xcodeproj` in Xcode 26.3 or later.
+2. Choose the `SavrMobile` scheme and an iPhone simulator (deployment target iOS 16.0).
+3. Run. Keep code signing on: sign-in uses the simulator keychain entitlement.
+
+Or from the repository root:
+
+```sh
+bash Sprint-Deliverables/shared/scripts/run-ios.sh    # SAVR_SIMULATOR_ID picks the device
+bash Sprint-Deliverables/shared/scripts/test-ios.sh   # 27 XCTest cases
+```
+
+### Configuration
+
+| Setting | Where | Notes |
+|---|---|---|
+| `EXPO_PUBLIC_API_URL` | `.env.local` | Defaults to `https://savr.app/api`. Point at a test backend when testing anything that writes data. |
+| `GOOGLE_MAPS_ANDROID_API_KEY` | `.env.local` or EAS environment | Restrict to `com.savr.mobile` and SAVR's signing certificate. |
+| Bundle / package ID | `app.json`, Xcode project | `com.savr.mobile` on both platforms |
+| Versioning | `eas.json` | Remote app version, production builds auto-increment |
+
+No credentials or tokens are stored in this repository. Session tokens live in SecureStore on the device.
+
+### Verify the setup
+
+```sh
+cd SavrExpo/SAVR
+npm run check                   # TypeScript, lint, and regression tests
+npx expo-doctor
+npx expo export --platform all
+npx playwright install chromium
+npm run test:e2e                # browser journeys against a mocked backend
+```
+
+### Main libraries (locked versions)
+
+| Library | Version | License |
+|---|---|---|
+| expo | 57.0.28 | MIT |
+| react / react-dom | 19.2.3 | MIT |
+| react-native | 0.86.3 | MIT |
+| expo-router | 57.0.26 | MIT |
+| expo-secure-store | 57.0.4 | MIT |
+| @react-native-async-storage/async-storage | 2.2.0 | MIT |
+| expo-image-picker | 57.0.20 | MIT |
+| expo-location | 57.0.21 | MIT |
+| react-native-maps | 1.27.2 | MIT |
+| react-native-reanimated | 4.5.1 | MIT |
+| typescript (dev) | 6.0.3 | Apache-2.0 |
+| @playwright/test (dev) | 1.63.0 | Apache-2.0 |
+| Google ML Kit text-recognition (Android) | 16.0.1 | Google ML Kit Terms |
+
+Full list: [`SavrExpo/SAVR/package.json`](SavrExpo/SAVR/package.json) and `package-lock.json`.
+
+### APIs and SDKs
+
+- **SAVR API** (`https://savr.app/api`): `auth/*`, `chat/*`, `grocery-lists/*`, `flyers/*`, `user/selected_stores`, profile update and delete
+- **Expo SDK 57** with EAS Build and Submit
+- **Apple Vision** (on-device OCR) and **MapKit** on iOS
+- **Google ML Kit Text Recognition 16.0.1** and **Google Maps SDK for Android**
+
+## User Guide
+
+| I want to... | Go to | What happens |
+|---|---|---|
+| Create an account and stay signed in | Sign up / Sign in | Email and password. Session is saved securely and restored on reopen. |
+| Plan shopping | Chat | Ask SAVR. It replies with formatted plans and creates lists. |
+| Scan a recipe or written list | Camera button in Chat | Text is read on the device and placed in the message box to edit. |
+| Review my lists | Lists, then a list | Receipt-style list with rename, share, delete, and its own chat. |
+| Add a recipe without duplicates | List, then Add recipe | Mark what you already have; only missing items are saved. |
+| See what chat changed | Change receipt in Chat | Shows what was actually saved. Undo restores the previous list. |
+| Shop in the store | List, then Start shopping | Check items off, pause, close the app, and resume later. |
+| Find deals | Flyers | Search deals at saved stores, review picks in a tray, add to a list. |
+| Compare stores | List, then Compare | Only complete baskets can be marked Best. |
+| Choose stores | Stores | Map or list, up to three stores. |
+| Manage my account | Profile | Dietary preferences, brands, password, sign out, delete account. |
+
+**Inputs and outputs:** text messages, photos, optional location, store picks, flyer selections, and checkmarks go in. AI replies, saved grocery lists, scanned text, a store map, saved stores, and shopping progress come out. All account data is stored by the SAVR backend; sessions and shopping progress are stored on the device.
+
+**Demo order:** sign up, pick stores, chat to create a list, add flyer deals, compare stores, start shopping.
+
+## Support
+
+| Name | Role | Contact for | Email |
+|---|---|---|---|
+| Aashir Javed (primary) | Backend and integration | Setup, API, auth, tests | anola133@asu.edu |
+| Peter Forbes | Expo and release builds | Android, EAS, signing, store submissions | pqforbes@asu.edu |
+| Alex Wei | UI/UX design | Figma and design system | gwei10@asu.edu |
+| David D'Agostino | Sponsor, SAVR | API, backend, product decisions | david@savr.app |
+
+To report a problem, open a GitHub issue with steps to reproduce, the device and OS version, and a screenshot.
 
 ## Links
 
-- Taiga Board: https://tree.taiga.io/project/peteyjoe-savr-asu-cse-capstone/backlog
+- Taiga board: https://tree.taiga.io/project/peteyjoe-savr-asu-cse-capstone/backlog
+- Figma prototype: https://www.figma.com/design/7B9cTaJyursjmfAOr74R6h/Savr-app-prototype?node-id=135-543
+- Early Expo web demo: https://peteyjoe.github.io/savr-react-native-demo/
